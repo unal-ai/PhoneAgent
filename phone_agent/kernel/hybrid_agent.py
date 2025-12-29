@@ -9,16 +9,32 @@
 """
 混合智能体 - 自动选择最优执行模式
 
-支持三种执行模式：
-1. Vision Kernel - 稳定、通用（**推荐生产环境使用**）
-2. XML Kernel - 快速、便宜（Beta，适合测试）
-3. Auto - 自动选择（XML优先，失败时降级到Vision）
+⚠️ **DEPRECATED - 已废弃**
+此模块已被废弃，不建议在新代码中使用。
+请直接使用 PhoneAgent (Vision Kernel)，它更稳定且经过充分测试。
 
-推荐配置：
-- 生产环境：mode=ExecutionMode.VISION（稳定性优先）
-- 测试环境：mode=ExecutionMode.AUTO（性能测试）
-- 实验环境：mode=ExecutionMode.XML（Beta功能）
+废弃原因:
+- XML Kernel 稳定性不足，导致混合模式不可靠
+- 自动切换逻辑增加复杂性，难以调试
+- Vision Kernel 已足够满足绝大多数场景
+
+迁移指南:
+>>> # 旧代码 (废弃)
+>>> from phone_agent.kernel import HybridAgent, ExecutionMode
+>>> agent = HybridAgent(model_config, config=HybridConfig(mode=ExecutionMode.AUTO))
+>>>
+>>> # 新代码 (推荐)
+>>> from phone_agent import PhoneAgent
+>>> agent = PhoneAgent(model_config)
 """
+
+import warnings
+warnings.warn(
+    "HybridAgent 已废弃，请直接使用 PhoneAgent (Vision Kernel)。"
+    "详见 PROJECT_ASSESSMENT.md 和 ROADMAP.md",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import logging
 from enum import Enum

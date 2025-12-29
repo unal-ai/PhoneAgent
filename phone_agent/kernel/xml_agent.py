@@ -8,23 +8,36 @@
 # Files: kernel.py
 
 """
-XML Kernel Agent - 基于UI树的智能体 [BETA]
+XML Kernel Agent - 基于UI树的智能体
 
-⚠️ **Beta Version - Use with Caution**
-This kernel is in beta testing. For stable production use, please use Vision Kernel.
+⚠️ **DEPRECATED - 已废弃**
+此模块已被废弃，不建议在新代码中使用。
+请使用 Vision Kernel (PhoneAgent) 替代，它更稳定且经过充分测试。
+
+废弃原因:
+- 依赖 uiautomator 稳定性差，某些界面经常获取失败
+- WebView、动态内容、复杂界面支持有限
+- 维护成本高，与 Vision Kernel 功能重叠
+
+迁移指南:
+>>> # 旧代码 (废弃)
+>>> from phone_agent.kernel import XMLKernelAgent
+>>> agent = XMLKernelAgent(model_config)
+>>>
+>>> # 新代码 (推荐)
+>>> from phone_agent import PhoneAgent
+>>> agent = PhoneAgent(model_config)
 
 核心逻辑集成自 Android Action Kernel (MIT License)
-理论优势：
-- 速度快 10-20倍（1-3秒 vs 20-28秒/步）
-- 成本低 95%（$0.01 vs $0.15/步）
-
-已知限制：
-- 依赖 uiautomator 稳定性（某些界面可能失败）
-- 需要预配置应用包名
-- 复杂界面（WebView、动态内容）支持有限
-
-推荐：生产环境优先使用 Vision Kernel
 """
+
+import warnings
+warnings.warn(
+    "XMLKernelAgent 已废弃，请使用 PhoneAgent (Vision Kernel) 替代。"
+    "详见 PROJECT_ASSESSMENT.md 和 ROADMAP.md",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import json
 import time

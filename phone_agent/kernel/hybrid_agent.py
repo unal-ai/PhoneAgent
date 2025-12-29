@@ -30,7 +30,7 @@
 
 import warnings
 warnings.warn(
-    "HybridAgent 已废弃，请直接使用 PhoneAgent (Vision Kernel)。"
+    "HybridAgent 已废弃，请直接使用 PhoneAgent (Vision Kernel)。\n"
     "详见 PROJECT_ASSESSMENT.md 和 ROADMAP.md",
     DeprecationWarning,
     stacklevel=2

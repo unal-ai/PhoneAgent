@@ -33,7 +33,7 @@ XML Kernel Agent - 基于UI树的智能体
 
 import warnings
 warnings.warn(
-    "XMLKernelAgent 已废弃，请使用 PhoneAgent (Vision Kernel) 替代。"
+    "XMLKernelAgent 已废弃，请使用 PhoneAgent (Vision Kernel) 替代。\n"
     "详见 PROJECT_ASSESSMENT.md 和 ROADMAP.md",
     DeprecationWarning,
     stacklevel=2

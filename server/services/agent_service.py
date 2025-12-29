@@ -772,8 +772,9 @@ class AgentService:
             logger.info(f"⏱️  [Task {task.task_id}] Kernel mode: {kernel_mode}")
             
             # ⚠️ 已废弃：XML和混合内核（稳定性差，已移除）
-            # 现在统一使用Vision内核（PhoneAgent）
-            if False:  # kernel_mode in ["xml", "auto"]:
+            # 详见 PROJECT_ASSESSMENT.md 和 ROADMAP.md
+            # 现在统一使用Vision内核（PhoneAgent），它更稳定且经过充分测试
+            if False:  # kernel_mode in ["xml", "auto"]:  # DEPRECATED
                 # 🗑️ 废弃：使用混合智能体（支持XML和Vision）
                 from phone_agent.kernel import HybridAgent, HybridConfig, ExecutionMode
                 

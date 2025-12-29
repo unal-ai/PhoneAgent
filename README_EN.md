@@ -345,9 +345,13 @@ Visit [Zhipu AI Platform](https://open.bigmodel.cn/) → Register → Create API
 
 ---
 
-## 📖 Deployment Documentation
+## 📖 Documentation
 
-**[📘 Deployment Guide](DEPLOYMENT.md)** - Complete deployment steps and configuration instructions
+| Document | Description |
+|----------|-------------|
+| **[📘 Deployment Guide](DEPLOYMENT.md)** | Complete deployment steps and configuration |
+| **[📊 Project Assessment](PROJECT_ASSESSMENT.md)** | Project completion assessment and technical analysis |
+| **[🗺️ Implementation Roadmap](ROADMAP.md)** | Upgrade guide from prototype to production |
 
 **Two Deployment Modes**:
 - **Simple Mode**: IP direct, 10 minutes, suitable for quick experience and testing

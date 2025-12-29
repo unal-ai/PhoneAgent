@@ -352,6 +352,7 @@ Visit [Zhipu AI Platform](https://open.bigmodel.cn/) → Register → Create API
 | **[📘 Deployment Guide](DEPLOYMENT.md)** | Complete deployment steps and configuration |
 | **[📊 Project Assessment](PROJECT_ASSESSMENT.md)** | Project completion assessment and technical analysis |
 | **[🗺️ Implementation Roadmap](ROADMAP.md)** | Upgrade guide from prototype to production |
+| **[🔍 Comparison Analysis](COMPARISON_MIDSCENE.md)** | Comparison with Midscene.js and key takeaways |
 
 **Two Deployment Modes**:
 - **Simple Mode**: IP direct, 10 minutes, suitable for quick experience and testing

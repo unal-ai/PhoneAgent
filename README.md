@@ -351,6 +351,7 @@ npm install && npm run dev -- --host 0.0.0.0
 | **[📘 部署指南](DEPLOYMENT.md)** | 完整的部署步骤和配置说明 |
 | **[📊 项目评估](PROJECT_ASSESSMENT.md)** | 项目完成度评估与技术分析 |
 | **[🗺️ 实现路线](ROADMAP.md)** | 从原型到生产的升级指南 |
+| **[🔍 对比分析](COMPARISON_MIDSCENE.md)** | 与 Midscene.js 的对比及可借鉴亮点 |
 
 **两种部署模式**：
 - **简单模式**：IP 直连，10分钟完成，适合快速体验和测试

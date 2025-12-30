@@ -10,6 +10,8 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
 import asyncio
 import logging
+import re
+import subprocess
 from typing import Optional
 
 from server.services.scrcpy_manager import get_scrcpy_manager
@@ -233,6 +235,37 @@ class KeyRequest(BaseModel):
     action: str = "press"  # press/down/up
 
 
+def _is_valid_ip_octet(octet: str) -> bool:
+    """Check if a string is a valid IP octet (0-255)."""
+    try:
+        val = int(octet)
+        return 0 <= val <= 255
+    except ValueError:
+        return False
+
+
+# Security: Validate device_id format to prevent command injection
+def _validate_device_id(device_id: str) -> bool:
+    """
+    Validate device_id to prevent command injection.
+    Valid formats: device_XXXX (port number), localhost:XXXX, or valid_ip:port
+    """
+    # Pattern for device_XXXX or localhost:XXXX
+    if re.match(r'^device_\d{4,5}$', device_id):
+        return True
+    if re.match(r'^localhost:\d{4,5}$', device_id):
+        return True
+    
+    # Pattern for IP:port - validate each octet is 0-255
+    ip_port_match = re.match(r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3}):(\d{4,5})$', device_id)
+    if ip_port_match:
+        octets = ip_port_match.groups()[:4]
+        port = int(ip_port_match.group(5))
+        return all(_is_valid_ip_octet(o) for o in octets) and 1024 <= port <= 65535
+    
+    return False
+
+
 @router.post("/control/{device_id}/touch")
 async def control_touch(device_id: str, request: TouchRequest):
     """
@@ -243,9 +276,12 @@ async def control_touch(device_id: str, request: TouchRequest):
         request: 触摸请求 (x, y 为百分比 0-100)
     """
     try:
-        import subprocess
         from server.utils import device_id_to_adb_address
         from server.services.device_scanner import get_device_scanner
+        
+        # Security: Validate device_id format
+        if not _validate_device_id(device_id):
+            raise HTTPException(400, f"Invalid device_id format: {device_id}")
         
         # 转换 device_id 为 ADB 地址 (device_6100 -> localhost:6100)
         adb_address = device_id_to_adb_address(device_id)
@@ -272,16 +308,18 @@ async def control_touch(device_id: str, request: TouchRequest):
         actual_x = int(request.x * width / 100)
         actual_y = int(request.y * height / 100)
         
-        logger.info(f"🎯 Touch: {request.x}%, {request.y}% -> {actual_x}, {actual_y} (screen: {width}x{height})")
+        logger.info(f"Touch: {request.x}%, {request.y}% -> {actual_x}, {actual_y} (screen: {width}x{height})")
         
+        # Security: Use list arguments instead of shell=True to prevent command injection
         if request.action == "tap":
-            cmd = f"adb -s {adb_address} shell input tap {actual_x} {actual_y}"
+            cmd = ['adb', '-s', adb_address, 'shell', 'input', 'tap', str(actual_x), str(actual_y)]
         elif request.action == "down":
-            cmd = f"adb -s {adb_address} shell input touchscreen swipe {actual_x} {actual_y} {actual_x} {actual_y} 1000"
+            cmd = ['adb', '-s', adb_address, 'shell', 'input', 'touchscreen', 'swipe',
+                   str(actual_x), str(actual_y), str(actual_x), str(actual_y), '1000']
         else:
             raise HTTPException(400, f"Unsupported touch action: {request.action}")
         
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
         
         if result.returncode != 0:
             raise HTTPException(500, f"ADB command failed: {result.stderr}")
@@ -310,9 +348,12 @@ async def control_swipe(device_id: str, request: SwipeRequest):
         request: 滑动请求
     """
     try:
-        import subprocess
         from server.utils import device_id_to_adb_address
         from server.services.device_scanner import get_device_scanner
+        
+        # Security: Validate device_id format
+        if not _validate_device_id(device_id):
+            raise HTTPException(400, f"Invalid device_id format: {device_id}")
         
         # 转换 device_id 为 ADB 地址 (device_6100 -> localhost:6100)
         adb_address = device_id_to_adb_address(device_id)
@@ -339,8 +380,10 @@ async def control_swipe(device_id: str, request: SwipeRequest):
         end_x = int(request.end_x * width / 100)
         end_y = int(request.end_y * height / 100)
         
-        cmd = f"adb -s {adb_address} shell input swipe {start_x} {start_y} {end_x} {end_y} {request.duration}"
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+        # Security: Use list arguments instead of shell=True
+        cmd = ['adb', '-s', adb_address, 'shell', 'input', 'swipe',
+               str(start_x), str(start_y), str(end_x), str(end_y), str(request.duration)]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
         
         if result.returncode != 0:
             raise HTTPException(500, f"ADB command failed: {result.stderr}")
@@ -370,14 +413,18 @@ async def control_key(device_id: str, request: KeyRequest):
         request: 按键请求
     """
     try:
-        import subprocess
         from server.utils import device_id_to_adb_address
+        
+        # Security: Validate device_id format
+        if not _validate_device_id(device_id):
+            raise HTTPException(400, f"Invalid device_id format: {device_id}")
         
         # 转换 device_id 为 ADB 地址 (device_6100 -> localhost:6100)
         adb_address = device_id_to_adb_address(device_id)
         
-        cmd = f"adb -s {adb_address} shell input keyevent {request.keycode}"
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
+        # Security: Use list arguments instead of shell=True
+        cmd = ['adb', '-s', adb_address, 'shell', 'input', 'keyevent', str(request.keycode)]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
         
         if result.returncode != 0:
             raise HTTPException(500, f"ADB command failed: {result.stderr}")

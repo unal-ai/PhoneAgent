@@ -16,11 +16,23 @@ import subprocess
 import asyncio
 import logging
 import os
+import re
 import socket
 import threading
 import queue
 from typing import Optional, Dict
 from pathlib import Path
+
+# Scrcpy version configuration - MUST match the version installed on devices
+# This should be kept in sync with client/install_termux.sh SCRCPY_VERSION
+SCRCPY_SERVER_VERSION = os.getenv("SCRCPY_SERVER_VERSION", "3.3.3")
+
+# Scrcpy TCP port range for ADB forwarding
+SCRCPY_PORT_MIN = int(os.getenv("SCRCPY_PORT_MIN", "27183"))
+SCRCPY_PORT_MAX = int(os.getenv("SCRCPY_PORT_MAX", "27283"))
+
+# Maximum NAL buffer size (8MB) to prevent memory exhaustion
+MAX_NAL_BUFFER_SIZE = int(os.getenv("MAX_NAL_BUFFER_SIZE", str(8 * 1024 * 1024)))
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +99,7 @@ class ScrcpySession:
             
             # 步骤 2: 设置 ADB 端口转发（使用动态端口避免冲突）
             import random
-            self.scrcpy_port = random.randint(27183, 27283)  # 随机端口
+            self.scrcpy_port = random.randint(SCRCPY_PORT_MIN, SCRCPY_PORT_MAX)
             self._setup_port_forward(adb_address)
             
             # 步骤 3: 启动 scrcpy server
@@ -151,12 +163,21 @@ class ScrcpySession:
     
     def _start_scrcpy_server(self, adb_address: str, bitrate: int, max_size: int, framerate: int):
         """启动 scrcpy server"""
+        # Validate scrcpy-server exists on device before starting
+        check_cmd = ['adb', '-s', adb_address, 'shell', 'ls', '-l', '/data/local/tmp/scrcpy-server']
+        check_result = subprocess.run(check_cmd, capture_output=True, text=True, timeout=5)
+        if check_result.returncode != 0:
+            raise RuntimeError(
+                f"scrcpy-server not found on device. Please install it first. "
+                f"Expected at /data/local/tmp/scrcpy-server"
+            )
+        
         # 构建 scrcpy server 启动命令
         server_cmd = [
             'adb', '-s', adb_address, 'shell',
             'CLASSPATH=/data/local/tmp/scrcpy-server',
             'app_process', '/', 'com.genymobile.scrcpy.Server',
-            '3.3.3',  # scrcpy 版本（需要与设备上的 scrcpy-server 版本匹配）
+            SCRCPY_SERVER_VERSION,  # scrcpy 版本（需要与设备上的 scrcpy-server 版本匹配）
             f'max_size={max_size}',
             f'video_bit_rate={bitrate}',
             f'max_fps={framerate}',
@@ -265,8 +286,19 @@ class ScrcpySession:
                     logger.error(f"Socket read error: {e}")
                     break
                 
-                # 2. 追加到缓冲区
+                # 2. 追加到缓冲区 (with memory protection)
                 self._nal_buffer.extend(chunk)
+                
+                # Memory protection: if buffer exceeds max size, discard oldest data
+                if len(self._nal_buffer) > MAX_NAL_BUFFER_SIZE:
+                    logger.warning(
+                        f"NAL buffer overflow ({len(self._nal_buffer)} bytes), "
+                        f"discarding oldest data for {self.device_id}"
+                    )
+                    # Keep only half the max buffer size to avoid repeated trimming
+                    retain_size = MAX_NAL_BUFFER_SIZE // 2
+                    discard_size = len(self._nal_buffer) - retain_size
+                    self._nal_buffer = self._nal_buffer[discard_size:]
                 
                 # 3. 提取完整 NAL 单元
                 while True:

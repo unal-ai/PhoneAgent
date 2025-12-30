@@ -866,19 +866,20 @@ const executePlan = async () => {
   }
   
   try {
-    console.log('🚀 Executing plan with device:', taskForm.value.device_id)
+    if (import.meta.env.DEV) {
+      console.log('[Plan] Executing with device:', taskForm.value.device_id)
+    }
     const result = await planningApi.execute({
       plan: generatedPlan.value,
       device_id: taskForm.value.device_id
     })
     
-    console.log('✅ Plan execution result:', result)
+    if (import.meta.env.DEV) {
+      console.log('[Plan] Execution result:', result)
+    }
     
     if (result && result.task_id) {
       currentTaskId.value = result.task_id
-      console.log('📋 Task ID set:', result.task_id)
-    } else {
-      console.warn('⚠️ No task_id in result:', result)
     }
     
     showPlanPreview.value = false
@@ -892,7 +893,7 @@ const executePlan = async () => {
     
     taskForm.value.instruction = ''
   } catch (error) {
-    console.error('❌ Plan execution failed:', error)
+    console.error('[Plan] Execution failed:', error)
     ElMessage.error('计划执行失败：' + (error.message || '未知错误'))
   }
 }

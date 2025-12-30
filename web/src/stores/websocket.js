@@ -32,16 +32,22 @@ export const useWebSocketStore = defineStore('websocket', () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       // 根据标准文档：前端域名反向代理方案使用 /ws 路径
       wsUrl = `${protocol}//${window.location.host}/ws`
-      console.warn('VITE_WS_URL not configured, using fallback:', wsUrl)
+      if (import.meta.env.DEV) {
+        console.log('[WebSocket] Using fallback URL:', wsUrl)
+      }
     }
     
-    console.log('Connecting to WebSocket:', wsUrl)
+    if (import.meta.env.DEV) {
+      console.log('[WebSocket] Connecting to:', wsUrl)
+    }
     
     try {
       ws.value = new WebSocket(wsUrl)
       
       ws.value.onopen = () => {
-        console.log('✅ WebSocket connected')
+        if (import.meta.env.DEV) {
+          console.log('[WebSocket] Connected')
+        }
         connected.value = true
         reconnectAttempts.value = 0
         reconnectDelay.value = 1000
@@ -63,18 +69,22 @@ export const useWebSocketStore = defineStore('websocket', () => {
       }
       
       ws.value.onerror = (error) => {
-        console.error('❌ WebSocket error:', error)
+        console.error('[WebSocket] Error:', error)
       }
       
       ws.value.onclose = () => {
-        console.log('🔌 WebSocket disconnected')
+        if (import.meta.env.DEV) {
+          console.log('[WebSocket] Disconnected')
+        }
         connected.value = false
         stopHeartbeat()
         
         // 尝试重连
         if (reconnectAttempts.value < maxReconnectAttempts) {
           reconnectAttempts.value++
-          console.log(`🔄 Reconnecting in ${reconnectDelay.value}ms (attempt ${reconnectAttempts.value}/${maxReconnectAttempts})`)
+          if (import.meta.env.DEV) {
+            console.log(`[WebSocket] Reconnecting in ${reconnectDelay.value}ms (attempt ${reconnectAttempts.value}/${maxReconnectAttempts})`)
+          }
           
           setTimeout(() => {
             connect()
@@ -83,7 +93,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
           // 指数退避
           reconnectDelay.value = Math.min(reconnectDelay.value * 2, 30000)
         } else {
-          console.error('❌ Max reconnect attempts reached')
+          console.error('[WebSocket] Max reconnect attempts reached')
         }
       }
     } catch (e) {
@@ -122,7 +132,9 @@ export const useWebSocketStore = defineStore('websocket', () => {
         break
         
       case 'initial_state':
-        console.log('Initial state:', data.data)
+        if (import.meta.env.DEV) {
+          console.log('[WebSocket] Initial state:', data.data)
+        }
         break
         
       case 'device_update':
@@ -135,22 +147,17 @@ export const useWebSocketStore = defineStore('websocket', () => {
         
       case 'task_step_update':
         // 任务步骤更新（实时推送）
-        console.log('✅ [WebSocket] Task step update received:', data.data)
         // 触发自定义事件，让其他组件监听
         window.dispatchEvent(new CustomEvent('task-step-update', { detail: data.data }))
-        console.log('✅ [WebSocket] Custom event dispatched: task-step-update')
         break
         
       case 'task_status_change':
-        // 任务状态变化事件（新增）
-        console.log('✅ [WebSocket] Task status change received:', data.data)
+        // 任务状态变化事件
         window.dispatchEvent(new CustomEvent('task-status-change', { detail: data.data }))
-        console.log('✅ [WebSocket] Custom event dispatched: task-status-change')
         break
         
       case 'task_cancelled':
         // 任务取消事件
-        console.log('Task cancelled:', data.data)
         window.dispatchEvent(new CustomEvent('task-cancelled', { detail: data.data }))
         break
         

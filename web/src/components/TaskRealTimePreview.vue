@@ -130,8 +130,8 @@ const currentTask = ref(null)
 const steps = ref([])
 const isCancelling = ref(false)
 const elapsedTime = ref(0)
-const pollingTimer = ref(null) // 🆕 轮询计时器
-const pollingInterval = 1000 // 🆕 轮询间隔（1秒）
+const pollingTimer = ref(null)
+const pollingInterval = 1000 // Polling interval in ms
 const totalTokens = computed(() => {
   return steps.value.reduce((sum, step) => {
     return sum + (step.tokens_used?.total_tokens || 0)
@@ -238,26 +238,20 @@ function formatTime(timestamp) {
 
 async function loadTask() {
   if (!props.taskId) {
-    console.log('⚠️ [TaskRealTimePreview] No taskId provided')
     return
   }
   
   try {
-    console.log('✅ [TaskRealTimePreview] Loading task:', props.taskId)
     currentTask.value = await taskApi.get(props.taskId)
-    console.log('✅ [TaskRealTimePreview] Task loaded:', currentTask.value)
     
     const stepsData = await taskApi.getSteps(props.taskId)
-    console.log('✅ [TaskRealTimePreview] Steps loaded:', stepsData)
     
-    // ✅ 修复：始终加载初始步骤（不检查steps.value长度）
-    // WebSocket会实时更新，初始加载确保不会遗漏已有步骤
+    // Load initial steps (WebSocket will update in real-time)
     if (stepsData.steps && Array.isArray(stepsData.steps)) {
       steps.value = stepsData.steps
-      console.log('✅ [TaskRealTimePreview] Steps set:', steps.value.length)
     }
   } catch (error) {
-    console.error('❌ [TaskRealTimePreview] Failed to load task:', error)
+    console.error('[TaskPreview] Failed to load task:', error)
   }
 }
 
@@ -295,11 +289,9 @@ function stopElapsedTimer() {
   }
 }
 
-// 🆕 启动轮询
+// Start polling for task updates
 function startPolling() {
   if (pollingTimer.value) return
-  
-  console.log('✅ [TaskRealTimePreview] Starting polling for task:', props.taskId)
   
   pollingTimer.value = setInterval(async () => {
     if (!props.taskId) {
@@ -323,8 +315,6 @@ function startPolling() {
       if (stepsData.steps && Array.isArray(stepsData.steps)) {
         // 检查是否有新步骤
         if (stepsData.steps.length > steps.value.length) {
-          console.log(`✅ [TaskRealTimePreview] New steps detected: ${stepsData.steps.length - steps.value.length}`)
-          
           // 标记新步骤（用于动画）
           const newSteps = stepsData.steps.slice(steps.value.length)
           newSteps.forEach(step => {
@@ -340,30 +330,26 @@ function startPolling() {
       
       // 任务完成后停止轮询
       if (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled') {
-        console.log('✅ [TaskRealTimePreview] Task finished, stopping polling')
         stopPolling()
         stopElapsedTimer()
       }
     } catch (error) {
-      console.error('❌ [TaskRealTimePreview] Polling error:', error)
+      console.error('[TaskPreview] Polling error:', error)
     }
   }, pollingInterval)
 }
 
-// 🆕 停止轮询
+// Stop polling
 function stopPolling() {
   if (pollingTimer.value) {
     clearInterval(pollingTimer.value)
     pollingTimer.value = null
-    console.log('✅ [TaskRealTimePreview] Polling stopped')
   }
 }
 
-// ✅ 监听 taskId 变化，自动重新加载任务
+// Watch taskId changes, reload task automatically
 watch(() => props.taskId, async (newTaskId, oldTaskId) => {
-  console.log('✅ [TaskRealTimePreview] taskId changed:', oldTaskId, '→', newTaskId)
-  
-  // 🆕 停止旧任务的轮询
+  // Stop old task polling
   stopPolling()
   
   if (newTaskId && newTaskId !== oldTaskId) {
@@ -376,7 +362,7 @@ watch(() => props.taskId, async (newTaskId, oldTaskId) => {
     stopElapsedTimer()
     startElapsedTimer()
     
-    // 🆕 启动新任务的轮询
+    // Start new task polling
     if (currentTask.value && currentTask.value.status === 'running') {
       startPolling()
     }
@@ -384,7 +370,6 @@ watch(() => props.taskId, async (newTaskId, oldTaskId) => {
 }, { immediate: false })
 
 onMounted(async () => {
-  console.log('✅ [TaskRealTimePreview] Component mounted, taskId:', props.taskId)
   await loadTask()
   
   // 启动轮询（如果任务正在执行）

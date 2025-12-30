@@ -77,15 +77,18 @@ class Config:
     CUSTOM_MODEL_NAME: Optional[str] = os.getenv("CUSTOM_MODEL_NAME")
     
     # ============================================
-    # 语音识别配置（独立于模型API）
+    # 语音识别配置（ASR）
     # ============================================
     
     # 智谱AI语音识别API Key（可选，与ZHIPU_API_KEY可不同）
     # 如果未设置，则使用ZHIPU_API_KEY
     ZHIPU_SPEECH_API_KEY: str = os.getenv("ZHIPU_SPEECH_API_KEY", "")
     
-    # Fish Audio API Key（暂未开放，预留）
-    # FISHAUDIO_API_KEY: str = os.getenv("FISHAUDIO_API_KEY", "")
+    # 自定义ASR服务配置
+    CUSTOM_ASR_ENABLED: bool = os.getenv("CUSTOM_ASR_ENABLED", "false").lower() == "true"
+    CUSTOM_ASR_BASE_URL: Optional[str] = os.getenv("CUSTOM_ASR_BASE_URL")
+    CUSTOM_ASR_API_KEY: Optional[str] = os.getenv("CUSTOM_ASR_API_KEY")
+    CUSTOM_ASR_MODEL: str = os.getenv("CUSTOM_ASR_MODEL", "whisper-1")
     
     # 模型配置参数（通用）
     MAX_TOKENS: int = int(os.getenv("MAX_TOKENS", "3000"))  # 调整为3000（推荐值）
@@ -142,10 +145,20 @@ class Config:
         warnings = []
         
         # 检查 API Key（根据提供商检查）
-        if cls.MODEL_PROVIDER == "zhipu" and not cls.ZHIPU_API_KEY and not cls.CUSTOM_API_KEY:
-            errors.append("ZHIPU_API_KEY 或 CUSTOM_API_KEY 未设置")
-        elif cls.MODEL_PROVIDER != "zhipu" and cls.MODEL_PROVIDER != "local" and not cls.CUSTOM_API_KEY:
-            warnings.append(f"使用 {cls.MODEL_PROVIDER} 但未设置 CUSTOM_API_KEY")
+        provider = cls.MODEL_PROVIDER.lower()
+        has_api_key = cls.CUSTOM_API_KEY or cls.ZHIPU_API_KEY
+        
+        if provider == "local":
+            # 本地模型不需要 API Key，但需要 base_url
+            if not cls.CUSTOM_BASE_URL:
+                warnings.append("使用本地模型但未设置 CUSTOM_BASE_URL")
+        elif provider == "zhipu":
+            if not has_api_key:
+                errors.append("ZHIPU_API_KEY 或 CUSTOM_API_KEY 未设置")
+        else:
+            # 其他提供商（openai, gemini, qwen）
+            if not cls.CUSTOM_API_KEY:
+                errors.append(f"使用 {provider} 需要设置 CUSTOM_API_KEY")
         
         # 检查其他配置
         if cls.MAX_DEVICES < 1:
@@ -154,12 +167,17 @@ class Config:
         if cls.MAX_TOKENS < 512:
             warnings.append(f"MAX_TOKENS 过小 (当前: {cls.MAX_TOKENS}，建议 >= 1024)")
         
+        # 检查自定义 ASR 配置
+        if cls.CUSTOM_ASR_ENABLED:
+            if not cls.CUSTOM_ASR_BASE_URL:
+                errors.append("启用自定义ASR但未设置 CUSTOM_ASR_BASE_URL")
+        
         # 打印结果（优先使用logger，否则使用print向后兼容）
         if logger:
             if not errors and not warnings:
                 logger.info("✅ 配置验证通过")
+                logger.info(f"   模型提供商: {provider}")
                 logger.info(f"   最大设备数: {cls.MAX_DEVICES}")
-                logger.info("   💡 模型会根据任务自动选择（智能选择器）")
             else:
                 if errors:
                     logger.error("❌ 配置验证失败:")
@@ -173,8 +191,8 @@ class Config:
         elif verbose:
             if not errors and not warnings:
                 print("✅ 配置验证通过")
+                print(f"   模型提供商: {provider}")
                 print(f"   最大设备数: {cls.MAX_DEVICES}")
-                print(f"   💡 模型会根据任务自动选择（智能选择器）")
             else:
                 if errors:
                     print("❌ 配置验证失败:")
@@ -202,17 +220,31 @@ class Config:
                 return "未设置"
             return f"{key[:8]}...{key[-4:]}" if len(key) > 12 else "***"
         
+        # 确定有效的 API Key
+        effective_api_key = cls.CUSTOM_API_KEY or cls.ZHIPU_API_KEY
+        
+        # 构建语音识别配置行
+        asr_lines = [
+            "【语音识别】",
+            f"  自定义ASR: {'启用' if cls.CUSTOM_ASR_ENABLED else '禁用（使用智谱AI）'}"
+        ]
+        if cls.CUSTOM_ASR_ENABLED:
+            asr_lines.append(f"  ASR端点: {cls.CUSTOM_ASR_BASE_URL or '未配置'}")
+        
         lines = [
             "\n" + "="*60,
             "  当前配置",
             "="*60,
             "",
             "【AI 模型】",
-            "  提供商: zhipu",
-            "  模型: 智能选择（根据任务内核自动匹配）",
-            f"  Zhipu API Key: {mask_key(cls.ZHIPU_API_KEY)}",
+            f"  提供商: {cls.MODEL_PROVIDER}",
+            f"  自定义模型: {cls.CUSTOM_MODEL_NAME or '智能选择'}",
+            f"  自定义端点: {cls.CUSTOM_BASE_URL or '使用默认'}",
+            f"  API Key: {mask_key(effective_api_key)}",
             f"  Max Tokens: {cls.MAX_TOKENS}",
             f"  Temperature: {cls.TEMPERATURE}",
+            "",
+        ] + asr_lines + [
             "",
             "【服务器】",
             f"  监听地址: {cls.SERVER_HOST}",
@@ -234,7 +266,7 @@ class Config:
         
         if logger:
             for line in lines:
-                if line:
+                if line:  # 跳过空行
                     logger.info(line)
         else:
             for line in lines:

@@ -838,7 +838,9 @@ setup_scrcpy_server() {
     if [ -f "$TARGET_PATH" ]; then
         log_info "scrcpy-server 已存在，跳过安装"
         # 备份一份到本地，避免 /data/local/tmp 被清理后无法恢复
-        cp -f "$TARGET_PATH" "$LOCAL_CACHE_PATH" 2>/dev/null || true
+        if [ -s "$TARGET_PATH" ]; then
+            cp -f "$TARGET_PATH" "$LOCAL_CACHE_PATH" 2>/dev/null || true
+        fi
         return 0
     fi
     
@@ -866,7 +868,9 @@ setup_scrcpy_server() {
     
     log_info "安装 scrcpy-server 到设备..."
     # 保留一份本地副本，防止 /data/local/tmp 被系统清理
-    cp -f "${SCRCPY_SERVER_FILE}" "$LOCAL_CACHE_PATH" 2>/dev/null || true
+    if [ -s "${SCRCPY_SERVER_FILE}" ]; then
+        cp -f "${SCRCPY_SERVER_FILE}" "$LOCAL_CACHE_PATH" 2>/dev/null || true
+    fi
     
     # 方案1：直接复制（最简单，推荐）
     if cp "${SCRCPY_SERVER_FILE}" "$TARGET_PATH" 2>/dev/null && chmod 755 "$TARGET_PATH" 2>/dev/null; then
@@ -1183,13 +1187,16 @@ echo ""
 # 确保 scrcpy-server 存在（/data/local/tmp 可能会被清理）
 SCRCPY_TARGET="/data/local/tmp/scrcpy-server"
 SCRCPY_CACHE="$HOME/scrcpy-server"
-if [ ! -f "\$SCRCPY_TARGET" ] && [ -f "\$SCRCPY_CACHE" ]; then
+SCRCPY_DIR=\$(dirname "\$SCRCPY_TARGET")
+if [ ! -d "\${SCRCPY_DIR}" ] && ! mkdir -p "\${SCRCPY_DIR}" 2>/dev/null; then
+    echo -e "   \${YELLOW}⚠️  \${SCRCPY_DIR} 目录创建失败，可能需要手动检查权限\${NC}"
+fi
+if [ ! -f "\${SCRCPY_TARGET}" ] && [ -s "\${SCRCPY_CACHE}" ]; then
     echo -e "\${YELLOW}🛠️  检测到 scrcpy-server 缺失，正在恢复...\${NC}"
-    mkdir -p /data/local/tmp 2>/dev/null || true
-    if cp "\$SCRCPY_CACHE" "\$SCRCPY_TARGET" 2>/dev/null && chmod 755 "\$SCRCPY_TARGET" 2>/dev/null; then
-        echo -e "   \${GREEN}✅ scrcpy-server 已恢复到 /data/local/tmp/scrcpy-server\${NC}"
+    if cp "\${SCRCPY_CACHE}" "\${SCRCPY_TARGET}" 2>/dev/null && chmod 755 "\${SCRCPY_TARGET}" 2>/dev/null && [ -s "\${SCRCPY_TARGET}" ]; then
+        echo -e "   \${GREEN}✅ scrcpy-server 已恢复到 \${SCRCPY_TARGET}\${NC}"
     else
-        echo -e "   \${YELLOW}⚠️  scrcpy-server 自动恢复失败，请手动复制到 /data/local/tmp/scrcpy-server\${NC}"
+        echo -e "   \${YELLOW}⚠️  scrcpy-server 自动恢复失败，请手动复制到 \${SCRCPY_TARGET}\${NC}"
     fi
 fi
 

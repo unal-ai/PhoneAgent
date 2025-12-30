@@ -58,7 +58,7 @@ class RuleEngineExecutor:
         if not app_name:
             return False, "缺少应用名称"
         
-        logger.info(f"🚀 规则引擎: 启动应用 {app_name}")
+        logger.info(f"规则引擎: 启动应用 {app_name}")
         success = launch_app(app_name, self.device_id)
         
         if success:

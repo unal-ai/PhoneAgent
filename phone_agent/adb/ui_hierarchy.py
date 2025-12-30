@@ -71,7 +71,7 @@ def get_ui_hierarchy_robust(
                 if elements:
                     # 成功！记住这个策略
                     _device_strategies[device_key] = strategy
-                    logger.info(f"✅ {strategy} 成功，找到 {len(elements)} 个元素")
+                    logger.info(f"{strategy} 成功，找到 {len(elements)} 个元素")
                     return elements
             
             except Exception as e:
@@ -109,7 +109,7 @@ def _execute_strategy(
         raise ValueError(f"未知策略: {strategy}")
 
 
-# ❌ REMOVED: _try_yadb() function
+# REMOVED: _try_yadb() function
 # Reason: yadb does NOT support UI layout dump
 # This was a misunderstanding of yadb's capabilities
 

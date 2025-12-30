@@ -51,7 +51,7 @@ You can interact with Android phones through these actions:
 
 # Output Format
 
-⚠️ CRITICAL: You MUST respond with ONLY a valid JSON object. 
+CRITICAL: You MUST respond with ONLY a valid JSON object. 
 - NO markdown code blocks (no ```json or ```)
 - NO explanations before or after the JSON
 - NO natural language text
@@ -82,7 +82,7 @@ Your response MUST be a valid JSON object:
       "reasoning": "why this step is necessary",
       "parameters": {
         // action-specific parameters
-        // LAUNCH: {"app_name": "小红书"}  ⚠️ IMPORTANT: app_name is ONLY the app name, NOT the full task!
+        // LAUNCH: {"app_name": "小红书"}  IMPORTANT: app_name is ONLY the app name, NOT the full task!
         // TAP: {"x": 500, "y": 1000}
         // DOUBLE_TAP: {"x": 500, "y": 1000}
         // LONG_PRESS: {"x": 500, "y": 1000, "duration_ms": 3000}
@@ -118,7 +118,7 @@ Your response MUST be a valid JSON object:
 - Plan for error recovery at critical points
 - Keep steps atomic and verifiable
 
-# ⚠️ Special Cases Handling
+# Warning: Special Cases Handling
 
 DO NOT use [notool] or [sensitive] tags in planning mode! These tags are for step-by-step mode only.
 
@@ -132,17 +132,17 @@ If the task involves sensitive operations (payment, password, login, banking):
 - Add risk_points: ["Sensitive operation detected", "Manual intervention required"]
 - Mark the sensitive step with appropriate warnings in the reasoning field
 
-# ⚠️ CRITICAL: App Name Extraction
+# Warning: CRITICAL: App Name Extraction
 
 When the user's task involves launching an app, you MUST extract ONLY the app name, NOT the entire task description!
 
 Examples:
-✅ CORRECT:
+CORRECT:
 - Task: "小红书创作一篇图文笔记" → app_name: "小红书"
 - Task: "在微信给张三发消息" → app_name: "微信"
 - Task: "打开抖音刷视频" → app_name: "抖音"
 
-❌ WRONG:
+WRONG:
 - Task: "小红书创作一篇图文笔记" → app_name: "小红书创作一篇图文笔记" (WRONG!)
 - Task: "在微信给张三发消息" → app_name: "在微信给张三发消息" (WRONG!)
 """
@@ -155,7 +155,7 @@ Current Screen Information:
 - Current App: {current_app}
 - Screen Size: {screen_width}x{screen_height}
 
-⚠️ CRITICAL REMINDER - READ CAREFULLY:
+CRITICAL REMINDER - READ CAREFULLY:
 1. Your response MUST be ONLY a valid JSON object
 2. NO natural language explanations
 3. NO markdown code blocks (no ```json or ```)
@@ -164,10 +164,10 @@ Current Screen Information:
 6. DO NOT use do(action=...) format - that's for a different mode!
 7. If the task involves launching an app, extract ONLY the app name for the app_name parameter
 
-❌ WRONG FORMAT (Vision mode, NOT for planning):
+WRONG FORMAT (Vision mode, NOT for planning):
 do(action="Launch", app="微信")
 
-✅ CORRECT FORMAT (Planning mode JSON):
+CORRECT FORMAT (Planning mode JSON):
 {{"instruction": "打开微信", "complexity": "simple", "steps": [{{"step_id": 1, "action_type": "LAUNCH", "parameters": {{"app_name": "微信"}}}}]}}
 
 Example of CORRECT response format:

@@ -148,12 +148,12 @@ class DeviceManager:
             )
             
             if success:
-                logger.info(f"✅ Background initialization completed for {device_id}")
+                logger.info(f"Background initialization completed for {device_id}")
             else:
-                logger.warning(f"⚠️  Background initialization had warnings for {device_id}")
+                logger.warning(f" Background initialization had warnings for {device_id}")
                 
         except Exception as e:
-            logger.error(f"❌ Background initialization failed for {device_id}: {e}", exc_info=True)
+            logger.error(f"Background initialization failed for {device_id}: {e}", exc_info=True)
     
     async def unregister_device(self, device_id: str):
         """注销设备"""
@@ -481,7 +481,7 @@ async def auto_connect_devices():
                 
                 output = connect_result.stdout.lower()
                 if "connected" in output or "already connected" in output:
-                    logger.info(f"✅ 设备连接成功: {device_addr}")
+                    logger.info(f"设备连接成功: {device_addr}")
                     connected_count += 1
                 else:
                     logger.warning(f"设备连接失败: {device_addr} - {connect_result.stdout}")
@@ -491,7 +491,7 @@ async def auto_connect_devices():
             continue
     
     if connected_count > 0:
-        logger.info(f"✅ 自动连接了 {connected_count} 个设备")
+        logger.info(f"自动连接了 {connected_count} 个设备")
     else:
         logger.info("没有检测到可连接的设备")
 
@@ -500,7 +500,7 @@ async def auto_connect_devices():
 async def startup_event():
     """应用启动事件"""
     # V2: 不再需要心跳超时检测，WebSocket 使用原生 ping/pong 机制
-    logger.info("✅ WebSocket 服务器启动完成（使用原生 ping/pong 机制，ping_interval=30s）")
+    logger.info("WebSocket 服务器启动完成（使用原生 ping/pong 机制，ping_interval=30s）")
 
 
 if __name__ == "__main__":

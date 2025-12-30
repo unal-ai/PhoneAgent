@@ -9,7 +9,7 @@
 """
 混合智能体 - 自动选择最优执行模式
 
-⚠️ **DEPRECATED - 已废弃**
+**DEPRECATED - 已废弃**
 此模块已被废弃，不建议在新代码中使用。
 请直接使用 PhoneAgent (Vision Kernel)，它更稳定且经过充分测试。
 
@@ -63,14 +63,14 @@ class HybridConfig:
     
     推荐：生产环境使用 mode=ExecutionMode.VISION
     """
-    mode: ExecutionMode = ExecutionMode.VISION  # ✅ 改为默认 Vision（稳定）
+    mode: ExecutionMode = ExecutionMode.VISION  # 改为默认 Vision（稳定）
     device_id: str | None = None
     max_steps: int = 50
     verbose: bool = True
     
     # XML模式配置
     xml_max_elements: int = 50
-    xml_step_delay: float = 0.3  # ✅ 优化: 缩短到0.3秒 (原1.5秒)
+    xml_step_delay: float = 0.3  # 优化: 缩短到0.3秒 (原1.5秒)
     
     # Vision模式配置
     vision_system_prompt: str | None = None
@@ -175,7 +175,7 @@ class HybridAgent:
         - 精度高 99%+
         """
         if self.config.verbose:
-            logger.info("🚀 使用 XML Kernel 模式")
+            logger.info("使用 XML Kernel 模式")
         
         try:
             # 延迟创建XML agent
@@ -209,7 +209,7 @@ class HybridAgent:
             return result
             
         except Exception as e:
-            logger.error(f"❌ XML模式执行失败: {e}", exc_info=True)
+            logger.error(f"XML模式执行失败: {e}", exc_info=True)
             self._stats["xml_failure"] += 1
             
             return {
@@ -235,7 +235,7 @@ class HybridAgent:
         - 精度相对较低
         """
         if self.config.verbose:
-            logger.info("🚀 使用 Vision Kernel 模式")
+            logger.info("使用 Vision Kernel 模式")
         
         try:
             # 延迟创建Vision agent
@@ -277,7 +277,7 @@ class HybridAgent:
             }
             
         except Exception as e:
-            logger.error(f"❌ Vision模式执行失败: {e}", exc_info=True)
+            logger.error(f"Vision模式执行失败: {e}", exc_info=True)
             self._stats["vision_failure"] += 1
             
             return {
@@ -310,7 +310,7 @@ class HybridAgent:
         
         if xml_result.get("success"):
             if self.config.verbose:
-                logger.info("✅ XML模式成功完成")
+                logger.info("XML模式成功完成")
             return xml_result
         
         # 2. 检查是否应该降级
@@ -319,7 +319,7 @@ class HybridAgent:
         
         if should_fallback:
             if self.config.verbose:
-                logger.warning(f"⚠️ XML模式失败 (原因: {reason})，自动降级到 Vision Kernel")
+                logger.warning(f"XML模式失败 (原因: {reason})，自动降级到 Vision Kernel")
                 logger.info("🔄 Vision Kernel可以处理更复杂的界面...")
             
             # 降级到Vision模式
@@ -334,7 +334,7 @@ class HybridAgent:
         else:
             # XML失败但不建议降级（可能是任务本身的问题）
             if self.config.verbose:
-                logger.error("❌ XML模式失败，且未建议降级到Vision")
+                logger.error("XML模式失败，且未建议降级到Vision")
             
             xml_result["mode"] = "xml (failed)"
             return xml_result

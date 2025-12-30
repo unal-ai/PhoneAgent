@@ -60,7 +60,7 @@ class DBDevice(Base):
     success_tasks = Column(Integer, default=0)
     failed_tasks = Column(Integer, default=0)
     
-    # ✅ 新增: 实时状态字段
+    # 新增: 实时状态字段
     current_task_id = Column(String(36))  # 当前执行的任务ID
     is_busy = Column(Boolean, default=False)  # 是否忙碌
     last_error = Column(Text)  # 最后一次错误

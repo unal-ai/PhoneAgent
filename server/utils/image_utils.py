@@ -6,8 +6,8 @@
 - 前端展示用：640x360, JPEG 75%
 
 性能优化：
-- ✅ 异步压缩（不阻塞主线程）
-- ✅ 批量处理（多级别并行）
+- 异步压缩（不阻塞主线程）
+- 批量处理（多级别并行）
 """
 
 import os
@@ -223,7 +223,7 @@ async def compress_screenshot_async(
     for_ai: bool = True
 ) -> dict:
     """
-    ✅ 异步压缩截图（推荐使用）
+    异步压缩截图（推荐使用）
     
     Args:
         screenshot_path: 截图路径
@@ -257,7 +257,7 @@ async def compress_image_async(
     level: str = "medium"
 ) -> str:
     """
-    ✅ 异步压缩单张图片
+    异步压缩单张图片
     
     Args:
         input_path: 输入图片路径
@@ -282,7 +282,7 @@ async def compress_image_async(
 __all__ = [
     "ImageCompressor", 
     "compress_screenshot",
-    "compress_screenshot_async",  # ✅ 新增: 异步版本
-    "compress_image_async"  # ✅ 新增: 异步版本
+    "compress_screenshot_async",  # 新增: 异步版本
+    "compress_image_async"  # 新增: 异步版本
 ]
 

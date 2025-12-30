@@ -1,8 +1,8 @@
 # PhoneAgent vs Midscene.js 对比分析
 
-> 本文档分析 PhoneAgent 与 [Midscene.js](https://github.com/web-infra-dev/midscene) 在实现方式和原理上的异同，并提炼可借鉴的核心亮点。
+> 本文档分析 PhoneAgent 与 [Midscene.js](https://github.com/web-infra-dev/midscene) 在实现方式和原理上的异同。
 
-## 📋 项目概述对比
+## 项目概述对比
 
 | 维度 | PhoneAgent | Midscene.js |
 |------|------------|-------------|
@@ -15,7 +15,7 @@
 
 ---
 
-## 🔧 架构对比
+## 架构对比
 
 ### PhoneAgent 架构
 
@@ -55,7 +55,7 @@
 
 ---
 
-## 🎯 核心实现原理对比
+## 核心实现原理对比
 
 ### 1. AI 决策流程
 
@@ -83,8 +83,8 @@ for (const action of plans) {
 
 | 策略 | PhoneAgent | Midscene.js |
 |------|------------|-------------|
-| **纯视觉** | ✅ Vision Agent (主要) | ✅ 默认模式 |
-| **UI 树** | ⚠️ XML Kernel (Beta, 不稳定) | ❌ 已在 v1.0 移除 |
+| **纯视觉** | Vision Agent (主要) | 默认模式 |
+| **UI 树** | XML Kernel (Beta, 已废弃) | 已在 v1.0 移除 |
 | **坐标系统** | 相对坐标 (0-1000) | 绝对坐标 (像素) |
 | **缩放处理** | 手动转换 | 自动缩放 (screenshotScale) |
 
@@ -103,9 +103,9 @@ if (matchedCache) {
 
 ---
 
-## ✨ Midscene.js 核心亮点 (可借鉴)
+## Midscene.js 核心亮点 (可借鉴)
 
-### 1. 🎯 YAML 脚本驱动
+### 1. YAML 脚本驱动
 
 **优势**: 将 AI 自动化步骤持久化为可复用的 YAML 脚本
 
@@ -126,19 +126,19 @@ tasks:
 - 将成功的任务执行序列保存为 YAML
 - 支持从 YAML 脚本回放，减少 AI 调用
 
-### 2. 🔄 智能重规划 (Replanning)
+### 2. 智能重规划 (Replanning)
 
 **优势**: 执行失败时自动重新规划，提高成功率
 
 ```typescript
 // Midscene 重规划机制
-const replanningCycleLimit = 20;  // 最多重试 20 次
+const replanningCycleLimit = 20;
 while (retryCount < replanningCycleLimit) {
     try {
         await execute(plan);
         break;
     } catch (error) {
-        plan = await replan(task, error, context);  // 根据错误重新规划
+        plan = await replan(task, error, context);
         retryCount++;
     }
 }
@@ -148,7 +148,7 @@ while (retryCount < replanningCycleLimit) {
 - 添加执行失败后的智能重试
 - 根据错误信息调整执行策略
 
-### 3. 📊 可视化调试报告
+### 3. 可视化调试报告
 
 **优势**: 自动生成 HTML 报告，包含截图和执行轨迹
 
@@ -166,7 +166,7 @@ this.reportFile = writeLogFile({
 - 当前仅保存 JSONL 日志
 - 可添加 HTML 可视化报告生成
 
-### 4. 🧊 上下文冻结 (Context Freezing)
+### 4. 上下文冻结 (Context Freezing)
 
 **优势**: 减少重复截图，提高批量操作效率
 
@@ -182,7 +182,7 @@ await agent.unfreezePageContext();
 - 连续操作时复用截图
 - 减少 ADB 截图开销
 
-### 5. 🛠️ 设备抽象层 (AbstractInterface)
+### 5. 设备抽象层 (AbstractInterface)
 
 **优势**: 统一接口，支持多平台扩展
 
@@ -192,7 +192,6 @@ interface AbstractInterface {
     screenshotBase64(): Promise<string>;
     size(): Promise<Size>;
     actionSpace(): DeviceAction[];
-    // ... 其他方法
 }
 
 // 不同平台实现
@@ -205,7 +204,7 @@ class IOSDevice implements AbstractInterface { ... }
 - 当前 ADB 操作直接调用命令
 - 可抽象为统一接口，便于扩展 iOS 等平台
 
-### 6. 📦 MCP 集成
+### 6. MCP 集成
 
 **优势**: 支持 Model Context Protocol，可被上层 Agent 调用
 
@@ -214,7 +213,6 @@ class IOSDevice implements AbstractInterface { ... }
 export const mcpTools = [
     { name: "screenshot", handler: async () => { ... } },
     { name: "tap", handler: async (x, y) => { ... } },
-    // ...
 ];
 ```
 
@@ -224,7 +222,7 @@ export const mcpTools = [
 
 ---
 
-## 🚀 单机 MVP 运行流程
+## 单机 MVP 运行流程
 
 ### PhoneAgent 单机 MVP (最简方案)
 
@@ -260,7 +258,7 @@ cd web && npm install && npm run dev
 # 7. 访问 http://localhost:5173
 ```
 
-**最简命令行使用**:
+**命令行使用**:
 
 ```python
 # cli_demo.py - 单机命令行 MVP
@@ -271,10 +269,10 @@ from phone_agent.model import ModelConfig
 config = ModelConfig(
     api_key="your-zhipu-api-key",
     base_url="https://open.bigmodel.cn/api/paas/v4/",
-    model_name="glm-4.1v-thinking-flash"  # 免费模型
+    model_name="glm-4.1v-thinking-flash"
 )
 
-# 创建 Agent (无需指定 device_id，默认使用第一个设备)
+# 创建 Agent (默认使用第一个设备)
 agent = PhoneAgent(model_config=config)
 
 # 执行任务
@@ -312,20 +310,20 @@ npx @midscene/cli android
 
 ---
 
-## 📝 关键差异总结
+## 关键差异总结
 
 | 特性 | PhoneAgent | Midscene.js | 建议 |
 |------|------------|-------------|------|
 | **执行模式** | 逐步决策 | 规划后执行 | PhoneAgent 更稳定，Midscene 更高效 |
-| **缓存** | 无 | YAML 缓存 | ✅ 应借鉴 |
-| **重规划** | 无 | 支持 | ✅ 应借鉴 |
-| **报告** | JSONL | HTML 可视化 | ✅ 应借鉴 |
+| **缓存** | 无 | YAML 缓存 | 应借鉴 |
+| **重规划** | 无 | 支持 | 应借鉴 |
+| **报告** | JSONL | HTML 可视化 | 应借鉴 |
 | **多平台** | Android | Web/Android/iOS | 按需扩展 |
 | **部署模式** | Server + Client | SDK 本地运行 | 各有优势 |
 
 ---
 
-## 🎯 行动建议
+## 行动建议
 
 ### 短期 (1-2 周)
 

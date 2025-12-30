@@ -56,7 +56,7 @@ class PortManager:
             if device_id in self.device_ports:
                 old_port = self.device_ports[device_id]
                 if old_port == requested_port:
-                    logger.info(f"✅ Device {device_id} already owns port {requested_port}")
+                    logger.info(f"Device {device_id} already owns port {requested_port}")
                     return True, f"Port {requested_port} already allocated to this device"
                 else:
                     # 设备重新连接，释放旧端口
@@ -70,14 +70,14 @@ class PortManager:
                 
                 if force:
                     # 强制分配，踢掉原设备
-                    logger.warning(f"⚠️  Force allocating port {requested_port}: kicking out device {existing_device}")
+                    logger.warning(f" Force allocating port {requested_port}: kicking out device {existing_device}")
                     await self._release_port_internal(requested_port)
                 else:
                     # 拒绝分配
                     allocated_at = existing['allocated_at']
                     elapsed = (datetime.now() - allocated_at).total_seconds()
                     logger.warning(
-                        f"❌ Port {requested_port} is occupied by device {existing_device} "
+                        f"Port {requested_port} is occupied by device {existing_device} "
                         f"(allocated {elapsed:.0f}s ago)"
                     )
                     return False, (
@@ -93,7 +93,7 @@ class PortManager:
             }
             self.device_ports[device_id] = requested_port
             
-            logger.info(f"✅ Allocated port {requested_port} to device {device_id} ({device_name})")
+            logger.info(f"Allocated port {requested_port} to device {device_id} ({device_name})")
             return True, f"Port {requested_port} successfully allocated"
     
     async def release_port(self, device_id: Optional[str] = None, port: Optional[int] = None) -> bool:

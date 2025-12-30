@@ -2,7 +2,7 @@
 
 > 本指南介绍如何在本地部署 AutoGLM-Phone-9B 模型并与 PhoneAgent 集成
 
-## 📋 前提条件
+## 前提条件
 
 1. **硬件要求**:
    - GPU: NVIDIA GPU (至少 16GB 显存，推荐 A100/4090)
@@ -20,14 +20,14 @@
 
 ---
 
-## 🚀 快速配置 (一键运行)
+## 快速配置
 
 ### 方式一: 通过 .env 文件配置
 
 编辑项目根目录下的 `.env` 文件:
 
 ```bash
-# 1. 设置提供商为 "local" 或保持 "zhipu"
+# 1. 设置提供商为 "local"
 MODEL_PROVIDER=local
 
 # 2. 设置你的本地模型服务地址
@@ -55,7 +55,7 @@ export CUSTOM_MODEL_NAME=autoglm-phone-9b
 
 ---
 
-## 🖥️ 完整单机 MVP 流程
+## 完整单机 MVP 流程
 
 以下是在一台电脑上从零开始运行 PhoneAgent + 自托管模型的完整流程:
 
@@ -70,7 +70,7 @@ cd AutoGLM-Phone-9B-Multilingual
 pip install -r requirements.txt
 
 # 启动 OpenAI 兼容的 API 服务
-# ⚠️ 安全提示: --trust-remote-code 允许执行远程代码，仅在信任模型来源时使用
+# 注意: --trust-remote-code 允许执行远程代码，仅在信任模型来源时使用
 python -m vllm.entrypoints.openai.api_server \
     --model zai-org/AutoGLM-Phone-9B-Multilingual \
     --port 6002 \
@@ -101,7 +101,6 @@ CUSTOM_API_KEY=EMPTY
 CUSTOM_MODEL_NAME=autoglm-phone-9b
 
 # 禁用智谱API（使用本地模型）
-# 留空即可
 ZHIPU_API_KEY=
 ```
 
@@ -116,7 +115,7 @@ adb devices
 # XXXXXXXX    device
 
 # 可选: 开启 ADB 网络调试（仅在受信任的本地网络中使用）
-# ⚠️ 安全提示: ADB TCP 模式无认证，请勿在公共网络中使用
+# 注意: ADB TCP 模式无认证，请勿在公共网络中使用
 adb tcpip 5555
 adb connect 127.0.0.1:5555
 ```
@@ -161,7 +160,7 @@ curl http://127.0.0.1:8000/api/v1/health
 
 ---
 
-## 🔧 高级配置
+## 高级配置
 
 ### 多模型配置
 
@@ -205,7 +204,7 @@ MAX_TASK_STEPS=50
 
 ---
 
-## 📊 架构图
+## 架构图
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -230,7 +229,7 @@ MAX_TASK_STEPS=50
 
 ---
 
-## ❓ 常见问题
+## 常见问题
 
 ### Q1: 本地模型响应很慢怎么办？
 
@@ -270,7 +269,7 @@ adb devices  # 设备状态应为 "device" 而非 "unauthorized"
 
 ---
 
-## 🔗 相关资源
+## 相关资源
 
 - [AutoGLM-Phone-9B 官方仓库](https://github.com/zai-org/AutoGLM-Phone-9B-Multilingual)
 - [vLLM 部署指南](https://docs.vllm.ai/en/latest/)
@@ -279,7 +278,7 @@ adb devices  # 设备状态应为 "device" 而非 "unauthorized"
 
 ---
 
-## 📝 最佳实践总结
+## 最佳实践总结
 
 1. **先验证模型服务**: 启动 PhoneAgent 前，确保 `curl` 能正常调用模型 API
 2. **使用稳定版本**: 推荐使用官方发布的模型版本

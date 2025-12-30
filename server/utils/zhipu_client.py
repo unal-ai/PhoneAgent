@@ -254,17 +254,17 @@ class ZhipuAIClient:
                 response.raise_for_status()
                 result = response.json()
                 
-                logger.info(f"✅ STT Success: text_length={len(result.get('text', ''))}")
+                logger.info(f"STT Success: text_length={len(result.get('text', ''))}")
                 return result
         
         except httpx.HTTPStatusError as e:
             error_detail = e.response.text if hasattr(e, 'response') else str(e)
-            logger.error(f"❌ Zhipu STT Error: status={e.response.status_code}")
-            logger.error(f"❌ Detail: {error_detail}")
-            logger.error(f"❌ Request data: model={model}, stream={stream}, prompt_len={len(prompt) if prompt else 0}")
+            logger.error(f"Zhipu STT Error: status={e.response.status_code}")
+            logger.error(f"Detail: {error_detail}")
+            logger.error(f"Request data: model={model}, stream={stream}, prompt_len={len(prompt) if prompt else 0}")
             raise
         except Exception as e:
-            logger.error(f"❌ Unexpected STT error: {e}", exc_info=True)
+            logger.error(f"Unexpected STT error: {e}", exc_info=True)
             raise
     
     # ============================================

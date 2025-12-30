@@ -74,7 +74,7 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
             status_code = 500
             
             # 记录异常堆栈
-            logger.error(f"❌ {method} {path} - Exception: {error}")
+            logger.error(f"{method} {path} - Exception: {error}")
             logger.error(traceback.format_exc())
             
             # 重新抛出异常让FastAPI处理
@@ -88,19 +88,19 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
             # 根据状态码和耗时选择日志级别
             if error or status_code >= 500:
                 log_level = logging.ERROR
-                emoji = "❌"
+                status_mark = "[ERR]"
             elif status_code >= 400:
                 log_level = logging.WARNING
-                emoji = "⚠️"
+                status_mark = "[WARN]"
             elif duration > 5.0:  # 超过5秒的慢请求
                 log_level = logging.WARNING
-                emoji = "🐌"
+                status_mark = "[SLOW]"
             else:
                 log_level = logging.INFO
-                emoji = "✅"
+                status_mark = "[OK]"
             
             # 格式化日志消息
-            log_message = f"{emoji} {method} {path} - {status_code} - {duration_ms:.0f}ms - {client_ip}"
+            log_message = f"{status_mark} {method} {path} - {status_code} - {duration_ms:.0f}ms - {client_ip}"
             
             if error:
                 log_message += f" - ERROR: {error}"
@@ -162,18 +162,18 @@ def format_request_log(
     """
     duration_ms = duration * 1000
     
-    # 选择emoji
+    # 选择状态标记
     if error or status_code >= 500:
-        emoji = "❌"
+        status_mark = "[ERR]"
     elif status_code >= 400:
-        emoji = "⚠️"
+        status_mark = "[WARN]"
     elif duration > 5.0:
-        emoji = "🐌"
+        status_mark = "[SLOW]"
     else:
-        emoji = "✅"
+        status_mark = "[OK]"
     
     log_parts = [
-        emoji,
+        status_mark,
         method,
         path,
         f"{status_code}",
@@ -221,7 +221,7 @@ class SlowRequestTracker:
             if len(self.slow_requests) > self.max_records:
                 self.slow_requests.pop(0)
             
-            logger.warning(f"🐌 Slow request detected: {method} {path} - {duration:.2f}s")
+            logger.warning(f"[SLOW] Slow request detected: {method} {path} - {duration:.2f}s")
     
     def get_slow_requests(self, limit: int = 10):
         """获取最近的慢请求"""

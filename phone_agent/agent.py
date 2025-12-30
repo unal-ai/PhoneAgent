@@ -148,7 +148,7 @@ class PhoneAgent:
         """Execute a single step of the agent loop."""
         self._step_count += 1
         
-        # ⚠️ 不在这里调用 on_step_start，因为此时还没有 thinking 和 action
+        # Warning: 不在这里调用 on_step_start，因为此时还没有 thinking 和 action
         # on_step_start 会在 LLM 响应后、执行动作前调用
 
         # Capture current screen state
@@ -256,7 +256,7 @@ class PhoneAgent:
 
         if finished and self.agent_config.verbose:
             logger.info("="*50)
-            logger.info(f"✅ 任务完成: {result.message or action.get('message', '完成')}")
+            logger.info(f"任务完成: {result.message or action.get('message', '完成')}")
             logger.info("="*50)
 
         return StepResult(

@@ -121,7 +121,7 @@ async def get_model_stats(
             return stats
             
         except Exception as e:
-            logger.error(f"❌ Failed to get model stats: {e}")
+            logger.error(f"Failed to get model stats: {e}")
             raise
 
 
@@ -172,7 +172,7 @@ async def get_task_model_calls(task_id: str):
             return result
             
         except Exception as e:
-            logger.error(f"❌ Failed to get task model calls: {e}")
+            logger.error(f"Failed to get task model calls: {e}")
             raise
 
 
@@ -238,6 +238,6 @@ async def get_model_call_history(
             return result
             
         except Exception as e:
-            logger.error(f"❌ Failed to get model call history: {e}")
+            logger.error(f"Failed to get model call history: {e}")
             raise
 

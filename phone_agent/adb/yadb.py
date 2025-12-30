@@ -146,7 +146,7 @@ def install_yadb(device_id: str = None, adb_host: str = None, adb_port: int = No
             push_cmd,
             capture_output=True,
             text=True,
-            timeout=60  # ✅ 增加超时时间从30秒到60秒
+            timeout=60  # 增加超时时间从30秒到60秒
         )
         
         if result.returncode != 0:
@@ -155,14 +155,14 @@ def install_yadb(device_id: str = None, adb_host: str = None, adb_port: int = No
             logger.error(f"  stdout: {result.stdout}")
             return False
         
-        logger.info(f"✅ yadb push command succeeded: {result.stdout.strip()}")
+        logger.info(f"yadb push command succeeded: {result.stdout.strip()}")
         
         # 验证推送后的文件
         if is_yadb_installed(device_id, adb_host, adb_port):
-            logger.info(f"✅ yadb successfully installed")
+            logger.info(f"yadb successfully installed")
             return True
         else:
-            logger.error(f"❌ yadb installation verification failed")
+            logger.error(f"yadb installation verification failed")
             return False
             
     except subprocess.TimeoutExpired:
@@ -258,7 +258,7 @@ def force_screenshot(
     """
     Capture screenshot using yadb (bypasses FLAG_SECURE).
     
-    ⚠️ **Key Feature**: This method can screenshot sensitive apps 
+    **Key Feature**: This method can screenshot sensitive apps 
     (banking, payment, etc.) that normally block screenshots.
     
     Args:
@@ -312,7 +312,7 @@ def force_screenshot(
             logger.error(f"Screenshot data too small: {len(png_data)} bytes")
             return None
         
-        logger.info(f"✅ Force screenshot captured: {len(png_data)} bytes")
+        logger.info(f"Force screenshot captured: {len(png_data)} bytes")
         
         # 如果需要返回 PIL Image
         if return_pil and PIL_AVAILABLE:
@@ -526,7 +526,7 @@ def write_clipboard(
         return False
 
 
-# ❌ REMOVED: dump_layout() function
+# REMOVED: dump_layout() function
 # Reason: Official yadb does NOT support `-layout` parameter
 # This function never worked and always failed silently
 # Use uiautomator dump instead (see ui_hierarchy.py)

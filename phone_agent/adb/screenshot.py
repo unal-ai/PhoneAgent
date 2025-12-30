@@ -75,7 +75,7 @@ def get_screenshot(
         yadb_screenshot = _get_screenshot_yadb(device_id, adb_host, adb_port)
         
         if yadb_screenshot and not yadb_screenshot.is_sensitive:
-            logger.info("✅ yadb force screenshot succeeded!")
+            logger.info("yadb force screenshot succeeded!")
             return yadb_screenshot
         else:
             logger.warning("yadb force screenshot also failed, returning fallback")
@@ -119,14 +119,14 @@ def _get_screenshot_standard(
         
         if not image_data or len(image_data) < 100:
             logger.warning(f"Screenshot data too small: {len(image_data)} bytes")
-            # ✅ 修复：数据过小也可能是敏感屏幕
+            # 修复：数据过小也可能是敏感屏幕
             return _create_fallback_screenshot(is_sensitive=True)
 
         # 使用 BytesIO 从内存中加载图片
         img = Image.open(BytesIO(image_data))
         width, height = img.size
 
-        # ✅ 新增：检测是否是全黑或几乎全黑的图片（可能是敏感屏幕）
+        # 新增：检测是否是全黑或几乎全黑的图片（可能是敏感屏幕）
         # 计算平均亮度
         grayscale = img.convert('L')  # 转为灰度
         pixels = list(grayscale.getdata())
@@ -150,10 +150,10 @@ def _get_screenshot_standard(
 
     except subprocess.TimeoutExpired:
         logger.error(f"Screenshot timeout after {timeout}s")
-        return _create_fallback_screenshot(is_sensitive=True)  # ✅ 超时也标记为敏感
+        return _create_fallback_screenshot(is_sensitive=True)  # 超时也标记为敏感
     except Exception as e:
         logger.error(f"Screenshot error: {e}", exc_info=True)
-        return _create_fallback_screenshot(is_sensitive=True)  # ✅ 异常也标记为敏感
+        return _create_fallback_screenshot(is_sensitive=True)  # 异常也标记为敏感
 
 
 def _get_screenshot_yadb(

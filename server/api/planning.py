@@ -39,7 +39,7 @@ class GeneratePlanRequest(BaseModel):
     """生成计划请求"""
     instruction: str = Field(..., description="任务指令")
     device_id: Optional[str] = Field(None, description="设备ID")
-    # ✅ model_settings 完全可选，不设置时由后端环境变量控制
+    # model_settings 完全可选，不设置时由后端环境变量控制
     model_settings: Optional[ModelConfig] = Field(None, alias="model_config", description="模型配置（可选，留空使用环境变量）")
     prompt_cards: Optional[List[str]] = Field(default=[], description="提示词卡片名称列表")
     
@@ -60,7 +60,7 @@ class ExecuteDirectRequest(BaseModel):
     """直接执行请求（生成+执行）"""
     instruction: str = Field(..., description="任务指令")
     device_id: Optional[str] = Field(None, description="设备ID")
-    # ✅ model_settings 完全可选，不设置时由后端环境变量控制
+    # model_settings 完全可选，不设置时由后端环境变量控制
     model_settings: Optional[Dict[str, Any]] = Field(None, alias="model_config", description="模型配置（可选，留空使用环境变量）")
     prompt_cards: Optional[List[str]] = Field(default=[], description="提示词卡片名称列表")
     use_smart_positioning: bool = Field(
@@ -96,7 +96,7 @@ async def generate_plan(request: GeneratePlanRequest):
         else:
             model_config_dict = {}
         
-        # ✅ 优先使用用户指定配置，否则从环境变量获取
+        # 优先使用用户指定配置，否则从环境变量获取
         if model_config_dict:
             # 用户指定了配置
             model_name = model_config_dict.get("model_name")
@@ -132,7 +132,7 @@ async def generate_plan(request: GeneratePlanRequest):
             model_name=model_name,
         )
         
-        # ✅ 详细日志
+        # 详细日志
         logger.info(f"📡 规划模式配置:")
         logger.info(f"   base_url: {base_url}")
         logger.info(f"   model_name: {model_name}")
@@ -319,7 +319,7 @@ async def execute_direct(request: ExecuteDirectRequest):
         else:
             model_config_dict = {}
         
-        # ✅ 优先使用用户指定配置，否则从环境变量获取
+        # 优先使用用户指定配置，否则从环境变量获取
         if model_config_dict:
             # 用户指定了配置
             model_name = model_config_dict.get("model_name")
@@ -355,7 +355,7 @@ async def execute_direct(request: ExecuteDirectRequest):
             model_name=model_name,
         )
         
-        # ✅ 详细日志
+        # 详细日志
         logger.info(f"📡 规划模式配置:")
         logger.info(f"   base_url: {base_url}")
         logger.info(f"   model_name: {model_name}")

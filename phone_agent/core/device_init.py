@@ -46,9 +46,9 @@ async def initialize_device(
     if push_yadb:
         yadb_success = await _init_yadb(device_id, adb_host, adb_port)
         if yadb_success:
-            logger.info(f"  ✅ yadb ready on {device_id}")
+            logger.info(f"  yadb ready on {device_id}")
         else:
-            logger.warning(f"  ⚠️  yadb installation failed on {device_id}")
+            logger.warning(f"   yadb installation failed on {device_id}")
             success = False
     
     # 2. 其他初始化任务（未来扩展）
@@ -57,9 +57,9 @@ async def initialize_device(
     # - 设置系统语言
     
     if success:
-        logger.info(f"✅ Device {device_id} initialized successfully")
+        logger.info(f"Device {device_id} initialized successfully")
     else:
-        logger.warning(f"⚠️  Device {device_id} initialization completed with warnings")
+        logger.warning(f" Device {device_id} initialization completed with warnings")
     
     return success
 
@@ -133,9 +133,9 @@ def initialize_device_sync(
             )
             
             if yadb_success:
-                logger.info(f"  ✅ yadb ready on {device_id}")
+                logger.info(f"  yadb ready on {device_id}")
             else:
-                logger.warning(f"  ⚠️  yadb installation failed on {device_id}")
+                logger.warning(f"   yadb installation failed on {device_id}")
                 success = False
                 
         except ImportError:
@@ -146,9 +146,9 @@ def initialize_device_sync(
             success = False
     
     if success:
-        logger.info(f"✅ Device {device_id} initialized successfully")
+        logger.info(f"Device {device_id} initialized successfully")
     else:
-        logger.warning(f"⚠️  Device {device_id} initialization completed with warnings")
+        logger.warning(f" Device {device_id} initialization completed with warnings")
     
     return success
 

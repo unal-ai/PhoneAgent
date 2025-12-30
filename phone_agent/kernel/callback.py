@@ -129,7 +129,7 @@ class AsyncStepCallback:
     ) -> None:
         """同步接口，直接调用同步回调"""
         # AgentCallback.on_step_complete 是同步方法，直接调用即可
-        # ⚠️ 注意：AgentCallback 不接受 screenshot_path 参数，因为截图由 AgentService 统一管理
+        # Warning: 注意：AgentCallback 不接受 screenshot_path 参数，因为截图由 AgentService 统一管理
         self._sync_callback.on_step_complete(step, success, thinking, observation)
     
     def on_error(self, error: str) -> None:

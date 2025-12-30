@@ -5,7 +5,7 @@
 """
 应用配置管理模块 - 动态配置管理器
 
-⚠️ 重要说明：
+重要说明：
   本模块管理 data/app_config.json 动态配置文件，优先级高于静态配置。
   
   推荐使用方式：
@@ -13,7 +13,7 @@
     2. 系统自动维护 data/app_config.json
     3. 启动时自动加载并与静态配置合并
   
-  ⚠️ 设备扫描功能已弃用：
+  设备扫描功能已弃用：
     - scan_device_apps() - 已弃用，不建议使用
     - sync_from_device() - 已弃用，不建议使用
     - 原因：扫描出的包名为英文，用户体验差
@@ -141,7 +141,7 @@ class AppConfigManager:
                     )
                     self._apps[package_name] = app
             
-            logger.info(f"✅ 从静态配置加载了 {len(APP_PACKAGES)} 个预置应用")
+            logger.info(f"从静态配置加载了 {len(APP_PACKAGES)} 个预置应用")
         except Exception as e:
             logger.warning(f"加载静态配置失败: {e}")
     
@@ -154,7 +154,7 @@ class AppConfigManager:
                     for item in data:
                         app = AppConfig(**item)
                         self._apps[app.package_name] = app  # 覆盖静态配置
-                logger.info(f"✅ 从动态配置加载了 {len(data)} 个应用（覆盖静态配置）")
+                logger.info(f"从动态配置加载了 {len(data)} 个应用（覆盖静态配置）")
             except Exception as e:
                 logger.error(f"加载动态配置失败: {e}")
         else:
@@ -170,7 +170,7 @@ class AppConfigManager:
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 json.dump(apps_list, f, ensure_ascii=False, indent=2)
             
-            logger.info(f"✅ 保存了 {len(apps_list)} 个应用配置到 {self.config_path}")
+            logger.info(f"保存了 {len(apps_list)} 个应用配置到 {self.config_path}")
             return True
         except Exception as e:
             logger.error(f"保存配置失败: {e}")
@@ -178,7 +178,7 @@ class AppConfigManager:
     
     def scan_device_apps(self, device_id: Optional[str] = None) -> List[Dict]:
         """
-        ⚠️ 已弃用：扫描设备上已安装的应用
+        已弃用：扫描设备上已安装的应用
         
         不建议使用原因：
           - 扫描出的包名为英文（如 "Chrome" 而非 "谷歌浏览器"）
@@ -219,7 +219,7 @@ class AppConfigManager:
             
             logger.info(f"找到 {len(packages)} 个第三方应用")
             
-            # ✅ 优化：批量获取应用名称，而不是逐个查询
+            # 优化：批量获取应用名称，而不是逐个查询
             # 使用 pm list packages -f 一次性获取所有应用信息
             logger.info("正在批量获取应用名称...")
             
@@ -254,7 +254,7 @@ class AppConfigManager:
                     "label": label
                 })
             
-            logger.info(f"✅ 成功获取 {len(installed_apps)} 个应用信息（优化后）")
+            logger.info(f"成功获取 {len(installed_apps)} 个应用信息（优化后）")
             return installed_apps
         
         except Exception as e:
@@ -276,7 +276,7 @@ class AppConfigManager:
         merge_mode: str = "add_new"
     ) -> dict:
         """
-        ⚠️ 已弃用：从设备同步应用配置
+        已弃用：从设备同步应用配置
         
         不建议使用原因：
           - 扫描出的包名为英文，用户体验差
@@ -347,7 +347,7 @@ class AppConfigManager:
         total_changes = new_count + updated_count + removed_count
         if total_changes > 0:
             self.save_config()
-            logger.info(f"✅ 同步完成：新增 {new_count}，更新 {updated_count}，删除 {removed_count}，保留 {kept_count}")
+            logger.info(f"同步完成：新增 {new_count}，更新 {updated_count}，删除 {removed_count}，保留 {kept_count}")
         else:
             logger.info("没有应用需要同步")
         
@@ -512,13 +512,13 @@ if __name__ == "__main__":
         count = manager.sync_from_device(device_id, auto_enable=False)
         print(f"\n同步完成，处理了 {count} 个应用")
         print(f"配置文件: {manager.config_path}")
-        print("\n💡 提示: 新应用默认为禁用状态，请到前端界面或手动编辑配置文件启用")
+        print("\n提示: 新应用默认为禁用状态，请到前端界面或手动编辑配置文件启用")
     
     elif command == "list":
         apps = manager.get_all_apps()
         print(f"\n配置的应用 ({len(apps)} 个):\n")
         for app in apps:
-            status = "✅" if app.enabled else "❌"
+            status = "[ON]" if app.enabled else "[OFF]"
             print(f"  {status} {app.display_name:<20} [{app.category}] ({app.package_name})")
     
     elif command == "stats":

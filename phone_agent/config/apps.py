@@ -12,7 +12,7 @@ App静态配置 - 143个预置应用的名称到包名映射
   - 浏览器: Chrome、Firefox、Edge、Opera、Brave、UC、夸克、QQ浏览器
   - 其他: AI助手、办公工具、云存储、输入法等
 
-💡 使用方式:
+使用方式:
   1. 直接调用: get_package_name("微信") → "com.tencent.mm"
   2. 动态配置: 通过前端"应用配置"页面添加/编辑应用
   3. 配置文件: 用户修改会保存到 data/app_config.json

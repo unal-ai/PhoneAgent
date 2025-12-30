@@ -154,7 +154,7 @@ class PlanningAgent:
             logger.error(f"Raw response: {response.action}")
             raise ValueError(f"Failed to parse plan: {e}")
         
-        # ✅ 修复：处理AI返回列表的情况
+        # 修复：处理AI返回列表的情况
         if isinstance(plan_data, list):
             # AI返回了步骤列表而不是完整的计划对象
             # 包装成标准格式，并确保每个步骤都有step_id
@@ -179,7 +179,7 @@ class PlanningAgent:
                 "risk_points": []
             }
         else:
-            # ✅ 修复：即使是标准格式，也要确保步骤有step_id
+            # 修复：即使是标准格式，也要确保步骤有step_id
             if "steps" in plan_data and isinstance(plan_data["steps"], list):
                 for i, step in enumerate(plan_data["steps"], 1):
                     if isinstance(step, dict) and "step_id" not in step:
@@ -216,9 +216,9 @@ class PlanningAgent:
         import re
         response = response.strip()
         
-        # ✅ 检测特殊标签：[notool], [sensitive]
+        # 检测特殊标签：[notool], [sensitive]
         if response.startswith('[notool]'):
-            logger.warning("⚠️  AI returned [notool] - task doesn't need phone操作")
+            logger.warning(" AI returned [notool] - task doesn't need phone操作")
             raise ValueError(
                 "Task doesn't require phone operation. "
                 "This task can be answered directly without phone automation. "
@@ -268,8 +268,8 @@ class PlanningAgent:
                 except json.JSONDecodeError:
                     pass
             
-            # ✅ 容错处理：如果AI返回了自然语言而不是JSON，尝试从文本中提取关键信息
-            logger.warning(f"⚠️  AI returned non-JSON response, attempting to extract action from text")
+            # 容错处理：如果AI返回了自然语言而不是JSON，尝试从文本中提取关键信息
+            logger.warning(f" AI returned non-JSON response, attempting to extract action from text")
             
             # 检查是否包含 do() 调用（Vision模式的格式）
             do_match = re.search(r'do\(action="(\w+)"(?:,\s*(\w+)="([^"]+)")?\)', response)

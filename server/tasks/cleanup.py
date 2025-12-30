@@ -47,11 +47,11 @@ class CleanupService:
                     await self.run_cleanup()
                     
                 except Exception as e:
-                    logger.error(f"❌ 清理任务循环出错: {e}")
+                    logger.error(f"清理任务循环出错: {e}")
                     await asyncio.sleep(3600)  # 出错后1小时后重试
         
         self._cleanup_task = asyncio.create_task(cleanup_loop())
-        logger.info("✅ 清理服务已启动")
+        logger.info("清理服务已启动")
         
         # 启动时立即执行一次清理
         asyncio.create_task(self.run_cleanup())
@@ -66,7 +66,7 @@ class CleanupService:
         # 清理日志
         log_count = await self.cleanup_logs()
         
-        logger.info(f"✅ 清理任务完成: 删除 {screenshot_count} 个截图, {log_count} 个日志文件")
+        logger.info(f"清理任务完成: 删除 {screenshot_count} 个截图, {log_count} 个日志文件")
     
     async def cleanup_screenshots(self) -> int:
         """

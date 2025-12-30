@@ -32,7 +32,7 @@ def init_database():
     # 确保目录存在
     DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
     
-    # ✅ 优化: 启用WAL模式和性能优化
+    # 优化: 启用WAL模式和性能优化
     engine = create_engine(
         DATABASE_URL,
         echo=False,
@@ -50,7 +50,7 @@ def init_database():
     # 创建所有表
     Base.metadata.create_all(bind=engine)
     
-    # ✅ 优化: 启用WAL模式和性能PRAGMA
+    # 优化: 启用WAL模式和性能PRAGMA
     with engine.connect() as conn:
         conn.execute(text("PRAGMA journal_mode=WAL;"))  # WAL模式（并发读写）
         conn.execute(text("PRAGMA synchronous=NORMAL;"))  # 平衡性能和安全
@@ -59,9 +59,9 @@ def init_database():
         conn.execute(text("PRAGMA mmap_size=268435456;"))  # 256MB内存映射
         conn.commit()
     
-    logger.info(f"✅ Database initialized (WAL mode): {DATABASE_PATH.absolute()}")
+    logger.info(f"Database initialized (WAL mode): {DATABASE_PATH.absolute()}")
     
-    # ✅ 创建性能优化索引
+    # 创建性能优化索引
     _create_indexes(engine)
 
 
@@ -97,17 +97,17 @@ def _create_indexes(engine):
             except Exception as e:
                 # 如果是列不存在的错误，记录警告而不是错误
                 if "no such column" in str(e):
-                    logger.warning(f"⚠️  Index {index_name} skipped: column not found (database schema may be outdated)")
+                    logger.warning(f" Index {index_name} skipped: column not found (database schema may be outdated)")
                 else:
-                    logger.error(f"❌ Failed to create index {index_name}: {e}")
+                    logger.error(f"Failed to create index {index_name}: {e}")
                 failed_count += 1
         
         conn.commit()
     
     if failed_count == 0:
-        logger.info(f"✅ Database indexes created ({created_count}/{len(indexes)})")
+        logger.info(f"Database indexes created ({created_count}/{len(indexes)})")
     else:
-        logger.warning(f"⚠️  Database indexes partially created ({created_count}/{len(indexes)}, {failed_count} failed)")
+        logger.warning(f" Database indexes partially created ({created_count}/{len(indexes)}, {failed_count} failed)")
 
 
 def get_db() -> Session:

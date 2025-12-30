@@ -85,7 +85,7 @@ class TimeoutMonitorMiddleware(BaseHTTPMiddleware):
             log_level = logging.WARNING if request_time > self.slow_request_threshold else logging.DEBUG
             logger.log(
                 log_level,
-                f"{'⚠️ SLOW' if request_time > self.slow_request_threshold else '✅'} "
+                f"{'[SLOW]' if request_time > self.slow_request_threshold else '[OK]'} "
                 f"{endpoint} - {request_time:.3f}s"
             )
             
@@ -97,7 +97,7 @@ class TimeoutMonitorMiddleware(BaseHTTPMiddleware):
             self._update_stats(endpoint, request_time, success=False)
             
             logger.error(
-                f"❌ {endpoint} - {request_time:.3f}s - ERROR: {str(e)}"
+                f"{endpoint} - {request_time:.3f}s - ERROR: {str(e)}"
             )
             raise
             
@@ -136,7 +136,7 @@ class TimeoutMonitorMiddleware(BaseHTTPMiddleware):
             stats['last_slow_requests'].pop(0)
         
         logger.warning(
-            f"⚠️ 慢请求告警: {endpoint} 耗时 {request_time:.2f}秒 "
+            f"慢请求告警: {endpoint} 耗时 {request_time:.2f}秒 "
             f"(阈值: {self.slow_request_threshold}秒)"
         )
     

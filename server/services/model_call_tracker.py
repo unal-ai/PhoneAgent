@@ -81,7 +81,7 @@ class ModelCallTracker:
             
         except Exception as e:
             # 记录失败不应影响主流程
-            logger.error(f"❌ Failed to track model call: {e}")
+            logger.error(f"Failed to track model call: {e}")
     
     @staticmethod
     def _calculate_cost(model_name: str, prompt_tokens: int, completion_tokens: int) -> float:

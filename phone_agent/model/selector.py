@@ -104,7 +104,7 @@ AVAILABLE_MODELS = {
 # ============================================
 
 DEFAULT_MODEL_STRATEGY = {
-    # ⚠️ XML内核已废弃，默认fallback到vision
+    # Warning: XML内核已废弃，默认fallback到vision
     KernelType.XML: "autoglm-phone",
     
     # Vision内核使用AutoGLM官方Phone模型（推荐）
@@ -147,7 +147,7 @@ class ModelSelector:
         """从环境变量加载策略（支持多平台）"""
         strategy = DEFAULT_MODEL_STRATEGY.copy()
         
-        # ✅ 优先检查 MODEL_PROVIDER 和 CUSTOM_MODEL_NAME
+        # 优先检查 MODEL_PROVIDER 和 CUSTOM_MODEL_NAME
         # 如果设置了自定义模型，所有内核都使用它
         custom_model = os.getenv("CUSTOM_MODEL_NAME")
         if custom_model:
@@ -171,17 +171,17 @@ class ModelSelector:
         xml_model = os.getenv("XML_KERNEL_MODEL")
         if xml_model:
             strategy[KernelType.XML] = xml_model
-            logger.info(f"✅ XML内核模型（环境变量）: {xml_model}")
+            logger.info(f"XML内核模型（环境变量）: {xml_model}")
         
         vision_model = os.getenv("VISION_KERNEL_MODEL")
         if vision_model:
             strategy[KernelType.VISION] = vision_model
-            logger.info(f"✅ Vision内核模型（环境变量）: {vision_model}")
+            logger.info(f"Vision内核模型（环境变量）: {vision_model}")
         
         planning_model = os.getenv("PLANNING_KERNEL_MODEL")
         if planning_model:
             strategy[KernelType.PLANNING] = planning_model
-            logger.info(f"✅ 规划模式模型（环境变量）: {planning_model}")
+            logger.info(f"规划模式模型（环境变量）: {planning_model}")
         
         return strategy
     
@@ -220,9 +220,9 @@ class ModelSelector:
         
         preset = AVAILABLE_MODELS.get(model_name)
         if preset:
-            logger.debug(f"✅ {kernel_type.value} 内核 → {preset}")
+            logger.debug(f"{kernel_type.value} 内核 → {preset}")
         else:
-            logger.warning(f"⚠️ 未知模型: {model_name}")
+            logger.warning(f"未知模型: {model_name}")
         
         return model_name
     
@@ -278,7 +278,7 @@ def select_model_for_kernel(
     try:
         kernel_type = KernelType(kernel_mode.lower())
     except ValueError:
-        logger.warning(f"⚠️ 未知内核模式: {kernel_mode}，使用AUTO")
+        logger.warning(f"未知内核模式: {kernel_mode}，使用AUTO")
         kernel_type = KernelType.AUTO
     
     return selector.select_model(kernel_type, override_model)
@@ -329,7 +329,7 @@ if __name__ == "__main__":
         print()
     
     print("="*60)
-    print("💡 提示:")
+    print("提示:")
     print("  1. 设置 FORCE_SINGLE_MODEL=glm-4.1v-thinking-flash 统一使用大模型")
     print("  2. 设置 XML_KERNEL_MODEL=xxx 单独配置XML内核模型")
     print("  3. 设置 VISION_KERNEL_MODEL=xxx 单独配置Vision内核模型")

@@ -317,14 +317,14 @@ def launch_app(app_name: str, device_id: str | None = None, delay: float = 1.0) 
     
     # 如果仍然找不到包名，返回详细错误
     if not package:
-        logger.error(f"❌ 未找到应用 '{app_name}' 的包名")
-        logger.info(f"💡 提示: 请在 data/app_config.json 中添加应用配置:")
+        logger.error(f"未找到应用 '{app_name}' 的包名")
+        logger.info(f"提示: 请在 data/app_config.json 中添加应用配置:")
         logger.info(f'   {{"display_name": "{app_name}", "package_name": "com.example.app"}}')
         logger.info(f"   或在 phone_agent/config/apps.py 的 APP_PACKAGES 中添加")
         return False
 
     adb_prefix = _get_adb_prefix(device_id)
-    logger.info(f"🚀 正在启动应用: {app_name} ({package}) [来源: {source}]")
+    logger.info(f"正在启动应用: {app_name} ({package}) [来源: {source}]")
 
     # Method 1: Use Activity Manager (AM) - Most reliable and fast
     try:
@@ -346,16 +346,16 @@ def launch_app(app_name: str, device_id: str | None = None, delay: float = 1.0) 
         
         # Check if launch was successful
         if result.returncode == 0 and "Error" not in result.stderr:
-            logger.info(f"✅ 应用启动成功 (AM): {app_name}")
+            logger.info(f"应用启动成功 (AM): {app_name}")
             time.sleep(delay)
             return True
         
-        logger.warning(f"⚠️ AM启动失败: {result.stderr.strip()}")
+        logger.warning(f"AM启动失败: {result.stderr.strip()}")
         
     except subprocess.TimeoutExpired:
-        logger.warning(f"⚠️ AM启动超时")
+        logger.warning(f"AM启动超时")
     except Exception as e:
-        logger.warning(f"⚠️ AM启动异常: {e}")
+        logger.warning(f"AM启动异常: {e}")
     
     # Method 2: Fallback to monkey command
     logger.info(f"🔄 尝试 monkey 命令启动...")
@@ -376,20 +376,20 @@ def launch_app(app_name: str, device_id: str | None = None, delay: float = 1.0) 
         )
         
         if result.returncode == 0:
-            logger.info(f"✅ 应用启动成功 (monkey): {app_name}")
+            logger.info(f"应用启动成功 (monkey): {app_name}")
             time.sleep(delay)
             return True
         
-        logger.error(f"❌ monkey启动失败: {result.stderr.strip()}")
+        logger.error(f"monkey启动失败: {result.stderr.strip()}")
         
     except subprocess.TimeoutExpired:
-        logger.error(f"❌ monkey启动超时")
+        logger.error(f"monkey启动超时")
     except Exception as e:
-        logger.error(f"❌ monkey启动异常: {e}")
+        logger.error(f"monkey启动异常: {e}")
     
     # Method 3: All methods failed
-    logger.error(f"❌ 应用启动失败: {app_name}")
-    logger.info(f"💡 调试建议:")
+    logger.error(f"应用启动失败: {app_name}")
+    logger.info(f"调试建议:")
     logger.info(f"   1. 检查包名是否正确: {package}")
     logger.info(f"   2. 手动测试: adb shell am start -n {package}/.MainActivity")
     logger.info(f"   3. 检查应用是否已安装: adb shell pm list packages | grep {package}")

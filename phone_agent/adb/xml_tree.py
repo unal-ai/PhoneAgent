@@ -8,7 +8,7 @@
 """
 XML树解析模块 - 兼容层
 
-⚠️ 此模块现在是 ui_hierarchy.py 的轻量包装器
+此模块现在是 ui_hierarchy.py 的轻量包装器
    保留用于向后兼容，新代码请直接使用 ui_hierarchy.py
 
 主要改进:
@@ -112,12 +112,12 @@ def parse_ui_xml(xml_content: str) -> List[UIElement]:
         class_name = node.get("class", "Unknown")
         bounds_str = node.get("bounds", "")
         
-        # 🔥 参考源项目：只判断clickable和focusable
+        # 参考源项目：只判断clickable和focusable
         clickable = node.get("clickable", "false") == "true"
         focusable = node.get("focusable", "false") == "true" or node.get("focus", "false") == "true"
         enabled = node.get("enabled", "true") == "true"
         
-        # ✅ 修复：采用源项目的宽松过滤策略
+        # 修复：采用源项目的宽松过滤策略
         # 源项目逻辑：只要是可交互或有任何信息就保留
         # 跳过完全空白且不可交互的布局容器
         if not clickable and not focusable and not text and not content_desc:
@@ -141,11 +141,11 @@ def parse_ui_xml(xml_content: str) -> List[UIElement]:
         except (ValueError, AttributeError):
             continue
         
-        # 🔥 文本处理：优先text，回退到content-desc（完全对齐源项目）
+        # 文本处理：优先text，回退到content-desc（完全对齐源项目）
         display_text = text or content_desc or ""
         class_short = class_name.split(".")[-1]
         
-        # ✅ 移除了"完全无标识但可交互就用类型作为标识"的逻辑
+        # 移除了"完全无标识但可交互就用类型作为标识"的逻辑
         # 源项目不做这个处理，保持原样
         
         elements.append(UIElement(
@@ -163,7 +163,7 @@ def parse_ui_xml(xml_content: str) -> List[UIElement]:
     if elements:
         logger.debug(f"XML解析: 总节点={total_nodes}, 可交互={interactive_nodes}, 最终保留={len(elements)}")
     else:
-        logger.warning(f"⚠️ XML解析结果为空: 总节点={total_nodes}, 可交互={interactive_nodes}")
+        logger.warning(f"XML解析结果为空: 总节点={total_nodes}, 可交互={interactive_nodes}")
         logger.warning("可能原因: 1) 界面正在加载 2) 所有元素都是纯布局容器 3) dump数据异常")
     
     elements.sort(key=lambda e: (e.center[1], e.center[0]))
@@ -195,8 +195,8 @@ def format_elements_for_llm(elements: List[UIElement], max_elements: int = 20) -
             "text": elem.text,
             "type": elem.element_type,
             "center": list(elem.center),
-            "clickable": elem.clickable,  # ✅ 保留：明确元素是否可点击
-            "focusable": elem.focusable,  # ✅ 保留：明确元素是否可聚焦/输入
+            "clickable": elem.clickable,  # 保留：明确元素是否可点击
+            "focusable": elem.focusable,  # 保留：明确元素是否可聚焦/输入
             "action": "tap" if elem.clickable else ("input" if elem.focusable else "read")
         }
         if elem.resource_id:

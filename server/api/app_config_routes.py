@@ -204,20 +204,20 @@ async def delete_app(package_name: str):
 
 
 # ========================================
-# ⚠️ 已弃用的扫描功能（保留API以保持向后兼容）
+# Warning: 已弃用的扫描功能（保留API以保持向后兼容）
 # ========================================
 # 原因：扫描出的包名为英文，用户体验差
 # 替代方案：使用200+预置应用 + 手动添加
 # ========================================
 
-# ✅ 应用扫描缓存（设备ID -> (应用列表, 过期时间)）
+# 应用扫描缓存（设备ID -> (应用列表, 过期时间)）
 _app_scan_cache = {}
 _cache_ttl_seconds = 300  # 5分钟缓存
 
 @router.post("/apps/scan", tags=["📱 应用管理"], deprecated=True)
 async def scan_device_apps(device_id: Optional[str] = None):
     """
-    ⚠️ 已弃用：扫描设备上的应用（优化版 - 添加缓存）
+    已弃用：扫描设备上的应用（优化版 - 添加缓存）
     
     不建议使用原因：
       - 扫描出的包名为英文，用户体验差
@@ -227,7 +227,7 @@ async def scan_device_apps(device_id: Optional[str] = None):
     """
     import time
     
-    # ✅ 检查缓存
+    # 检查缓存
     cache_key = device_id or "default"
     now = time.time()
     
@@ -249,7 +249,7 @@ async def scan_device_apps(device_id: Optional[str] = None):
     if not apps:
         raise HTTPException(500, "扫描失败或设备无应用")
     
-    # ✅ 更新缓存
+    # 更新缓存
     _app_scan_cache[cache_key] = (apps, now + _cache_ttl_seconds)
     
     return {
@@ -263,7 +263,7 @@ async def scan_device_apps(device_id: Optional[str] = None):
 @router.post("/apps/sync", tags=["📱 应用管理"], deprecated=True)
 async def sync_device_apps(request: SyncRequest):
     """
-    ⚠️ 已弃用：从设备同步应用到配置文件（异步优化版本）
+    已弃用：从设备同步应用到配置文件（异步优化版本）
     
     不建议使用原因：
       - 扫描出的包名为英文，用户体验差
@@ -283,7 +283,7 @@ async def sync_device_apps(request: SyncRequest):
     import asyncio
     manager = get_app_manager()
     
-    # ✅ 异步执行同步操作，避免阻塞事件循环
+    # 异步执行同步操作，避免阻塞事件循环
     sync_result = await asyncio.to_thread(
         manager.sync_from_device,
         device_id=request.device_id,
@@ -308,7 +308,7 @@ async def sync_device_apps(request: SyncRequest):
     
     tip = None
     if not request.auto_enable and new_apps > 0:
-        tip = f"💡 新增了 {new_apps} 个应用（默认禁用），请到应用管理页面启用需要的应用"
+        tip = f"新增了 {new_apps} 个应用（默认禁用），请到应用管理页面启用需要的应用"
     
     return {
         "message": f"同步成功，新增 {new_apps} 个，删除 {removed_apps} 个，保留 {kept_apps} 个",

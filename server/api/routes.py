@@ -37,7 +37,7 @@ from server.api.shortcuts import router as shortcuts_router
 from server.api.prompt_cards import router as prompt_cards_router
 from server.api.scrcpy import router as scrcpy_router  # H.264 实时预览
 from server.api.planning import router as planning_router  # 智能规划模式
-from server.api.model_stats import router as model_stats_router  # ✅ 新增: 模型统计
+from server.api.model_stats import router as model_stats_router  # 新增: 模型统计
 
 # 注册子路由（带标签分类）
 # 按照功能模块分类，方便API文档查看和维护
@@ -45,8 +45,8 @@ router.include_router(speech_router, prefix="/speech", tags=["🎤 语音服务"
 router.include_router(scrcpy_router, prefix="", tags=["📺 实时预览"])
 router.include_router(planning_router, prefix="", tags=["🎯 智能规划"])
 router.include_router(shortcuts_router, prefix="", tags=["⚡ 快捷指令"])
-router.include_router(prompt_cards_router, prefix="", tags=["💡 提示词管理"])
-router.include_router(model_stats_router, prefix="", tags=["📊 模型统计"])  # ✅ 新增
+router.include_router(prompt_cards_router, prefix="", tags=["提示词管理"])
+router.include_router(model_stats_router, prefix="", tags=["📊 模型统计"])  # 新增
 # 注意：应用配置API已迁移到 app_config_routes.py (在 app.py 中注册)
 router.include_router(anti_detection_router, prefix="", tags=["🛡️ 防风控配置"])
 
@@ -205,14 +205,14 @@ async def get_websocket_device_status():
                     if frp_port:
                         ws_status["by_port"][frp_port] = ws_connected
                 
-                logger.info(f"✅ 从WebSocket服务器({url})获取到设备状态: {ws_status}")
+                logger.info(f"从WebSocket服务器({url})获取到设备状态: {ws_status}")
                 return ws_status
             else:
                 errors.append(f"{url}: HTTP {response.status_code}")
         except Exception as e:
             errors.append(f"{url}: {type(e).__name__}: {e}")
     
-    logger.error(f"❌ 所有WebSocket服务器地址都无法连接: {errors}")
+    logger.error(f"所有WebSocket服务器地址都无法连接: {errors}")
     return {"by_id": {}, "by_port": {}}
 
 @router.get("/devices/scanned", tags=["📱 设备管理"])
@@ -225,7 +225,7 @@ async def list_scanned_devices():
     """
     scanner = get_device_scanner()
     
-    # ✅ 优化：直接返回缓存的设备列表，不触发新扫描
+    # 优化：直接返回缓存的设备列表，不触发新扫描
     online_devices = scanner.get_online_devices()
     
     # 从WebSocket服务器查询设备状态（异步）
@@ -376,7 +376,7 @@ async def create_task(request: CreateTaskRequest):
     config = Config()
     
     # 构建模型配置
-    # ⚠️ 已废弃XML/混合内核，统一使用Vision内核
+    # Warning: 已废弃XML/混合内核，统一使用Vision内核
     # 如果用户未明确指定模型，让智能选择器决定
     should_use_selector = (
         request.ai_model == "autoglm-phone"  # 默认值
@@ -466,7 +466,7 @@ async def create_task(request: CreateTaskRequest):
         duration=task.duration,
         result=task.result,
         error=task.error,
-        steps=task.steps  # ✅ 修复：返回完整步骤列表
+        steps=task.steps  # 修复：返回完整步骤列表
     )
 
 
@@ -494,7 +494,7 @@ async def list_tasks(
         except ValueError:
             raise HTTPException(400, f"Invalid status: {status}")
     
-    # ✅ 使用异步版本避免阻塞
+    # 使用异步版本避免阻塞
     tasks = await agent_service.list_tasks_async(
         status=filter_status,
         limit=limit,
@@ -513,7 +513,7 @@ async def list_tasks(
             duration=t.duration,
             result=t.result,
             error=t.error,
-            steps=t.steps,  # ✅ 修复：返回完整步骤列表
+            steps=t.steps,  # 修复：返回完整步骤列表
             total_tokens=t.total_tokens,
             total_prompt_tokens=t.total_prompt_tokens,
             total_completion_tokens=t.total_completion_tokens
@@ -526,7 +526,7 @@ async def list_tasks(
 async def get_task(task_id: str):
     """获取任务详情（优化版 - 使用异步查询）"""
     agent_service = get_agent_service()
-    # ✅ 使用异步版本避免阻塞
+    # 使用异步版本避免阻塞
     task = await agent_service.get_task_async(task_id)
     
     if not task:
@@ -543,7 +543,7 @@ async def get_task(task_id: str):
         duration=task.duration,
         result=task.result,
         error=task.error,
-        steps=task.steps,  # ✅ 修复：返回完整步骤列表而不是步骤数量
+        steps=task.steps,  # 修复：返回完整步骤列表而不是步骤数量
         total_tokens=task.total_tokens,
         total_prompt_tokens=task.total_prompt_tokens,
         total_completion_tokens=task.total_completion_tokens
@@ -741,7 +741,7 @@ async def broadcast_status_updates():
 # 启动后台任务已迁移到 app.py 的 lifespan
 # ============================================
 # 
-# ⚠️ 注意：@router.on_event("startup") 在 FastAPI 2.0+ 中已废弃
+# Warning: 注意：@router.on_event("startup") 在 FastAPI 2.0+ 中已废弃
 # 所有启动逻辑已迁移到 app.py 的 lifespan 函数中：
 # - WebSocket广播回调设置
 # - 后台任务启动
@@ -916,7 +916,7 @@ async def get_logs(
             "limit": limit
         }
     
-    # ✅ 优化：只读取最近1个日志文件，限制文件大小
+    # 优化：只读取最近1个日志文件，限制文件大小
     log_files = sorted(
         [f for f in os.listdir(log_dir) if f.endswith('.log')],
         key=lambda x: os.path.getmtime(os.path.join(log_dir, x)),
@@ -929,12 +929,12 @@ async def get_logs(
         try:
             file_path = os.path.join(log_dir, log_file)
             
-            # ✅ 优化：检查文件大小，跳过过大的文件
+            # 优化：检查文件大小，跳过过大的文件
             if os.path.getsize(file_path) > MAX_FILE_SIZE:
-                logger.warning(f"⚠️ Log file {log_file} too large, skipping")
+                logger.warning(f"Log file {log_file} too large, skipping")
                 continue
             
-            # ✅ 优化：只读取文件最后的部分（倒序读取）
+            # 优化：只读取文件最后的部分（倒序读取）
             with open(file_path, 'r', encoding='utf-8') as f:
                 # 读取最后 5000 行
                 lines = f.readlines()[-5000:]

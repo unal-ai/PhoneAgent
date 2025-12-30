@@ -163,7 +163,7 @@ class ActionHandler:
         """Handle text input action."""
         text = action.get("text", "")
 
-        # ✅ 使用智能输入（优先yadb，兜底ADB Keyboard）
+        # 使用智能输入（优先yadb，兜底ADB Keyboard）
         from phone_agent.adb.smart_input import smart_type_text
         
         success = smart_type_text(text, self.device_id)

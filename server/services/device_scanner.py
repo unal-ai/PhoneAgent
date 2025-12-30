@@ -126,7 +126,7 @@ class DeviceScanner:
                 )
                 
                 if result.returncode == 0 and "test" in result.stdout:
-                    logger.debug(f"[DeviceScanner] ✅ ADB连接成功: {adb_address}")
+                    logger.debug(f"[DeviceScanner] ADB连接成功: {adb_address}")
                     return adb_address
             
             return None
@@ -320,8 +320,8 @@ class DeviceScanner:
                     )
                     
                     if not success:
-                        logger.error(f"[DeviceScanner] ❌ 端口{port}分配失败: {message}")
-                        logger.error(f"[DeviceScanner] ❌ 设备{device_id}无法上线")
+                        logger.error(f"[DeviceScanner] 端口{port}分配失败: {message}")
+                        logger.error(f"[DeviceScanner] 设备{device_id}无法上线")
                         
                         # 断开ADB连接
                         try:
@@ -336,7 +336,7 @@ class DeviceScanner:
                         
                         continue
                     
-                    logger.info(f"[DeviceScanner] ✅ 端口{port}已分配给设备{device_id}")
+                    logger.info(f"[DeviceScanner] 端口{port}已分配给设备{device_id}")
                     
                     # 获取设备规格
                     specs = await self.get_device_specs(adb_serial)
@@ -397,7 +397,7 @@ class DeviceScanner:
                 await asyncio.sleep(self.scan_interval)
             
             except Exception as e:
-                logger.error(f"[DeviceScanner] ❌ 扫描出错: {e}", exc_info=True)
+                logger.error(f"[DeviceScanner] 扫描出错: {e}", exc_info=True)
                 await asyncio.sleep(self.scan_interval)
     
     async def start(self):
@@ -408,7 +408,7 @@ class DeviceScanner:
         
         self.is_running = True
         self.scan_task = asyncio.create_task(self.scan_loop())
-        logger.info("[DeviceScanner] ✅ 扫描服务已启动")
+        logger.info("[DeviceScanner] 扫描服务已启动")
     
     async def stop(self):
         """停止扫描服务"""
@@ -424,7 +424,7 @@ class DeviceScanner:
             except asyncio.CancelledError:
                 pass
         
-        logger.info("[DeviceScanner] ✅ 扫描服务已停止")
+        logger.info("[DeviceScanner] 扫描服务已停止")
     
     def get_scanned_devices(self) -> Dict[str, ScannedDevice]:
         """获取所有扫描到的设备"""

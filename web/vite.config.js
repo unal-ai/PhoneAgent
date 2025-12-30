@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiHost = env.VITE_API_HOST || 'localhost'
   const apiPort = env.VITE_API_PORT || '8000'
-  const wsPort = env.VITE_WS_PORT || '9999'
+  // Note: VITE_WS_PORT (9999) 用于设备通信 WebSocket，前端 WebSocket 使用 API 端口
 
   return {
     plugins: [vue()],
@@ -26,9 +26,11 @@ export default defineConfig(({ mode }) => {
           target: `http://${apiHost}:${apiPort}`,
           changeOrigin: true
         },
+        // 前端 WebSocket 连接到 API 服务器 (port 8000) 的 /api/v1/ws 端点
         '/ws': {
-          target: `ws://${apiHost}:${wsPort}`,
-          ws: true
+          target: `ws://${apiHost}:${apiPort}`,
+          ws: true,
+          rewrite: (path) => `/api/v1${path}`
         }
       }
     },
@@ -48,9 +50,11 @@ export default defineConfig(({ mode }) => {
           target: `http://${apiHost}:${apiPort}`,
           changeOrigin: true
         },
+        // 前端 WebSocket 连接到 API 服务器 (port 8000) 的 /api/v1/ws 端点
         '/ws': {
-          target: `ws://${apiHost}:${wsPort}`,
-          ws: true
+          target: `ws://${apiHost}:${apiPort}`,
+          ws: true,
+          rewrite: (path) => `/api/v1${path}`
         }
       }
     },

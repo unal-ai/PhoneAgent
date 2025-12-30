@@ -682,7 +682,33 @@ setup_frp() {
     cd ~ || exit 1
     
     local FRP_VERSION="0.52.0"
-    local FRP_ARCH="arm64"
+    
+    # 自动检测系统架构
+    local MACHINE_ARCH=$(uname -m)
+    local FRP_ARCH=""
+    
+    case "$MACHINE_ARCH" in
+        x86_64)
+            FRP_ARCH="amd64"
+            ;;
+        aarch64)
+            FRP_ARCH="arm64"
+            ;;
+        armv7l)
+            FRP_ARCH="arm"
+            ;;
+        i386|i686)
+            FRP_ARCH="386"
+            ;;
+        *)
+            log_error "不支持的架构: $MACHINE_ARCH"
+            log_warn "支持的架构: x86_64, aarch64, armv7l, i386, i686"
+            exit 1
+            ;;
+    esac
+    
+    log_info "检测到系统架构: $MACHINE_ARCH → FRP 架构: $FRP_ARCH"
+    
     local FRP_FILE="frp_${FRP_VERSION}_linux_${FRP_ARCH}.tar.gz"
     
     if [ ! -f "$FRP_FILE" ]; then

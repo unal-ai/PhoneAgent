@@ -121,7 +121,9 @@ function connect() {
     ws.binaryType = 'arraybuffer'
     
     ws.onopen = () => {
-      console.log('✅ WebSocket connected')
+      if (import.meta.env.DEV) {
+        console.log('[H264Preview] WebSocket connected')
+      }
       status.value = '已连接'
       statusType.value = 'success'
       startMonitors()

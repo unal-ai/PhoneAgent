@@ -7,8 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL}/api/v1`
   : '/api/v1'
 
-console.log('API Base URL:', API_BASE_URL)
-console.log('🔧 API Config Version: 2024-12-18-v3-with-monitor')
+// API configuration is loaded from environment variables
 
 // 超时配置（针对不同类型的请求）
 const TIMEOUT_CONFIG = {
@@ -60,7 +59,9 @@ request.interceptors.request.use(
     // 开始监控
     requestMonitor.startRequest(requestId, config)
     
-    console.log(`🚀 [${requestId}] ${config.method?.toUpperCase()} ${config.url} (timeout: ${config.timeout}ms)`)
+    if (import.meta.env.DEV) {
+      console.log(`[API] ${config.method?.toUpperCase()} ${config.url} (timeout: ${config.timeout}ms)`)
+    }
     
     // 可以在这里添加 token
     return config
@@ -102,8 +103,7 @@ request.interceptors.response.use(
         showClose: true
       })
       
-      console.error(`⏱️ 请求超时:`, {
-        url: error.config?.url,
+      console.error(`[TIMEOUT] ${error.config?.url}`, {
         timeout: `${timeout}ms`,
         method: error.config?.method
       })
@@ -133,11 +133,9 @@ request.interceptors.response.use(
 // ============================================
 
 export const deviceApi = {
-  // 获取设备列表（兼容V1和V2）
+  // 获取设备列表
   async list(status = null) {
     try {
-      // 优先使用V2扫描器API
-      console.log('🔍 DeviceAPI: Calling /devices/scanned')
       const scannedDevices = await request.get('/devices/scanned')
       
       // 如果scannedDevices有devices字段，返回devices数组

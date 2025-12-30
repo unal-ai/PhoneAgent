@@ -467,24 +467,28 @@ select_fastest_mirror() {
     
     local fastest_mirror=""
     local fastest_time=999999
+    local DEFAULT_FAST_RESPONSE_MS=100  # 小于1秒的响应默认估计为100ms
     
     for mirror in "${mirrors[@]}"; do
         local domain
         domain=$(echo "$mirror" | awk -F/ '{print $3}')
         log_info "  测试 ${domain} ..."
         
+        # 使用秒级时间戳（Termux/Android 不支持 %N 纳秒格式）
         local start_time
-        start_time=$(date +%s%N 2>/dev/null || date +%s)
+        start_time=$(date +%s)
         
         if curl -s --connect-timeout 2 --max-time 3 "$mirror" > /dev/null 2>&1; then
             local end_time
-            end_time=$(date +%s%N 2>/dev/null || date +%s)
+            end_time=$(date +%s)
             
+            # 计算耗时（秒转毫秒）
             local duration
-            if [ "$start_time" != "$end_time" ]; then
-                duration=$(( (end_time - start_time) / 1000000 ))
+            local diff=$((end_time - start_time))
+            if [ "$diff" -eq 0 ]; then
+                duration=$DEFAULT_FAST_RESPONSE_MS  # 小于1秒，使用默认估计值
             else
-                duration=500  # 如果不支持纳秒，使用默认值
+                duration=$((diff * 1000))
             fi
             
             log_info "    ✓ 响应: ${duration}ms"
@@ -524,6 +528,7 @@ download_with_fastest_mirror() {
     local fastest_mirror=""
     local fastest_time=999999
     local tested_count=0
+    local DEFAULT_FAST_RESPONSE_MS=100  # 小于1秒的响应默认估计为100ms
     
     # 并发测速所有镜像源（最多前3个）
     for mirror in "${mirrors[@]}"; do
@@ -532,16 +537,23 @@ download_with_fastest_mirror() {
         local domain
         domain=$(echo "$mirror" | awk -F/ '{print $3}')
         
+        # 使用秒级时间戳（Termux/Android 不支持 %N 纳秒格式）
         local start_time
-        start_time=$(date +%s%N 2>/dev/null || echo $(($(date +%s) * 1000000000)))
+        start_time=$(date +%s)
         
         # 使用HEAD请求测速（更快）
         if curl -I -s --connect-timeout 2 --max-time 3 "$mirror" > /dev/null 2>&1; then
             local end_time
-            end_time=$(date +%s%N 2>/dev/null || echo $(($(date +%s) * 1000000000)))
+            end_time=$(date +%s)
             
+            # 计算耗时（秒转毫秒）
             local duration
-            duration=$(( (end_time - start_time) / 1000000 ))
+            local diff=$((end_time - start_time))
+            if [ "$diff" -eq 0 ]; then
+                duration=$DEFAULT_FAST_RESPONSE_MS  # 小于1秒，使用默认估计值
+            else
+                duration=$((diff * 1000))
+            fi
             
             log_info "  ✓ ${domain}: ${duration}ms"
             

@@ -397,11 +397,30 @@ async def create_task(request: CreateTaskRequest):
     if request.ai_api_key:
         model_config["api_key"] = request.ai_api_key
     else:
-        # 从 .env 文件自动加载 API Key
-        if config.ZHIPU_API_KEY:
-            model_config["api_key"] = config.ZHIPU_API_KEY
+        # 从 .env 文件自动加载 API Key（支持多平台：zhipu, openai, gemini, qwen, local）
+        from server.utils.model_config_helper import get_model_config_from_env
+        env_config = get_model_config_from_env("vision")
+        
+        if env_config["api_key"] and env_config["api_key"] != "EMPTY":
+            model_config["api_key"] = env_config["api_key"]
+            # 如果用户没有指定模型，也使用环境配置
+            if should_use_selector and "model_name" not in model_config:
+                model_config["model_name"] = env_config["model_name"]
+            if "base_url" not in model_config:
+                model_config["base_url"] = env_config["base_url"]
+        elif config.MODEL_PROVIDER == "local":
+            # 本地模型不需要 API Key
+            model_config["api_key"] = "EMPTY"
+            model_config["base_url"] = env_config["base_url"]
+            if "model_name" not in model_config:
+                model_config["model_name"] = env_config["model_name"]
         else:
-            raise HTTPException(400, "未配置API Key，请在.env中设置ZHIPU_API_KEY或在创建任务时提供")
+            raise HTTPException(400, 
+                "未配置API Key，请在.env中设置：\n"
+                "- 智谱AI: ZHIPU_API_KEY=xxx\n"
+                "- OpenAI/其他: CUSTOM_API_KEY=xxx\n"
+                "- 本地模型: MODEL_PROVIDER=local"
+            )
     
     # 处理提示词卡片：拼接到指令中
     enhanced_instruction = request.instruction

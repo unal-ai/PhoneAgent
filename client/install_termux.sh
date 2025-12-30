@@ -832,10 +832,13 @@ setup_scrcpy_server() {
     local SCRCPY_VERSION="3.3.3"
     local SCRCPY_SERVER_FILE="scrcpy-server-v${SCRCPY_VERSION}"
     local TARGET_PATH="/data/local/tmp/scrcpy-server"
+    local LOCAL_CACHE_PATH="$HOME/scrcpy-server"
     
     # 检查是否已安装（使用文件系统检查，更可靠）
     if [ -f "$TARGET_PATH" ]; then
         log_info "scrcpy-server 已存在，跳过安装"
+        # 备份一份到本地，避免 /data/local/tmp 被清理后无法恢复
+        cp -f "$TARGET_PATH" "$LOCAL_CACHE_PATH" 2>/dev/null || true
         return 0
     fi
     
@@ -862,6 +865,8 @@ setup_scrcpy_server() {
     fi
     
     log_info "安装 scrcpy-server 到设备..."
+    # 保留一份本地副本，防止 /data/local/tmp 被系统清理
+    cp -f "${SCRCPY_SERVER_FILE}" "$LOCAL_CACHE_PATH" 2>/dev/null || true
     
     # 方案1：直接复制（最简单，推荐）
     if cp "${SCRCPY_SERVER_FILE}" "$TARGET_PATH" 2>/dev/null && chmod 755 "$TARGET_PATH" 2>/dev/null; then
@@ -1174,6 +1179,19 @@ echo -e "  设备名称: \${GREEN}${DEVICE_NAME}\${NC}"
 echo -e "  FRP端口:  \${GREEN}${REMOTE_PORT}\${NC}"
 echo -e "  设备ID:   \${GREEN}device_${REMOTE_PORT}\${NC}"
 echo ""
+
+# 确保 scrcpy-server 存在（/data/local/tmp 可能会被清理）
+SCRCPY_TARGET="/data/local/tmp/scrcpy-server"
+SCRCPY_CACHE="$HOME/scrcpy-server"
+if [ ! -f "\$SCRCPY_TARGET" ] && [ -f "\$SCRCPY_CACHE" ]; then
+    echo -e "\${YELLOW}🛠️  检测到 scrcpy-server 缺失，正在恢复...\${NC}"
+    mkdir -p /data/local/tmp 2>/dev/null || true
+    if cp "\$SCRCPY_CACHE" "\$SCRCPY_TARGET" 2>/dev/null && chmod 755 "\$SCRCPY_TARGET" 2>/dev/null; then
+        echo -e "   \${GREEN}✅ scrcpy-server 已恢复到 /data/local/tmp/scrcpy-server\${NC}"
+    else
+        echo -e "   \${YELLOW}⚠️  scrcpy-server 自动恢复失败，请手动复制到 /data/local/tmp/scrcpy-server\${NC}"
+    fi
+fi
 
 # 1. 启动 ADB
 echo "1️⃣  启动 ADB 服务..."

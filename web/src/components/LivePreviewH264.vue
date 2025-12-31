@@ -112,9 +112,19 @@ function connect() {
       }
     })
     
-    // 2. 连接 WebSocket
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${location.host}/api/v1/scrcpy/stream/${encodeURIComponent(props.deviceId)}`
+    // 2. 连接 WebSocket（优先使用后端 API 地址，避免代理丢失升级请求）
+    let protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+    let host = location.host
+    try {
+      if (import.meta.env.VITE_API_BASE_URL) {
+        const apiUrl = new URL(import.meta.env.VITE_API_BASE_URL)
+        protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+        host = apiUrl.host
+      }
+    } catch (e) {
+      console.warn('[WebSocket] Failed to parse VITE_API_BASE_URL, fallback to current host', e)
+    }
+    const wsUrl = `${protocol}//${host}/api/v1/scrcpy/stream/${encodeURIComponent(props.deviceId)}`
     
     console.log('[WebSocket] Connecting to:', wsUrl)
     ws = new WebSocket(wsUrl)
@@ -373,4 +383,3 @@ onUnmounted(() => {
   }
 }
 </style>
-

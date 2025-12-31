@@ -56,38 +56,48 @@ let frameCount = 0
 let lastCountTime = Date.now()
 let reconnectTimer = null
 let initSegment = null
+const NAL_SPS = 7
+const NAL_PPS = 8
+const NAL_IDR = 5
+
+function isStartCode(data, index) {
+  const fourByte = index + 3 < data.length &&
+    data[index] === 0x00 && data[index + 1] === 0x00 && data[index + 2] === 0x00 && data[index + 3] === 0x01
+  const threeByte = !fourByte && index + 2 < data.length &&
+    data[index] === 0x00 && data[index + 1] === 0x00 && data[index + 2] === 0x01
+  return {
+    matched: fourByte || threeByte,
+    length: fourByte ? 4 : (threeByte ? 3 : 0)
+  }
+}
 
 function extractInitSegment(data) {
   let sps = null
   let pps = null
   let idr = null
   
-  for (let i = 0; i < data.length - 3; i++) {
-    const isFourByte = i + 3 < data.length &&
-      data[i] === 0x00 && data[i + 1] === 0x00 && data[i + 2] === 0x00 && data[i + 3] === 0x01
-    const isThreeByte = !isFourByte && i + 2 < data.length &&
-      data[i] === 0x00 && data[i + 1] === 0x00 && data[i + 2] === 0x01
-    if (!isFourByte && !isThreeByte) continue
+  for (let i = 0; i <= data.length - 3; i++) {
+    const start = isStartCode(data, i)
+    if (!start.matched) continue
     
-    const offset = i + (isFourByte ? 4 : 3)
+    const offset = i + start.length
     if (offset >= data.length) continue
     const nalType = data[offset] & 0x1f
     
     // 查找下一个 start code 以确定当前 NAL 的结束位置
     let nextStart = data.length
-    for (let j = offset; j < data.length - 3; j++) {
-      const nextFourByte = data[j] === 0x00 && data[j + 1] === 0x00 && data[j + 2] === 0x00 && data[j + 3] === 0x01
-      const nextThreeByte = !nextFourByte && data[j] === 0x00 && data[j + 1] === 0x00 && data[j + 2] === 0x01
-      if (nextFourByte || nextThreeByte) {
+    for (let j = offset; j <= data.length - 3; j++) {
+      const nextStartCode = isStartCode(data, j)
+      if (nextStartCode.matched) {
         nextStart = j
         break
       }
     }
     
     const nalSlice = data.slice(i, nextStart)
-    if (nalType === 7 && !sps) sps = nalSlice
-    if (nalType === 8 && !pps) pps = nalSlice
-    if (nalType === 5 && !idr) idr = nalSlice
+    if (nalType === NAL_SPS && !sps) sps = nalSlice
+    if (nalType === NAL_PPS && !pps) pps = nalSlice
+    if (nalType === NAL_IDR && !idr) idr = nalSlice
     
     if (sps && pps && idr) {
       const combined = new Uint8Array(sps.length + pps.length + idr.length)

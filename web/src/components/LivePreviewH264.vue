@@ -57,6 +57,27 @@ let lastCountTime = Date.now()
 let reconnectTimer = null
 let initSegment = null
 
+function containsInitNals(data) {
+  let hasSps = false
+  let hasPps = false
+  let hasIdr = false
+  
+  for (let i = 0; i < data.length - 4; i++) {
+    const isFourByte = data[i] === 0x00 && data[i + 1] === 0x00 && data[i + 2] === 0x00 && data[i + 3] === 0x01
+    const isThreeByte = !isFourByte && data[i] === 0x00 && data[i + 1] === 0x00 && data[i + 2] === 0x01
+    if (!isFourByte && !isThreeByte) continue
+    
+    const offset = i + (isFourByte ? 4 : 3)
+    const nalType = data[offset] & 0x1f
+    if (nalType === 7) hasSps = true
+    if (nalType === 8) hasPps = true
+    if (nalType === 5) hasIdr = true
+    if (hasSps && hasPps && hasIdr) return true
+  }
+  
+  return false
+}
+
 // 监听设备切换
 watch(() => props.deviceId, () => {
   reconnect()
@@ -99,10 +120,17 @@ function connect() {
           try {
             jmuxerInstance?.reset()
             if (initSegment) {
-              jmuxerInstance.feed({ video: initSegment })
-              console.log('[jMuxer] Re-initialized with cached SPS/PPS/IDR')
+              try {
+                jmuxerInstance.feed({ video: initSegment })
+                console.log('[jMuxer] Re-initialized with cached SPS/PPS/IDR')
+              } catch (feedError) {
+                console.error('[jMuxer] Re-init feed failed, reconnecting...', feedError)
+                reconnect()
+                return
+              }
             } else {
               reconnect()
+              return
             }
             console.log('[jMuxer] Reset successful')
           } catch (resetError) {
@@ -171,7 +199,7 @@ function connect() {
       // H.264 NAL 单元数据
       if (jmuxerInstance) {
         const videoData = new Uint8Array(event.data)
-        if (!initSegment) {
+        if (!initSegment && containsInitNals(videoData)) {
           initSegment = videoData.slice()
         }
         

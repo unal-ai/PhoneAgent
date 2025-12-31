@@ -824,6 +824,48 @@ setup_adb() {
 # 步骤 4.5: 安装 scrcpy-server（用于 H.264 实时预览）
 #############################################################################
 
+select_adb_device() {
+    local devices
+    devices=$(adb devices | awk 'NR>1 && $2=="device"{print $1}')
+    if [ -z "$devices" ]; then
+        log_error "❌ 未检测到可用的 ADB 设备，请先完成 ADB 连接"
+        return 1
+    fi
+
+    local count
+    count=$(echo "$devices" | grep -c .)
+
+    # 优先选择本机的 adb (localhost:5555)
+    if echo "$devices" | grep -qx "localhost:5555"; then
+        echo "localhost:5555"
+        return 0
+    fi
+
+    if [ "$count" -eq 1 ]; then
+        echo "$devices"
+        return 0
+    fi
+
+    log_warn "检测到多个 ADB 设备，请选择目标设备："
+    local idx=1
+    while read -r dev; do
+        echo "  [$idx] $dev" >&2
+        idx=$((idx + 1))
+    done <<< "$devices"
+
+    read -p "请输入设备序号 (默认1): " choice
+    choice=${choice:-1}
+    local selected
+    selected=$(echo "$devices" | sed -n "${choice}p")
+
+    if [ -z "$selected" ]; then
+        log_error "无效的选择，无法继续"
+        return 1
+    fi
+
+    echo "$selected"
+}
+
 setup_scrcpy_server() {
     log_step "📺 步骤 4.5/6: 安装 scrcpy-server"
     
@@ -872,42 +914,67 @@ setup_scrcpy_server() {
         cp -f "${SCRCPY_SERVER_FILE}" "$LOCAL_CACHE_PATH" 2>/dev/null || true
     fi
     
-    # 方案1：直接复制（最简单，推荐）
+    local adb_serial=""
+    if adb_serial=$(select_adb_device); then
+        log_info "使用 ADB 设备: ${adb_serial}"
+    else
+        log_warn "未选择到有效的 ADB 设备，将尝试本地复制方案"
+    fi
+    local adb_opts=()
+    if [ -n "$adb_serial" ]; then
+        adb_opts=(-s "$adb_serial")
+    fi
+
+    # 方案1：通过 ADB 推送到 /data/local/tmp（Termux 推荐，支持自连）
+    if [ -n "$adb_serial" ]; then
+        log_info "尝试通过 ADB 推送 scrcpy-server..."
+        if adb "${adb_opts[@]}" push "${SCRCPY_SERVER_FILE}" "$TARGET_PATH" >/dev/null 2>&1; then
+            adb "${adb_opts[@]}" shell "chmod 755 $TARGET_PATH" 2>/dev/null
+            if adb "${adb_opts[@]}" shell "ls $TARGET_PATH" 2>/dev/null | grep -q "scrcpy-server"; then
+                log_info "✅ scrcpy-server 安装成功 (方案1: adb push)"
+                rm -f "${SCRCPY_SERVER_FILE}"
+                return 0
+            fi
+        fi
+        log_warn "⚠️  ADB 推送失败，尝试本地复制..."
+    fi
+    
+    # 方案2：直接复制（某些环境依然可用）
     if cp "${SCRCPY_SERVER_FILE}" "$TARGET_PATH" 2>/dev/null && chmod 755 "$TARGET_PATH" 2>/dev/null; then
-        log_info "✅ scrcpy-server 安装成功 (方案1: 直接复制)"
+        log_info "✅ scrcpy-server 安装成功 (方案2: 直接复制)"
         log_info "✓ 文件大小: $(ls -lh $TARGET_PATH | awk '{print $5}')"
         rm -f "${SCRCPY_SERVER_FILE}"
         return 0
     fi
     
-    log_warn "⚠️  方案1失败，尝试方案2..."
+    log_warn "⚠️  方案2失败，尝试方案3..."
     
-    # 方案2：通过 adb shell 复制（Termux特有方案）
+    # 方案3：通过 adb shell 复制（Termux特有方案）
     # 原理：adb shell 可以直接操作本机，通过 cat 命令传输文件
-    if adb shell "cat > $TARGET_PATH" < "${SCRCPY_SERVER_FILE}" 2>/dev/null; then
-        adb shell "chmod 755 $TARGET_PATH" 2>/dev/null
+    if adb "${adb_opts[@]}" shell "cat > $TARGET_PATH" < "${SCRCPY_SERVER_FILE}" 2>/dev/null; then
+        adb "${adb_opts[@]}" shell "chmod 755 $TARGET_PATH" 2>/dev/null
         
         # 验证
-        if adb shell "ls $TARGET_PATH" 2>/dev/null | grep -q "scrcpy-server"; then
-            log_info "✅ scrcpy-server 安装成功 (方案2: adb shell)"
+        if adb "${adb_opts[@]}" shell "ls $TARGET_PATH" 2>/dev/null | grep -q "scrcpy-server"; then
+            log_info "✅ scrcpy-server 安装成功 (方案3: adb shell)"
             log_info "✓ scrcpy-server 验证通过"
             rm -f "${SCRCPY_SERVER_FILE}"
             return 0
         fi
     fi
     
-    log_warn "⚠️  方案2失败，尝试方案3..."
+    log_warn "⚠️  方案3失败，尝试方案4..."
     
-    # 方案3：使用root权限（如果有）
+    # 方案4：使用root权限（如果有）
     if command -v su >/dev/null 2>&1; then
         if su -c "cp ${SCRCPY_SERVER_FILE} $TARGET_PATH && chmod 755 $TARGET_PATH" 2>/dev/null; then
-            log_info "✅ scrcpy-server 安装成功 (方案3: root权限)"
+            log_info "✅ scrcpy-server 安装成功 (方案4: root权限)"
             rm -f "${SCRCPY_SERVER_FILE}"
             return 0
         fi
     fi
     
-    log_warn "⚠️  所有方案都失败，使用备用方案..."
+    log_warn "⚠️  方案4失败，使用备用方案..."
     
     # 备用方案：安装到Termux临时目录
     local TERMUX_TMP="/data/data/com.termux/files/usr/tmp/scrcpy-server"

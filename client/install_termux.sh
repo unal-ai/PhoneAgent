@@ -825,24 +825,27 @@ setup_adb() {
 #############################################################################
 
 select_adb_device() {
+    local READ_TIMEOUT=30
     local devices
-    devices=$(adb devices | awk 'NR>1 && $2=="device"{print $1}')
-    if [ -z "$devices" ]; then
+    devices=$(adb devices | awk 'NR>1 && $2=="device"{gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1}')
+    local devices_list
+    devices_list=$(printf "%s\n" "$devices" | sed '/^$/d')
+    if [ -z "$devices_list" ]; then
         log_error "❌ 未检测到可用的 ADB 设备，请先完成 ADB 连接"
         return 1
     fi
 
     local count
-    count=$(echo "$devices" | grep -c .)
+    count=$(echo "$devices_list" | wc -l)
 
     # 优先选择本机的 adb (localhost:5555)
-    if echo "$devices" | grep -qx "localhost:5555"; then
+    if echo "$devices_list" | grep -qx "localhost:5555"; then
         echo "localhost:5555"
         return 0
     fi
 
     if [ "$count" -eq 1 ]; then
-        echo "$devices"
+        echo "$devices_list"
         return 0
     fi
 
@@ -851,18 +854,25 @@ select_adb_device() {
     while read -r dev; do
         echo "  [$idx] $dev" >&2
         idx=$((idx + 1))
-    done <<< "$devices"
+    done <<< "$devices_list"
 
-    read -p "请输入设备序号 (默认1): " choice
-    choice=${choice:-1}
-    local selected
-    selected=$(echo "$devices" | sed -n "${choice}p")
-
-    if [ -z "$selected" ]; then
-        log_error "无效的选择，无法继续"
+    echo -n "请输入设备序号 (1-${count}, 默认1): " >&2
+    if ! read -t "$READ_TIMEOUT" choice; then
+        log_error "输入超时或读取失败，无法继续"
         return 1
     fi
-
+    choice=${choice:-1}
+    if ! echo "$choice" | grep -Eq '^[0-9]+$'; then
+        log_error "无效的输入，必须是数字"
+        return 1
+    fi
+    choice=$((choice))
+    if [ "$choice" -lt 1 ] || [ "$choice" -gt "$count" ]; then
+        log_error "输入超出设备序号范围"
+        return 1
+    fi
+    local selected
+    selected=$(echo "$devices_list" | sed -n "${choice}p")
     echo "$selected"
 }
 
@@ -875,6 +885,7 @@ setup_scrcpy_server() {
     local SCRCPY_SERVER_FILE="scrcpy-server-v${SCRCPY_VERSION}"
     local TARGET_PATH="/data/local/tmp/scrcpy-server"
     local LOCAL_CACHE_PATH="$HOME/scrcpy-server"
+    local CHMOD_AND_TEST_CMD="chmod 755 $TARGET_PATH && test -f $TARGET_PATH"
     
     # 检查是否已安装（使用文件系统检查，更可靠）
     if [ -f "$TARGET_PATH" ]; then
@@ -921,20 +932,16 @@ setup_scrcpy_server() {
         log_warn "未选择到有效的 ADB 设备，将尝试本地复制方案"
     fi
     local adb_opts=()
-    if [ -n "$adb_serial" ]; then
-        adb_opts=(-s "$adb_serial")
-    fi
+    [ -n "$adb_serial" ] && adb_opts=(-s "$adb_serial")
 
     # 方案1：通过 ADB 推送到 /data/local/tmp（Termux 推荐，支持自连）
     if [ -n "$adb_serial" ]; then
         log_info "尝试通过 ADB 推送 scrcpy-server..."
-        if adb "${adb_opts[@]}" push "${SCRCPY_SERVER_FILE}" "$TARGET_PATH" >/dev/null 2>&1; then
-            adb "${adb_opts[@]}" shell "chmod 755 $TARGET_PATH" 2>/dev/null
-            if adb "${adb_opts[@]}" shell "ls $TARGET_PATH" 2>/dev/null | grep -q "scrcpy-server"; then
-                log_info "✅ scrcpy-server 安装成功 (方案1: adb push)"
-                rm -f "${SCRCPY_SERVER_FILE}"
-                return 0
-            fi
+        if adb "${adb_opts[@]}" push "${SCRCPY_SERVER_FILE}" "$TARGET_PATH" >/dev/null 2>&1 \
+            && adb "${adb_opts[@]}" shell "$CHMOD_AND_TEST_CMD" >/dev/null 2>&1; then
+            log_info "✅ scrcpy-server 安装成功 (方案1: adb push)"
+            rm -f "${SCRCPY_SERVER_FILE}"
+            return 0
         fi
         log_warn "⚠️  ADB 推送失败，尝试本地复制..."
     fi
@@ -951,11 +958,8 @@ setup_scrcpy_server() {
     
     # 方案3：通过 adb shell 复制（Termux特有方案）
     # 原理：adb shell 可以直接操作本机，通过 cat 命令传输文件
-    if adb "${adb_opts[@]}" shell "cat > $TARGET_PATH" < "${SCRCPY_SERVER_FILE}" 2>/dev/null; then
-        adb "${adb_opts[@]}" shell "chmod 755 $TARGET_PATH" 2>/dev/null
-        
-        # 验证
-        if adb "${adb_opts[@]}" shell "ls $TARGET_PATH" 2>/dev/null | grep -q "scrcpy-server"; then
+    if adb "${adb_opts[@]}" shell "cat > $TARGET_PATH" < "${SCRCPY_SERVER_FILE}" >/dev/null 2>&1; then
+        if adb "${adb_opts[@]}" shell "$CHMOD_AND_TEST_CMD" >/dev/null 2>&1; then
             log_info "✅ scrcpy-server 安装成功 (方案3: adb shell)"
             log_info "✓ scrcpy-server 验证通过"
             rm -f "${SCRCPY_SERVER_FILE}"

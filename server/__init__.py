@@ -22,17 +22,16 @@ Architecture:
 __version__ = "1.0.0"
 
 # Services exports
-from server.services.device_pool import DevicePool, Device, get_device_pool
-from server.services.agent_service import AgentService, get_agent_service
 from server.config import Config
+from server.services.agent_service import AgentService, get_agent_service
+from server.services.device_pool import Device, DevicePool, get_device_pool
 
 __all__ = [
     "AgentService",
-    "DevicePool", 
+    "DevicePool",
     "Device",
     "Config",
     "get_agent_service",
     "get_device_pool",
     "__version__",
 ]
-

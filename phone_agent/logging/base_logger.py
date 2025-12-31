@@ -5,17 +5,17 @@ Inspired by GELab-Zero's base_logger.py design pattern.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 
 class BaseLogger(ABC):
     """
     Abstract base class for all loggers.
-    
+
     This interface ensures consistency across different logging implementations
     (local file, remote server, database, etc.)
     """
-    
+
     @abstractmethod
     def log_step(
         self,
@@ -31,7 +31,7 @@ class BaseLogger(ABC):
     ) -> None:
         """
         Log a single step execution.
-        
+
         Args:
             task_id: Unique task identifier
             step: Step number (0-indexed)
@@ -44,7 +44,7 @@ class BaseLogger(ABC):
             tokens_used: Token usage statistics
         """
         pass
-    
+
     @abstractmethod
     def log_task_start(
         self,
@@ -55,7 +55,7 @@ class BaseLogger(ABC):
     ) -> None:
         """Log task initialization."""
         pass
-    
+
     @abstractmethod
     def log_task_complete(
         self,
@@ -68,17 +68,16 @@ class BaseLogger(ABC):
     ) -> None:
         """Log task completion."""
         pass
-    
+
     @abstractmethod
     def read_logs(self, task_id: str) -> List[Dict[str, Any]]:
         """
         Read all logs for a task.
-        
+
         Args:
             task_id: Task identifier
-        
+
         Returns:
             List of log entries (chronological order)
         """
         pass
-

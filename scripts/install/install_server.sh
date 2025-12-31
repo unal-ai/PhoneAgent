@@ -796,7 +796,7 @@ show_completion_info() {
     echo -e "${YELLOW}📱 下一步 - 部署手机端:${NC}"
     echo -e "  1. 在手机上安装 Termux (从 F-Droid)"
     echo -e "  2. 在 Termux 中运行:"
-    echo -e "     ${GREEN}bash <(curl -s https://raw.githubusercontent.com/tmwgsicp/PhoneAgent/main/client/install_termux.sh)${NC}"
+    echo -e "     ${GREEN}bash <(curl -s https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh)${NC}"
     echo -e "  3. 输入配置:"
     echo -e "     - 服务器 IP: ${PUBLIC_IP}"
     echo -e "     - FRP Token: ${FRP_TOKEN}"

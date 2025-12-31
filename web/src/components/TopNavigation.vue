@@ -134,7 +134,7 @@ const handleCommand = (command) => {
 
 // GitHub 跳转
 const openGitHub = () => {
-  window.open('https://github.com/tmwgsicp/PhoneAgent', '_blank')
+  window.open('https://github.com/unal-ai/PhoneAgent', '_blank')
 }
 </script>
 

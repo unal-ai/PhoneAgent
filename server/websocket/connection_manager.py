@@ -6,6 +6,7 @@ WebSocket 连接管理器 - 用于 API 层的实时通信
 
 import logging
 from typing import List
+
 from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
@@ -13,27 +14,29 @@ logger = logging.getLogger(__name__)
 
 class ConnectionManager:
     """WebSocket连接管理器"""
-    
+
     def __init__(self):
         self.active_connections: List[WebSocket] = []
-    
+
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
         logger.info(f"WebSocket connected: {websocket.client}")
-    
+
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
         logger.info(f"WebSocket disconnected: {websocket.client}")
-    
+
     async def broadcast(self, message: dict):
         """广播消息给所有连接"""
         if not self.active_connections:
-            logger.debug(f"No active WebSocket connections to broadcast to")
+            logger.debug("No active WebSocket connections to broadcast to")
             return
-        
-        logger.info(f"📡 Broadcasting to {len(self.active_connections)} connections: type={message.get('type')}")
-        
+
+        logger.info(
+            f"📡 Broadcasting to {len(self.active_connections)} connections: type={message.get('type')}"
+        )
+
         for connection in self.active_connections:
             try:
                 await connection.send_json(message)
@@ -51,4 +54,3 @@ def get_connection_manager() -> ConnectionManager:
     if _connection_manager is None:
         _connection_manager = ConnectionManager()
     return _connection_manager
-

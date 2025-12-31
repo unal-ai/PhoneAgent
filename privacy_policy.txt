@@ -216,4 +216,4 @@ PhoneAgent可以执行几乎所有手机操作，以下操作具有高风险，�
 ---
 
 
-如有疑问，请通过GitHub Issues联系：https://github.com/tmwgsicp/PhoneAgent/issues
+如有疑问，请通过GitHub Issues联系：https://github.com/unal-ai/PhoneAgent/issues

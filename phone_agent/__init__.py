@@ -19,8 +19,8 @@ Core Components:
 __version__ = "1.0.0"
 
 # Core exports
-from phone_agent.agent import PhoneAgent, AgentConfig
-from phone_agent.model import ModelConfig, ModelClient
+from phone_agent.agent import AgentConfig, PhoneAgent
+from phone_agent.model import ModelClient, ModelConfig
 
 __all__ = [
     "PhoneAgent",

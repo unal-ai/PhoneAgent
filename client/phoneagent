@@ -1,0 +1,54 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# PhoneAgent CLI wrapper
+# Calls the full install_termux.sh script
+
+SCRIPT_DIR="$HOME/phoneagent"
+INSTALL_SCRIPT="$SCRIPT_DIR/install_termux.sh"
+
+case "${1:-help}" in
+    install)
+        # Download and run installer
+        mkdir -p "$SCRIPT_DIR"
+        curl -sL https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh -o "$INSTALL_SCRIPT" || \
+        wget -qO "$INSTALL_SCRIPT" https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh
+        chmod +x "$INSTALL_SCRIPT"
+        bash "$INSTALL_SCRIPT"
+        ;;
+    start)
+        bash ~/start_all.sh
+        ;;
+    stop)
+        bash ~/stop_all.sh
+        ;;
+    status)
+        bash ~/check_status.sh
+        ;;
+    update)
+        echo "Downloading latest scripts..."
+        curl -sL https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh -o "$INSTALL_SCRIPT" || \
+        wget -qO "$INSTALL_SCRIPT" https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh
+        echo "Updated. Run 'phoneagent install' to reinstall."
+        ;;
+    logs)
+        tail -f ~/frp/frpc.log ~/ws_client_simple.log
+        ;;
+    help|*)
+        cat << EOF
+PhoneAgent CLI
+
+Usage: phoneagent <command>
+
+Commands:
+  install   Run full installation wizard
+  start     Start all services (FRP + WebSocket)
+  stop      Stop all services
+  status    Check service status
+  update    Download latest scripts
+  logs      View logs (follow mode)
+  help      Show this help
+
+Quick install:
+  curl -sL https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/phoneagent | bash -s install
+EOF
+        ;;
+esac

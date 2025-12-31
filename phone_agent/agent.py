@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from phone_agent.actions import ActionHandler
-from phone_agent.actions.handler import do, finish, parse_action
+from phone_agent.actions.handler import finish, parse_action
 from phone_agent.adb import get_current_app, get_screenshot
 from phone_agent.config import SYSTEM_PROMPT
 from phone_agent.model import ModelClient, ModelConfig
@@ -85,9 +85,10 @@ class PhoneAgent:
 
         self._context: list[dict[str, Any]] = []
         self._step_count = 0
-        
+
         # 新增：步骤回调支持
         from phone_agent.kernel.callback import NoOpCallback
+
         self.step_callback = step_callback or NoOpCallback()
 
     def run(self, task: str) -> str:
@@ -142,12 +143,10 @@ class PhoneAgent:
         self._context = []
         self._step_count = 0
 
-    def _execute_step(
-        self, user_prompt: str | None = None, is_first: bool = False
-    ) -> StepResult:
+    def _execute_step(self, user_prompt: str | None = None, is_first: bool = False) -> StepResult:
         """Execute a single step of the agent loop."""
         self._step_count += 1
-        
+
         # Warning: 不在这里调用 on_step_start，因为此时还没有 thinking 和 action
         # on_step_start 会在 LLM 响应后、执行动作前调用
 
@@ -204,31 +203,28 @@ class PhoneAgent:
         # 🆕 通知步骤开始（此时已有 thinking 和 action）
         action_json = json.dumps(action, ensure_ascii=False) if action else "{}"
         # 将 thinking 和 action 组合传递
-        step_info = {
-            "thinking": response.thinking,
-            "action": action_json
-        }
-        self.step_callback.on_step_start(self._step_count, json.dumps(step_info, ensure_ascii=False))
-        
+        step_info = {"thinking": response.thinking, "action": action_json}
+        self.step_callback.on_step_start(
+            self._step_count, json.dumps(step_info, ensure_ascii=False)
+        )
+
         if self.agent_config.verbose:
             # 打印思考过程（使用logger替代print）
-            logger.debug("="*50)
+            logger.debug("=" * 50)
             logger.debug("💭 思考过程:")
-            logger.debug("-"*50)
+            logger.debug("-" * 50)
             logger.debug(response.thinking)
-            logger.debug("-"*50)
+            logger.debug("-" * 50)
             logger.debug("🎯 执行动作:")
             logger.debug(json.dumps(action, ensure_ascii=False, indent=2))
-            logger.debug("="*50)
+            logger.debug("=" * 50)
 
         # Remove image from context to save space
         self._context[-1] = MessageBuilder.remove_images_from_message(self._context[-1])
 
         # Execute action
         try:
-            result = self.action_handler.execute(
-                action, screenshot.width, screenshot.height
-            )
+            result = self.action_handler.execute(action, screenshot.width, screenshot.height)
         except Exception as e:
             if self.agent_config.verbose:
                 traceback.print_exc()
@@ -245,19 +241,19 @@ class PhoneAgent:
 
         # Check if finished
         finished = action.get("_metadata") == "finish" or result.should_finish
-        
+
         # 🆕 通知步骤完成
         self.step_callback.on_step_complete(
             self._step_count,
             result.success,
             thinking=response.thinking,
-            observation=result.message or action.get("message", "")
+            observation=result.message or action.get("message", ""),
         )
 
         if finished and self.agent_config.verbose:
-            logger.info("="*50)
+            logger.info("=" * 50)
             logger.info(f"任务完成: {result.message or action.get('message', '完成')}")
-            logger.info("="*50)
+            logger.info("=" * 50)
 
         return StepResult(
             success=result.success,

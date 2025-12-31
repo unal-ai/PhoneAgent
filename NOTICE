@@ -118,18 +118,8 @@ When using PhoneAgent, you must:
 4. If distributing modified versions under AGPL-3.0, include source code access
 5. If providing the software as a network service, provide source code access to users
 
-Commercial Licensing
---------------------
-
-Organizations that wish to use PhoneAgent without the AGPL-3.0
-obligations (such as disclosing source code modifications) may purchase a
-commercial license.
-
-For commercial licensing inquiries, please contact:
-- GitHub: https://github.com/tmwgsicp/PhoneAgent
-- Issues: https://github.com/tmwgsicp/PhoneAgent/issues
-
-Trademark Notice
+Warranty Disclaimer
+-------------------
 ----------------
 
 "PhoneAgent" is a trademark of the PhoneAgent Contributors. Use of this
@@ -144,12 +134,10 @@ This software is provided "AS IS" without warranty of any kind, express or
 implied. See the LICENSE file for the complete warranty disclaimer and
 liability limitation.
 
-Contact Information
--------------------
+Project Links
+-------------
 
-For questions regarding licensing or attribution:
-- Project: https://github.com/tmwgsicp/PhoneAgent
+- Project: https://github.com/unal-ai/PhoneAgent
 - Original Project: https://github.com/zai-org/Open-AutoGLM
 
-Last Updated: December 22, 2025
-
+Last Updated: December 2025

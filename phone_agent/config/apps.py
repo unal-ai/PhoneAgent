@@ -29,7 +29,6 @@ APP_PACKAGES: dict[str, str] = {
     # ========================================
     "设置": "com.android.settings",
     "Settings": "com.android.settings",
-    
     # ========================================
     # 社交通讯 (Social & Messaging)
     # ========================================
@@ -48,7 +47,6 @@ APP_PACKAGES: dict[str, str] = {
     "Microsoft Teams": "com.microsoft.teams",
     "Zoom": "us.zoom.videomeetings",
     "Skype": "com.skype.raider",
-    
     # ========================================
     # 电商购物 (E-commerce & Shopping)
     # ========================================
@@ -62,7 +60,6 @@ APP_PACKAGES: dict[str, str] = {
     "饿了么": "me.ele",
     "Amazon": "com.amazon.mShop.android.shopping",
     "eBay": "com.ebay.mobile",
-    
     # ========================================
     # 视频娱乐 (Video & Entertainment)
     # ========================================
@@ -84,7 +81,6 @@ APP_PACKAGES: dict[str, str] = {
     "酷狗音乐": "com.kugou.android",
     "喜马拉雅": "com.ximalaya.ting.android",
     "Spotify": "com.spotify.music",
-    
     # ========================================
     # 地图导航 (Maps & Navigation)
     # ========================================
@@ -92,7 +88,6 @@ APP_PACKAGES: dict[str, str] = {
     "百度地图": "com.baidu.BaiduMap",
     "腾讯地图": "com.tencent.map",
     "Google地图": "com.google.android.apps.maps",
-    
     # ========================================
     # 出行交通 (Travel & Transportation)
     # ========================================
@@ -104,21 +99,17 @@ APP_PACKAGES: dict[str, str] = {
     "携程旅行": "ctrip.android.view",
     "去哪儿": "com.Qunar",
     "飞猪": "com.taobao.trip",
-    
-    
     # ========================================
     # 阅读学习 (Reading & Knowledge)
     # ========================================
     "微信读书": "com.tencent.weread",
     "有道词典": "com.youdao.dict",
     "扇贝单词": "cn.com.langeasy.LangEasyLexis",
-    
     # ========================================
     # 办公工具 (Productivity & Office)
     # ========================================
     "WPS": "cn.wps.moffice_eng",
     "扫描全能王": "com.intsig.camscanner",
-    
     # ========================================
     # 浏览器 (Browsers)
     # ========================================
@@ -132,14 +123,12 @@ APP_PACKAGES: dict[str, str] = {
     "Firefox": "org.mozilla.firefox",
     "Opera": "com.opera.browser",
     "Brave": "com.brave.browser",
-    
     # ========================================
     # 工具类 (Tools & Utilities)
     # ========================================
     "Termux": "com.termux",
     "ToDesk": "youqu.android.todesk",
     "向日葵": "com.oray.sunlogin",
-    
     # ========================================
     # AI助手 (AI Assistants)
     # ========================================
@@ -147,7 +136,6 @@ APP_PACKAGES: dict[str, str] = {
     "通义千问": "com.aliyun.tongyi",
     "讯飞星火": "com.iflytek.spark",
     "智谱清言": "com.zhipuai.qingyan",
-    
     # ========================================
     # 云存储 (Cloud Storage)
     # ========================================
@@ -155,7 +143,6 @@ APP_PACKAGES: dict[str, str] = {
     "百度网盘": "com.baidu.netdisk",
     "腾讯微云": "com.tencent.weiyun",
     "115网盘": "com.115.mobile",
-    
     # ========================================
     # 金融银行 (Finance & Banking)
     # ========================================
@@ -170,7 +157,6 @@ APP_PACKAGES: dict[str, str] = {
     "中信银行": "com.citicbank.cibmb",
     "浦发银行": "com.spdb.mobilebank.per",
     "兴业银行": "com.yitong.mbank.psam",
-    
     # ========================================
     # 政务服务 (Government & Public Services)
     # ========================================
@@ -179,7 +165,6 @@ APP_PACKAGES: dict[str, str] = {
     "医保服务平台": "cn.hsa.app",
     "交管12123": "com.tmri.app.main",
     "国家政务服务": "cn.gov.zwfw",
-    
     # ========================================
     # 求职招聘 (Job & Career)
     # ========================================
@@ -188,14 +173,12 @@ APP_PACKAGES: dict[str, str] = {
     "前程无忧": "com.51job.android",
     "猎聘": "com.liepin.android",
     "LinkedIn": "com.linkedin.android",
-    
     # ========================================
     # 运营商 (Telecom)
     # ========================================
     "中国移动": "com.greenpoint.android.mc10086.activity",
     "中国联通": "com.sinovatech.unicom.ui",
     "中国电信": "com.ct.client",
-    
     # ========================================
     # 教育学习 (Education)
     # ========================================
@@ -207,7 +190,6 @@ APP_PACKAGES: dict[str, str] = {
     "Coursera": "org.coursera.android",
     "Duolingo": "com.duolingo",
     "Khan Academy": "org.khanacademy.android",
-    
     # ========================================
     # 拍照摄影 (Photography)
     # ========================================
@@ -216,7 +198,6 @@ APP_PACKAGES: dict[str, str] = {
     "Instagram": "com.instagram.android",
     "VSCO": "com.vsco.cam",
     "Snapseed": "com.niksoftware.snapseed",
-    
     # ========================================
     # 输入法 (Input Methods)
     # ========================================
@@ -225,7 +206,6 @@ APP_PACKAGES: dict[str, str] = {
     "搜狗输入法": "com.sohu.inputmethod.sogou",
     "QQ输入法": "com.tencent.qqinput",
     "Google拼音": "com.google.android.inputmethod.pinyin",
-    
     # ========================================
     # Google服务 (Google Services)
     # ========================================
@@ -237,7 +217,6 @@ APP_PACKAGES: dict[str, str] = {
     "Google Keep": "com.google.android.keep",
     "Google Drive": "com.google.android.apps.docs",
     "Google Play": "com.android.vending",
-    
     # ========================================
     # Microsoft服务 (Microsoft Services)
     # ========================================
@@ -247,7 +226,6 @@ APP_PACKAGES: dict[str, str] = {
     "Word": "com.microsoft.office.word",
     "Excel": "com.microsoft.office.excel",
     "PowerPoint": "com.microsoft.office.powerpoint",
-    
     # ========================================
     # 生活服务 (Life Services)
     # ========================================
@@ -261,7 +239,7 @@ APP_PACKAGES: dict[str, str] = {
 def get_package_name(app_name: str) -> str | None:
     """
     根据应用名称获取包名（静态查询）
-    
+
     注意: 此函数只查询静态字典，不支持别名、动态配置等高级功能。
     如需完整功能，请使用 AppConfigManager.find_app()
 
@@ -270,7 +248,7 @@ def get_package_name(app_name: str) -> str | None:
 
     Returns:
         Android包名，未找到返回None
-        
+
     示例:
         >>> get_package_name("微信")
         'com.tencent.mm'
@@ -281,30 +259,30 @@ def get_package_name(app_name: str) -> str | None:
 def get_allowed_apps() -> list[str]:
     """
     获取允许操作的App列表（优先从动态配置读取）
-    
+
     策略:
       1. 优先读取 data/app_config.json，返回启用的应用
       2. 如果配置文件不存在，返回所有静态应用（向后兼容）
-    
+
     Returns:
         允许操作的App名称列表
-        
+
     注意:
         此函数会读取文件，建议在启动时调用一次，或使用 AppConfigManager 缓存
     """
     import json
     import os
-    
+
     config_file = "data/app_config.json"
     if os.path.exists(config_file):
         try:
-            with open(config_file, 'r', encoding='utf-8') as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 # 只返回启用的App
-                return [app['display_name'] for app in data if app.get('enabled', False)]
+                return [app["display_name"] for app in data if app.get("enabled", False)]
         except Exception:
             pass
-    
+
     # 默认返回所有已知App（向后兼容）
     return list(APP_PACKAGES.keys())
 
@@ -312,7 +290,7 @@ def get_allowed_apps() -> list[str]:
 def get_app_name(package_name: str) -> str | None:
     """
     根据包名反查应用名称（静态查询）
-    
+
     注意: 如果一个包名有多个别名（如"哔哩哔哩"/"bilibili"/"B站"），
          只会返回字典中第一个匹配的名称
 
@@ -321,7 +299,7 @@ def get_app_name(package_name: str) -> str | None:
 
     Returns:
         应用显示名称，未找到返回None
-        
+
     示例:
         >>> get_app_name("com.tencent.mm")
         '微信'
@@ -335,10 +313,10 @@ def get_app_name(package_name: str) -> str | None:
 def list_supported_apps() -> list[str]:
     """
     获取所有支持的应用名称列表（静态）
-    
+
     Returns:
         所有内置应用的显示名称列表（100+个）
-        
+
     注意:
         此函数返回所有静态应用，不考虑启用状态。
         如需获取启用的应用，请使用 get_allowed_apps()

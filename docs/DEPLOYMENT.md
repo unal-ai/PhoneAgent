@@ -85,7 +85,7 @@ sudo ufw enable
 ssh root@YOUR_SERVER_IP
 
 # 克隆项目
-git clone https://github.com/tmwgsicp/PhoneAgent.git
+git clone https://github.com/unal-ai/PhoneAgent.git
 cd PhoneAgent
 
 # 配置 API Key
@@ -113,13 +113,13 @@ curl http://localhost:8000/health  # 应返回 {"status": "ok"}
 
 ```bash
 # 使用官方源（需要VPN）
-bash <(curl -s https://raw.githubusercontent.com/tmwgsicp/PhoneAgent/main/client/install_termux.sh)
+bash <(curl -s https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh)
 
 # 使用国内CDN（推荐）
-bash <(curl -s https://cdn.jsdelivr.net/gh/tmwgsicp/PhoneAgent@main/client/install_termux.sh)
+bash <(curl -s https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh)
 
 # 使用国内镜像
-bash <(curl -s https://mirror.ghproxy.com/https://raw.githubusercontent.com/tmwgsicp/PhoneAgent/main/client/install_termux.sh)
+bash <(curl -s https://mirror.ghproxy.com/https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh)
 ```
 
 **安装过程会提示输入**（4 个必填参数）：
@@ -294,7 +294,7 @@ https://YOUR_SERVER_IP:端口  # 安装完成后会显示
 ### 步骤1：服务端部署
 
 ```bash
-git clone https://github.com/tmwgsicp/PhoneAgent.git
+git clone https://github.com/unal-ai/PhoneAgent.git
 cd PhoneAgent
 cp env.example .env
 nano .env  # 填写 ZHIPU_API_KEY
@@ -307,13 +307,13 @@ sudo bash scripts/install/install_server.sh
 
 ```bash
 # 使用官方源（需要VPN）
-bash <(curl -s https://raw.githubusercontent.com/tmwgsicp/PhoneAgent/main/client/install_termux.sh)
+bash <(curl -s https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh)
 
 # 使用国内CDN（推荐）
-bash <(curl -s https://cdn.jsdelivr.net/gh/tmwgsicp/PhoneAgent@main/client/install_termux.sh)
+bash <(curl -s https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh)
 
 # 使用国内镜像
-bash <(curl -s https://mirror.ghproxy.com/https://raw.githubusercontent.com/tmwgsicp/PhoneAgent/main/client/install_termux.sh)
+bash <(curl -s https://mirror.ghproxy.com/https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh)
 ```
 
 **必填参数**：
@@ -766,4 +766,4 @@ TEMPERATURE=0.7                    # 模型温度（0-1，越高越随机）
 
 ---
 
-**需要帮助？** 提交 [Issue](https://github.com/tmwgsicp/PhoneAgent/issues)
+**需要帮助？** 提交 [Issue](https://github.com/unal-ai/PhoneAgent/issues)

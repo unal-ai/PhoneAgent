@@ -54,10 +54,10 @@ dev = [
 anthropic = ["anthropic>=0.18.0"]
 
 [project.urls]
-Homepage = "https://github.com/tmwgsicp/PhoneAgent"
-Documentation = "https://github.com/tmwgsicp/PhoneAgent/docs"
-Repository = "https://github.com/tmwgsicp/PhoneAgent"
-Issues = "https://github.com/tmwgsicp/PhoneAgent/issues"
+Homepage = "https://github.com/unal-ai/PhoneAgent"
+Documentation = "https://github.com/unal-ai/PhoneAgent/docs"
+Repository = "https://github.com/unal-ai/PhoneAgent"
+Issues = "https://github.com/unal-ai/PhoneAgent/issues"
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]

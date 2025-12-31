@@ -1,12 +1,11 @@
 <div align="center">
 
-# 📱 PhoneAgent
+# PhoneAgent
 
 ### Complete AI Phone Assistant Solution, Ready to Use
 
 **Web Interface + Backend + Terminal | One-Click Deploy | Multi-Device | Live Preview**
 
-[![GitHub stars](https://img.shields.io/github/stars/tmwgsicp/PhoneAgent?style=for-the-badge&logo=github)](https://github.com/tmwgsicp/PhoneAgent/stargazers)
 [![License](https://img.shields.io/badge/License-AGPL%203.0-blue?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org/)
@@ -19,7 +18,7 @@
 
 ---
 
-## ✨ Why PhoneAgent?
+## Why PhoneAgent?
 
 > **Built on Open-AutoGLM, completing the last mile of engineering**
 
@@ -37,9 +36,9 @@
 
 ---
 
-## 🎯 Project Features
+## Project Features
 
-### 1. Smart Execution Engine + Dual Mode Support ⭐
+### 1. Smart Execution Engine + Dual Mode Support
 
 PhoneAgent uses advanced visual understanding technology with two execution modes:
 
@@ -92,7 +91,7 @@ PhoneAgent uses advanced visual understanding technology with two execution mode
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 PhoneAgent uses **Dual WebSocket Service** architecture:
 
@@ -122,7 +121,7 @@ PhoneAgent uses **Dual WebSocket Service** architecture:
 
 ---
 
-## 📸 Project Showcase
+## Project Showcase
 
 ### Web Management Interface
 
@@ -146,49 +145,17 @@ PhoneAgent uses **Dual WebSocket Service** architecture:
 <p><em>Performance Diagnostics - System Resources & Task Execution Monitoring</em></p>
 </div>
 
-### Android Voice Assistant App
-
-> 🚧 **In Development** - iFlytek Voice Wake-up + Zhipu AI Dialogue
-
-<div align="center">
-<table>
-  <tr>
-    <td><img src="assets/images/app-首页.jpg" alt="App Home" width="250"></td>
-    <td><img src="assets/images/app-设置1.jpg" alt="App Settings 1" width="250"></td>
-    <td><img src="assets/images/app-设置2.jpg" alt="App Settings 2" width="250"></td>
-    <td><img src="assets/images/app-设置3.jpg" alt="App Settings 3" width="250"></td>
-  </tr>
-  <tr>
-    <td align="center"><em>BT-7274 Cockpit Style</em></td>
-    <td align="center"><em>Model Configuration</em></td>
-    <td align="center"><em>Voice Configuration</em></td>
-    <td align="center"><em>Language Configuration</em></td>
-  </tr>
-</table>
-</div>
-
-**Positioning**: Optional voice interaction interface, works with Termux
-
-**Features**:
-- 🎙️ Voice Wake-up - "Hello BT" to activate
-- 💬 Streaming Recognition - Real-time speech-to-text
-- 🤖 AI Dialogue - Zhipu AI large model conversation
-- 🔊 TTS Playback - Voice feedback
-- 📱 Task Execution - Automatic phone operations
-
-**Design Inspiration**: Titanfall 2 BT-7274 Mech Cockpit
-
 ---
 
-## 💡 Use Cases
+## Use Cases
 
-### 🎯 Personal: Hands-Free
+### Personal
 
-- 🚗 **Driving** - Voice messaging, navigation, music
-- 🏃 **Exercise** - Control music, check messages
-- 💼 **Work** - Set reminders, quick replies
+- **Driving** - Voice messaging, navigation, music
+- **Exercise** - Control music, check messages
+- **Work** - Set reminders, quick replies
 
-### 🏢 Enterprise: Batch Automation
+### Enterprise
 
 - **App Automated Testing** - 100 devices in parallel, 10 minutes = 2 days work
 - **Content Batch Operations** - Multi-account auto-posting, anti-detection mechanism
@@ -196,7 +163,7 @@ PhoneAgent uses **Dual WebSocket Service** architecture:
 
 ---
 
-## ✅ Core Features
+## Core Features
 
 ### Tasks & Interaction
 
@@ -228,7 +195,7 @@ PhoneAgent uses **Dual WebSocket Service** architecture:
 ---
 
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Requirements
 
@@ -250,7 +217,7 @@ PhoneAgent uses **Dual WebSocket Service** architecture:
 #### 1️⃣ Server
 
 ```bash
-git clone https://github.com/tmwgsicp/PhoneAgent.git
+git clone https://github.com/unal-ai/PhoneAgent.git
 cd PhoneAgent
 
 # Configure API key
@@ -264,7 +231,7 @@ sudo bash scripts/install/install_server.sh
 #### 2️⃣ Client (Termux)
 
 ```bash
-bash <(curl -s https://cdn.jsdelivr.net/gh/tmwgsicp/PhoneAgent@main/client/install_termux.sh)
+bash <(curl -s https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh)
 ```
 
 **Installation requires 4 parameters**:
@@ -337,7 +304,7 @@ npm install && npm run dev -- --host 0.0.0.0
 # Access: http://SERVER_IP:5173
 ```
 
-**Complete Mode (Domain+SSL, voice support)**: See [Deployment Guide](DEPLOYMENT.md)
+**Complete Mode (Domain+SSL, voice support)**: See [Deployment Guide](docs/DEPLOYMENT.md)
 
 ### Get Zhipu AI API Key
 
@@ -345,16 +312,16 @@ Visit [Zhipu AI Platform](https://open.bigmodel.cn/) → Register → Create API
 
 ---
 
-## 📖 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
-| **[📘 Deployment Guide](DEPLOYMENT.md)** | Complete deployment steps and configuration |
-| **[📊 Project Assessment](PROJECT_ASSESSMENT.md)** | Project completion assessment and technical analysis |
-| **[🗺️ Implementation Roadmap](ROADMAP.md)** | Upgrade guide from prototype to production |
-| **[🔍 Comparison Analysis](COMPARISON_MIDSCENE.md)** | Comparison with Midscene.js and key takeaways |
-| **[🏠 Self-Hosted Model](SELF_HOSTED_MODEL.md)** | Local AutoGLM model deployment guide |
-| **[📱 Multi-Device Management](MULTI_DEVICE_MANAGEMENT.md)** | Multi-device centralized management and cluster deployment |
+| **[Deployment Guide](docs/DEPLOYMENT.md)** | Complete deployment steps and configuration |
+| **[Project Assessment](docs/PROJECT_ASSESSMENT.md)** | Project completion assessment and technical analysis |
+| **[Implementation Roadmap](docs/ROADMAP.md)** | Upgrade guide from prototype to production |
+| **[Comparison Analysis](docs/COMPARISON_MIDSCENE.md)** | Comparison with Midscene.js and key takeaways |
+| **[Self-Hosted Model](docs/SELF_HOSTED_MODEL.md)** | Local AutoGLM model deployment guide |
+| **[Multi-Device Management](docs/MULTI_DEVICE_MANAGEMENT.md)** | Multi-device centralized management and cluster deployment |
 
 **Two Deployment Modes**:
 - **Simple Mode**: IP direct, 10 minutes, suitable for quick experience and testing
@@ -362,7 +329,7 @@ Visit [Zhipu AI Platform](https://open.bigmodel.cn/) → Register → Create API
 
 ---
 
-## 🤖 AI Model Support
+## AI Model Support
 
 ### Default Models (Zhipu AI)
 
@@ -408,7 +375,7 @@ See configuration guide (Environment Variables Configuration section)
 
 ---
 
-## 📦 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -420,7 +387,7 @@ See configuration guide (Environment Variables Configuration section)
 
 ---
 
-## 📜 License
+## License
 
 Based on [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM) (Apache 2.0) with deep refactoring, open-sourced under **AGPL 3.0**.
 
@@ -431,12 +398,10 @@ Based on [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM) (Apache 2.0) wi
 | ✅ Personal learning and research | Free to use |
 | ✅ Internal enterprise use | Free to use |
 | ✅ Modify code for internal use | Free to use |
-| ⚠️ Provide modified services externally | Requires open source or commercial license |
-| ⚠️ Integrate into product for sale | Requires open source or commercial license |
+| ⚠️ Provide modified services externally | Must open source modified code |
+| ⚠️ Integrate into product for sale | Must open source modified code |
 
-**AGPL 3.0 Core**: When modifying code and providing services over a network, must disclose source code.
-
-**Commercial Licensing**: For closed-source use, please contact for commercial licensing discussion. See [LICENSE](LICENSE) file for details.
+**AGPL 3.0 Core**: When modifying code and providing services over a network, must disclose source code. See [LICENSE](LICENSE) file for details.
 
 **Third-Party Licenses**: This project uses code from multiple open-source projects, see [LICENSES_THIRD_PARTY.md](LICENSES_THIRD_PARTY.md)
 
@@ -474,39 +439,13 @@ For details, see: [privacy_policy.txt](privacy_policy.txt)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-### About Pull Requests
-
-Due to limited personal bandwidth, currently **not accepting PRs**, but very welcome to:
-
-- 🐛 **Submit Issues** - Report bugs, suggest features
-- 💡 **Fork Project** - Freely modify and customize
-- 📖 **Improvement Suggestions** - Propose documentation and feature improvements via Issues
-- ⭐ **Star Support** - Give the project a Star, let more people see it
-
-### Contact
-
-<table>
-  <tr>
-    <td align="center">
-      <img src="assets/qrcode/微信二维码.jpg" width="200"><br>
-      <b>Personal WeChat</b><br>
-      <em>Technical Discussion · Business Cooperation</em>
-    </td>
-    <td align="center">
-      <img src="assets/qrcode/赞赏码.jpg" width="200"><br>
-      <b>Appreciation Support</b><br>
-      <em>Open Source is Hard · Thanks for Support</em>
-    </td>
-  </tr>
-</table>
-
-- **GitHub Issues**: [Submit Issue](https://github.com/tmwgsicp/PhoneAgent/issues)
+Welcome to submit issues and suggestions via GitHub Issues.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 This project is developed based on the following open-source projects, with sincere thanks.
 
@@ -532,16 +471,4 @@ The following open-source projects provide technical support for this project:
 - **[Element Plus](https://element-plus.org/)** - UI component library
 - **[Termux](https://termux.dev/)** - Android terminal
 
-Thanks to all open-source contributors! 🙏
-
----
-
-<div align="center">
-
-**🌟 If you find this project useful, please give it a Star! 🌟**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=tmwgsicp/PhoneAgent&type=Date)](https://star-history.com/#tmwgsicp/PhoneAgent&Date)
-
-Made with ❤️ by [tmwgsicp](https://github.com/tmwgsicp)
-
-</div>
+Thanks to all open-source contributors.

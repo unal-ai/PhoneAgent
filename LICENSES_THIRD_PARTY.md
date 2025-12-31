@@ -236,8 +236,8 @@ from yadb import ADB
 
 如有许可证相关问题，请联系：
 
-- 项目主页: https://github.com/tmwgsicp/PhoneAgent
-- Issue 追踪: https://github.com/tmwgsicp/PhoneAgent/issues
+- 项目主页: https://github.com/unal-ai/PhoneAgent
+- Issue 追踪: https://github.com/unal-ai/PhoneAgent/issues
 
 ---
 

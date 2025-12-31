@@ -1,12 +1,11 @@
 <div align="center">
 
-# 📱 PhoneAgent
+# PhoneAgent
 
 ### 开箱即用的 AI 手机助手完整解决方案
 
 **Web 交互界面 + 后端 + 终端 | 一键部署 | 多设备管理 | 实时预览**
 
-[![GitHub stars](https://img.shields.io/github/stars/tmwgsicp/PhoneAgent?style=for-the-badge&logo=github)](https://github.com/tmwgsicp/PhoneAgent/stargazers)
 [![License](https://img.shields.io/badge/License-AGPL%203.0-blue?style=for-the-badge)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org/)
@@ -19,7 +18,7 @@
 
 ---
 
-## ✨ 为什么选择 PhoneAgent？
+## 为什么选择 PhoneAgent？
 
 > **基于 Open-AutoGLM 深度重构，补齐工程化的最后一公里**
 
@@ -37,9 +36,9 @@
 
 ---
 
-## 🎯 项目特色
+## 项目特色
 
-### 1. 智能执行引擎 + 双模式支持 ⭐
+### 1. 智能执行引擎 + 双模式支持
 
 PhoneAgent 采用先进的视觉理解技术，支持两种执行模式：
 
@@ -92,7 +91,7 @@ PhoneAgent 采用先进的视觉理解技术，支持两种执行模式：
 
 ---
 
-## 🏗️ 系统架构
+## 系统架构
 
 PhoneAgent 采用**双 WebSocket 服务**架构：
 
@@ -122,7 +121,7 @@ PhoneAgent 采用**双 WebSocket 服务**架构：
 
 ---
 
-## 📸 项目展示
+## 项目展示
 
 ### Web 管理界面
 
@@ -146,49 +145,17 @@ PhoneAgent 采用**双 WebSocket 服务**架构：
 <p><em>性能诊断 - 系统资源与任务执行监控</em></p>
 </div>
 
-### Android 语音助手 App
-
-> 🚧 **开发中** - 基于科大讯飞语音唤醒 + 智谱AI对话
-
-<div align="center">
-<table>
-  <tr>
-    <td><img src="assets/images/app-首页.jpg" alt="App首页" width="250"></td>
-    <td><img src="assets/images/app-设置1.jpg" alt="App设置1" width="250"></td>
-    <td><img src="assets/images/app-设置2.jpg" alt="App设置2" width="250"></td>
-    <td><img src="assets/images/app-设置3.jpg" alt="App设置3" width="250"></td>
-  </tr>
-  <tr>
-    <td align="center"><em>BT-7274 驾驶舱风格</em></td>
-    <td align="center"><em>模型配置</em></td>
-    <td align="center"><em>语音配置</em></td>
-    <td align="center"><em>语言配置</em></td>
-  </tr>
-</table>
-</div>
-
-**定位**：可选的语音交互入口，配合 Termux 使用
-
-**功能**：
-- 🎙️ 语音唤醒 - "你好BT"唤醒系统
-- 💬 流式识别 - 实时语音转文字
-- 🤖 AI 对话 - 智谱AI大模型对话
-- 🔊 TTS 播报 - 语音反馈
-- 📱 任务执行 - 自动执行手机操作
-
-**设计灵感**：泰坦陨落2 BT-7274 机甲驾驶舱
-
 ---
 
-## 💡 应用场景
+## 应用场景
 
-### 🎯 个人场景：解放双手
+### 个人场景
 
-- 🚗 **开车时** - 语音发消息、导航、播放音乐
-- 🏃 **运动时** - 控制音乐、查看消息
-- 💼 **工作时** - 设置提醒、快速回复
+- **开车时** - 语音发消息、导航、播放音乐
+- **运动时** - 控制音乐、查看消息
+- **工作时** - 设置提醒、快速回复
 
-### 🏢 企业场景：批量自动化
+### 企业场景
 
 - **App 自动化测试** - 100 台设备并行，10 分钟完成 2 天工作量
 - **内容批量运营** - 多账号自动发布，防风控机制
@@ -196,7 +163,7 @@ PhoneAgent 采用**双 WebSocket 服务**架构：
 
 ---
 
-## ✅ 核心功能
+## 核心功能
 
 ### 任务与交互
 
@@ -227,7 +194,7 @@ PhoneAgent 采用**双 WebSocket 服务**架构：
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 系统要求
 
@@ -249,7 +216,7 @@ PhoneAgent 采用**双 WebSocket 服务**架构：
 #### 1️⃣ 服务端
 
 ```bash
-git clone https://github.com/tmwgsicp/PhoneAgent.git
+git clone https://github.com/unal-ai/PhoneAgent.git
 cd PhoneAgent
 
 # 配置 API 密钥
@@ -263,7 +230,7 @@ sudo bash scripts/install/install_server.sh
 #### 2️⃣ 客户端（Termux）
 
 ```bash
-bash <(curl -s https://cdn.jsdelivr.net/gh/tmwgsicp/PhoneAgent@main/client/install_termux.sh)
+bash <(curl -s https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh)
 ```
 
 **安装过程需要输入 4 个参数**：
@@ -336,7 +303,7 @@ npm install && npm run dev -- --host 0.0.0.0
 # 访问：http://SERVER_IP:5173
 ```
 
-**完整模式（域名+SSL，支持语音）**：见 [部署文档](DEPLOYMENT.md)
+**完整模式（域名+SSL，支持语音）**：见 [部署文档](docs/DEPLOYMENT.md)
 
 ### 获取智谱AI密钥
 
@@ -344,16 +311,16 @@ npm install && npm run dev -- --host 0.0.0.0
 
 ---
 
-## 📖 文档
+## 文档
 
 | 文档 | 说明 |
 |------|------|
-| **[📘 部署指南](DEPLOYMENT.md)** | 完整的部署步骤和配置说明 |
-| **[📊 项目评估](PROJECT_ASSESSMENT.md)** | 项目完成度评估与技术分析 |
-| **[🗺️ 实现路线](ROADMAP.md)** | 从原型到生产的升级指南 |
-| **[🔍 对比分析](COMPARISON_MIDSCENE.md)** | 与 Midscene.js 的对比及可借鉴亮点 |
-| **[🏠 自托管模型](SELF_HOSTED_MODEL.md)** | 本地部署 AutoGLM 模型配置指南 |
-| **[📱 多设备管理](MULTI_DEVICE_MANAGEMENT.md)** | 多设备集中管理与集群部署 |
+| **[部署指南](docs/DEPLOYMENT.md)** | 完整的部署步骤和配置说明 |
+| **[项目评估](docs/PROJECT_ASSESSMENT.md)** | 项目完成度评估与技术分析 |
+| **[实现路线](docs/ROADMAP.md)** | 从原型到生产的升级指南 |
+| **[对比分析](docs/COMPARISON_MIDSCENE.md)** | 与 Midscene.js 的对比及可借鉴亮点 |
+| **[自托管模型](docs/SELF_HOSTED_MODEL.md)** | 本地部署 AutoGLM 模型配置指南 |
+| **[多设备管理](docs/MULTI_DEVICE_MANAGEMENT.md)** | 多设备集中管理与集群部署 |
 
 **两种部署模式**：
 - **简单模式**：IP 直连，10分钟完成，适合快速体验和测试
@@ -361,7 +328,7 @@ npm install && npm run dev -- --host 0.0.0.0
 
 ---
 
-## 🤖 AI 模型支持
+## AI 模型支持
 
 ### 默认模型（智谱 AI）
 
@@ -407,7 +374,7 @@ CUSTOM_MODEL_NAME=qwen-vl-plus
 
 ---
 
-## 📦 技术栈
+## 技术栈
 
 | 层级 | 技术 |
 |------|------|
@@ -419,7 +386,7 @@ CUSTOM_MODEL_NAME=qwen-vl-plus
 
 ---
 
-## 📜 开源协议
+## 开源协议
 
 本项目基于 [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM)（Apache 2.0）深度重构，采用 **AGPL 3.0** 协议开源。
 
@@ -430,12 +397,10 @@ CUSTOM_MODEL_NAME=qwen-vl-plus
 | ✅ 个人学习和研究 | 免费使用 |
 | ✅ 企业内部使用 | 免费使用 |
 | ✅ 修改代码内部使用 | 免费使用 |
-| ⚠️ 修改后对外提供服务 | 需开源或商业授权 |
-| ⚠️ 集成到产品中销售 | 需开源或商业授权 |
+| ⚠️ 修改后对外提供服务 | 需开源修改部分代码 |
+| ⚠️ 集成到产品中销售 | 需开源修改部分代码 |
 
-**AGPL 3.0 核心**：修改代码并通过网络提供服务时，必须公开源代码。
-
-**商业授权**：如需闭源使用，请联系洽谈商业授权。详见 [LICENSE](LICENSE) 文件。
+**AGPL 3.0 核心**：修改代码并通过网络提供服务时，必须公开源代码。详见 [LICENSE](LICENSE) 文件。
 
 **第三方许可证**：本项目使用了多个开源项目的代码，详见 [LICENSES_THIRD_PARTY.md](LICENSES_THIRD_PARTY.md)
 
@@ -473,39 +438,13 @@ PhoneAgent 可以控制你的 Android 设备执行自动化操作，使用前请
 
 ---
 
-## 🤝 参与贡献
+## 参与贡献
 
-### 关于 Pull Request
-
-由于个人精力有限，目前**暂不接受 PR**，但非常欢迎：
-
-- 🐛 **提交 Issue** - 报告 Bug、提出功能建议
-- 💡 **Fork 项目** - 自由修改和定制
-- 📖 **改进建议** - 通过 Issue 提出文档和功能改进
-- ⭐ **Star 支持** - 给项目点 Star，让更多人看到
-
-### 联系方式
-
-<table>
-  <tr>
-    <td align="center">
-      <img src="assets/qrcode/微信二维码.jpg" width="200"><br>
-      <b>个人微信</b><br>
-      <em>技术交流 · 商务合作</em>
-    </td>
-    <td align="center">
-      <img src="assets/qrcode/赞赏码.jpg" width="200"><br>
-      <b>赞赏支持</b><br>
-      <em>开源不易 · 感谢支持</em>
-    </td>
-  </tr>
-</table>
-
-- **GitHub Issues**: [提交问题](https://github.com/tmwgsicp/PhoneAgent/issues)
+欢迎通过 GitHub Issues 提交问题和建议。
 
 ---
 
-## 🙏 致谢
+## 致谢
 
 本项目基于以下开源项目开发，在此表示诚挚的感谢。
 
@@ -531,16 +470,4 @@ PhoneAgent 可以控制你的 Android 设备执行自动化操作，使用前请
 - **[Element Plus](https://element-plus.org/)** - UI 组件库
 - **[Termux](https://termux.dev/)** - Android 终端
 
-感谢所有开源贡献者！🙏
-
----
-
-<div align="center">
-
-**🌟 如果觉得项目有用，请给个 Star 支持一下！🌟**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=tmwgsicp/PhoneAgent&type=Date)](https://star-history.com/#tmwgsicp/PhoneAgent&Date)
-
-Made with ❤️ by [tmwgsicp](https://github.com/tmwgsicp)
-
-</div>
+感谢所有开源贡献者。

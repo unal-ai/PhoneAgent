@@ -172,4 +172,3 @@ CORRECT FORMAT (Planning mode JSON):
 
 Example of CORRECT response format:
 {{"instruction": "...", "complexity": "simple", "steps": [...]}}"""
-

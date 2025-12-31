@@ -2,7 +2,6 @@
 
 import base64
 import subprocess
-from typing import Optional
 
 
 def type_text(text: str, device_id: str | None = None) -> None:
@@ -97,9 +96,7 @@ def restore_keyboard(ime: str, device_id: str | None = None) -> None:
     """
     adb_prefix = _get_adb_prefix(device_id)
 
-    subprocess.run(
-        adb_prefix + ["shell", "ime", "set", ime], capture_output=True, text=True
-    )
+    subprocess.run(adb_prefix + ["shell", "ime", "set", ime], capture_output=True, text=True)
 
 
 def _get_adb_prefix(device_id: str | None) -> list:

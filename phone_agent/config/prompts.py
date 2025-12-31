@@ -16,7 +16,7 @@ from datetime import datetime
 PROMPT_VERSION = "v2.0.0"
 PROMPT_CHANGELOG = {
     "v2.0.0": "添加 XML Kernel 支持，统一提示词管理，增强应用名支持",
-    "v1.0.0": "初始版本 - Vision Kernel 提示词"
+    "v1.0.0": "初始版本 - Vision Kernel 提示词",
 }
 
 # ============================================

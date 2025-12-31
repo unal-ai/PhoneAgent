@@ -5,7 +5,6 @@ import subprocess
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -217,9 +216,7 @@ class ADBConnection:
 
         return any(d.device_id == device_id and d.status == "device" for d in devices)
 
-    def enable_tcpip(
-        self, port: int = 5555, device_id: str | None = None
-    ) -> tuple[bool, str]:
+    def enable_tcpip(self, port: int = 5555, device_id: str | None = None) -> tuple[bool, str]:
         """
         Enable TCP/IP debugging on a USB-connected device.
 
@@ -311,16 +308,12 @@ class ADBConnection:
         """
         try:
             # Kill server
-            subprocess.run(
-                [self.adb_path, "kill-server"], capture_output=True, timeout=5
-            )
+            subprocess.run([self.adb_path, "kill-server"], capture_output=True, timeout=5)
 
             time.sleep(1)
 
             # Start server
-            subprocess.run(
-                [self.adb_path, "start-server"], capture_output=True, timeout=5
-            )
+            subprocess.run([self.adb_path, "start-server"], capture_output=True, timeout=5)
 
             return True, "ADB server restarted"
 

@@ -7,16 +7,15 @@ Version: 1.0.0 (Phase 1)
 Author: PhoneAgent Team
 """
 
-from .task_preprocessor import TaskPreprocessor, ExecutionPlan, TaskType, ExecutorType
 from .rule_engine import RuleEngineExecutor
+from .task_preprocessor import ExecutionPlan, ExecutorType, TaskPreprocessor, TaskType
 
 __all__ = [
-    'TaskPreprocessor',
-    'ExecutionPlan',
-    'TaskType',
-    'ExecutorType',
-    'RuleEngineExecutor',
+    "TaskPreprocessor",
+    "ExecutionPlan",
+    "TaskType",
+    "ExecutorType",
+    "RuleEngineExecutor",
 ]
 
-__version__ = '1.0.0'
-
+__version__ = "1.0.0"

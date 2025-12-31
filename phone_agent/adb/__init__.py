@@ -4,9 +4,9 @@ from phone_agent.adb.anti_detection import (
     AntiDetection,
     get_anti_detection,
     human_delay,
+    randomize_point,
     reading_delay,
     thinking_delay,
-    randomize_point,
 )
 from phone_agent.adb.connection import (
     ADBConnection,
@@ -31,12 +31,12 @@ from phone_agent.adb.input import (
     restore_keyboard,
     type_text,
 )
-from phone_agent.adb.smart_input import (
-    smart_type_text,
-    reset_input_method,
-    get_input_method,
-)
 from phone_agent.adb.screenshot import get_screenshot
+from phone_agent.adb.smart_input import (
+    get_input_method,
+    reset_input_method,
+    smart_type_text,
+)
 
 __all__ = [
     # Screenshot

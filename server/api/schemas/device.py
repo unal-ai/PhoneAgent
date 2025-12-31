@@ -3,11 +3,13 @@
 """
 
 from typing import Optional
+
 from pydantic import BaseModel
 
 
 class DeviceResponse(BaseModel):
     """设备响应"""
+
     device_id: str
     device_name: str
     frp_port: int
@@ -26,4 +28,3 @@ class DeviceResponse(BaseModel):
     success_rate: float
     registered_at: str
     last_active: str
-

@@ -12,19 +12,19 @@
 # 🚀 快速安装（国内推荐，自动选择最快镜像）:
 #
 #   【方式1 - jsDelivr CDN（推荐）】
-#     bash <(curl -s https://cdn.jsdelivr.net/gh/tmwgsicp/PhoneAgent@main/client/install_termux.sh)
+#     bash <(curl -s https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh)
 #
 #   【方式2 - ghproxy 镜像】
-#     bash <(curl -s https://mirror.ghproxy.com/https://raw.githubusercontent.com/tmwgsicp/PhoneAgent/main/client/install_termux.sh)
+#     bash <(curl -s https://mirror.ghproxy.com/https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh)
 #
 #   【方式3 - gh.ddlc.top 镜像】
-#     bash <(curl -s https://gh.ddlc.top/https://raw.githubusercontent.com/tmwgsicp/PhoneAgent/main/client/install_termux.sh)
+#     bash <(curl -s https://gh.ddlc.top/https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh)
 #
 #   【方式4 - 官方GitHub（需要VPN）】
-#     bash <(curl -s https://raw.githubusercontent.com/tmwgsicp/PhoneAgent/main/client/install_termux.sh)
+#     bash <(curl -s https://raw.githubusercontent.com/unal-ai/PhoneAgent/main/client/install_termux.sh)
 #
 # 💡 wget 方式（如果 curl 不可用）:
-#     wget -O- https://cdn.jsdelivr.net/gh/tmwgsicp/PhoneAgent@main/client/install_termux.sh | bash
+#     wget -O- https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh | bash
 #
 # 🌐 如果有云服务器，可以更快：
 #     # 1. 在云服务器下载脚本

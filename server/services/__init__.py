@@ -2,8 +2,8 @@
 PhoneAgent 业务服务模块
 """
 
-from .device_pool import DevicePool, Device, get_device_pool
 from .agent_service import AgentService, get_agent_service
+from .device_pool import Device, DevicePool, get_device_pool
 
 __all__ = [
     "DevicePool",
@@ -12,4 +12,3 @@ __all__ = [
     "get_device_pool",
     "get_agent_service",
 ]
-

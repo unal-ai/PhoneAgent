@@ -57,6 +57,7 @@ let lastCountTime = Date.now()
 let reconnectTimer = null
 let initSegment = null
 let initScanComplete = false
+let initScanAttempts = 0
 const NAL_SPS = 7
 const NAL_PPS = 8
 const NAL_IDR = 5
@@ -67,7 +68,7 @@ const NAL_TYPE_MASK = 0x1f
 function isStartCode(data, index) {
   const fourByte = index + 3 < data.length &&
     data[index] === BYTE_ZERO && data[index + 1] === BYTE_ZERO && data[index + 2] === BYTE_ZERO && data[index + 3] === START_CODE
-  const threeByte = !fourByte && index + 2 < data.length &&
+  const threeByte = index + 2 < data.length &&
     data[index] === BYTE_ZERO && data[index + 1] === BYTE_ZERO && data[index + 2] === START_CODE
   return {
     matched: fourByte || threeByte,
@@ -79,38 +80,53 @@ function extractInitSegment(data) {
   let sps = null
   let pps = null
   let idr = null
-  const startPositions = []
-  let i = 0
-  while (i < data.length) {
+  let lastStart = -1
+  let lastLength = 0
+  
+  for (let i = 0; i < data.length; i++) {
     const start = isStartCode(data, i)
-    if (start.matched) {
-      startPositions.push({ index: i, length: start.length })
-      i += start.length
-    } else {
-      i++
+    if (!start.matched) continue
+    
+    if (lastStart >= 0) {
+      const offset = lastStart + lastLength
+      if (offset < data.length) {
+        const nalType = data[offset] & NAL_TYPE_MASK
+        const nalSlice = data.slice(lastStart, i)
+        if (nalType === NAL_SPS) sps = nalSlice
+        if (nalType === NAL_PPS) pps = nalSlice
+        if (nalType === NAL_IDR) idr = nalSlice
+        if (sps && pps && idr) {
+          const combined = new Uint8Array(sps.length + pps.length + idr.length)
+          combined.set(sps, 0)
+          combined.set(pps, sps.length)
+          combined.set(idr, sps.length + pps.length)
+          return combined
+        }
+      }
+    }
+    
+    lastStart = i
+    lastLength = start.length
+    i += start.length - 1
+  }
+  
+  if (lastStart >= 0) {
+    const offset = lastStart + lastLength
+    if (offset < data.length) {
+      const nalType = data[offset] & NAL_TYPE_MASK
+      const nalSlice = data.slice(lastStart)
+      if (nalType === NAL_SPS) sps = nalSlice
+      if (nalType === NAL_PPS) pps = nalSlice
+      if (nalType === NAL_IDR) idr = nalSlice
     }
   }
   
-  for (let idx = 0; idx < startPositions.length; idx++) {
-    const { index, length } = startPositions[idx]
-    const offset = index + length
-    if (offset >= data.length) continue
-    
-    const nalType = data[offset] & NAL_TYPE_MASK
-    const nextStart = idx + 1 < startPositions.length ? startPositions[idx + 1].index : data.length
-    const nalSlice = data.slice(index, nextStart)
-    
-    if (nalType === NAL_SPS) sps = nalSlice
-    if (nalType === NAL_PPS) pps = nalSlice
-    if (nalType === NAL_IDR) idr = nalSlice
-    
-    if (sps && pps && idr) {
-      const combined = new Uint8Array(sps.length + pps.length + idr.length)
-      combined.set(sps, 0)
-      combined.set(pps, sps.length)
-      combined.set(idr, sps.length + pps.length)
-      return combined
-    }
+  if (sps && pps && idr) {
+    const combined = new Uint8Array(sps.length + pps.length + idr.length)
+    combined.set(sps, 0)
+    combined.set(pps, sps.length)
+    combined.set(idr, sps.length + pps.length)
+    return combined
   }
   
   return null
@@ -237,10 +253,13 @@ function connect() {
       // H.264 NAL 单元数据
       if (jmuxerInstance) {
         const videoData = new Uint8Array(event.data)
-        if (!initSegment && !initScanComplete) {
+        if (!initSegment && initScanAttempts < 10 && !initScanComplete) {
+          initScanAttempts++
           const extracted = extractInitSegment(videoData)
           if (extracted) {
             initSegment = extracted
+            initScanComplete = true
+          } else if (initScanAttempts >= 10) {
             initScanComplete = true
           }
         }
@@ -319,6 +338,7 @@ function reconnect() {
   fps.value = 0
   initSegment = null
   initScanComplete = false
+  initScanAttempts = 0
   
   // 300ms 后重新连接（让资源释放）
   setTimeout(connect, 300)

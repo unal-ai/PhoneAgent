@@ -55,6 +55,7 @@ let ws = null
 let frameCount = 0
 let lastCountTime = Date.now()
 let reconnectTimer = null
+let initSegment = null
 
 // 监听设备切换
 watch(() => props.deviceId, () => {
@@ -97,6 +98,12 @@ function connect() {
           console.log('[jMuxer] Buffer error, attempting reset...')
           try {
             jmuxerInstance?.reset()
+            if (initSegment) {
+              jmuxerInstance.feed({ video: initSegment })
+              console.log('[jMuxer] Re-initialized with cached SPS/PPS/IDR')
+            } else {
+              reconnect()
+            }
             console.log('[jMuxer] Reset successful')
           } catch (resetError) {
             console.error('[jMuxer] Reset failed:', resetError)
@@ -164,6 +171,9 @@ function connect() {
       // H.264 NAL 单元数据
       if (jmuxerInstance) {
         const videoData = new Uint8Array(event.data)
+        if (!initSegment) {
+          initSegment = videoData.slice()
+        }
         
         // 验证 NAL unit（调试用）
         if (frameCount === 0) {
@@ -237,6 +247,7 @@ function reconnect() {
   // 重置状态
   frameCount = 0
   fps.value = 0
+  initSegment = null
   
   // 300ms 后重新连接（让资源释放）
   setTimeout(connect, 300)

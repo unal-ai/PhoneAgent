@@ -84,9 +84,9 @@ function extractInitSegment(data) {
     if (offset >= data.length) continue
     const nalType = data[offset] & 0x1f
     
-    // 查找下一个 start code 以确定当前 NAL 的结束位置
+    // Find next start code to determine current NAL end
     let nextStart = data.length
-    for (let j = offset; j <= data.length - 3; j++) {
+    for (let j = offset + 1; j <= data.length - 3; j++) {
       const nextStartCode = isStartCode(data, j)
       if (nextStartCode.matched) {
         nextStart = j
@@ -98,6 +98,10 @@ function extractInitSegment(data) {
     if (nalType === NAL_SPS && !sps) sps = nalSlice
     if (nalType === NAL_PPS && !pps) pps = nalSlice
     if (nalType === NAL_IDR && !idr) idr = nalSlice
+    
+    if (nextStart !== data.length) {
+      i = nextStart - 1
+    }
     
     if (sps && pps && idr) {
       const combined = new Uint8Array(sps.length + pps.length + idr.length)

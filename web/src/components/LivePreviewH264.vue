@@ -76,7 +76,7 @@ function extractInitSegment(data) {
   let pps = null
   let idr = null
   
-  for (let i = 0; i <= data.length - 3; i++) {
+  for (let i = 0; i < data.length; i++) {
     const start = isStartCode(data, i)
     if (!start.matched) continue
     
@@ -86,7 +86,7 @@ function extractInitSegment(data) {
     
     // Find next start code to determine current NAL end
     let nextStart = data.length
-    for (let j = offset + 1; j <= data.length - 3; j++) {
+    for (let j = offset + 1; j < data.length; j++) {
       const nextStartCode = isStartCode(data, j)
       if (nextStartCode.matched) {
         nextStart = j
@@ -98,10 +98,6 @@ function extractInitSegment(data) {
     if (nalType === NAL_SPS && !sps) sps = nalSlice
     if (nalType === NAL_PPS && !pps) pps = nalSlice
     if (nalType === NAL_IDR && !idr) idr = nalSlice
-    
-    if (nextStart !== data.length) {
-      i = nextStart - 1
-    }
     
     if (sps && pps && idr) {
       const combined = new Uint8Array(sps.length + pps.length + idr.length)

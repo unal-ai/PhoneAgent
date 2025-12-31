@@ -56,15 +56,19 @@ let frameCount = 0
 let lastCountTime = Date.now()
 let reconnectTimer = null
 let initSegment = null
+let initScanComplete = false
 const NAL_SPS = 7
 const NAL_PPS = 8
 const NAL_IDR = 5
+const BYTE_ZERO = 0x00
+const START_CODE = 0x01
+const NAL_TYPE_MASK = 0x1f
 
 function isStartCode(data, index) {
   const fourByte = index + 3 < data.length &&
-    data[index] === 0x00 && data[index + 1] === 0x00 && data[index + 2] === 0x00 && data[index + 3] === 0x01
+    data[index] === BYTE_ZERO && data[index + 1] === BYTE_ZERO && data[index + 2] === BYTE_ZERO && data[index + 3] === START_CODE
   const threeByte = !fourByte && index + 2 < data.length &&
-    data[index] === 0x00 && data[index + 1] === 0x00 && data[index + 2] === 0x01
+    data[index] === BYTE_ZERO && data[index + 1] === BYTE_ZERO && data[index + 2] === START_CODE
   return {
     matched: fourByte || threeByte,
     length: fourByte ? 4 : (threeByte ? 3 : 0)
@@ -86,7 +90,7 @@ function extractInitSegment(data) {
     
     const offset = i + start.length
     if (offset >= data.length) break
-    const nalType = data[offset] & 0x1f
+    const nalType = data[offset] & NAL_TYPE_MASK
     
     // Find next start code to determine current NAL end
     let nextStart = data.length
@@ -237,8 +241,9 @@ function connect() {
       // H.264 NAL 单元数据
       if (jmuxerInstance) {
         const videoData = new Uint8Array(event.data)
-        if (!initSegment) {
+        if (!initSegment && !initScanComplete) {
           const extracted = extractInitSegment(videoData)
+          initScanComplete = true
           if (extracted) {
             initSegment = extracted
           }
@@ -317,6 +322,7 @@ function reconnect() {
   frameCount = 0
   fps.value = 0
   initSegment = null
+  initScanComplete = false
   
   // 300ms 后重新连接（让资源释放）
   setTimeout(connect, 300)

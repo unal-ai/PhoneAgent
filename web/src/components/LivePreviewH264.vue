@@ -263,8 +263,6 @@ function connect() {
             if (extracted) {
               initSegment = extracted
               initScanComplete = true
-            } else if (initScanAttempts >= MAX_INIT_SCAN_ATTEMPTS) {
-              initScanComplete = true
             }
           }
         }

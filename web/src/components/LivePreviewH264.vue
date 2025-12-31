@@ -57,25 +57,48 @@ let lastCountTime = Date.now()
 let reconnectTimer = null
 let initSegment = null
 
-function containsInitNals(data) {
-  let hasSps = false
-  let hasPps = false
-  let hasIdr = false
+function extractInitSegment(data) {
+  let sps = null
+  let pps = null
+  let idr = null
   
-  for (let i = 0; i < data.length - 4; i++) {
-    const isFourByte = data[i] === 0x00 && data[i + 1] === 0x00 && data[i + 2] === 0x00 && data[i + 3] === 0x01
-    const isThreeByte = !isFourByte && data[i] === 0x00 && data[i + 1] === 0x00 && data[i + 2] === 0x01
+  for (let i = 0; i < data.length - 3; i++) {
+    const isFourByte = i + 3 < data.length &&
+      data[i] === 0x00 && data[i + 1] === 0x00 && data[i + 2] === 0x00 && data[i + 3] === 0x01
+    const isThreeByte = !isFourByte && i + 2 < data.length &&
+      data[i] === 0x00 && data[i + 1] === 0x00 && data[i + 2] === 0x01
     if (!isFourByte && !isThreeByte) continue
     
     const offset = i + (isFourByte ? 4 : 3)
+    if (offset >= data.length) continue
     const nalType = data[offset] & 0x1f
-    if (nalType === 7) hasSps = true
-    if (nalType === 8) hasPps = true
-    if (nalType === 5) hasIdr = true
-    if (hasSps && hasPps && hasIdr) return true
+    
+    // 查找下一个 start code 以确定当前 NAL 的结束位置
+    let nextStart = data.length
+    for (let j = offset; j < data.length - 3; j++) {
+      const nextFourByte = data[j] === 0x00 && data[j + 1] === 0x00 && data[j + 2] === 0x00 && data[j + 3] === 0x01
+      const nextThreeByte = !nextFourByte && data[j] === 0x00 && data[j + 1] === 0x00 && data[j + 2] === 0x01
+      if (nextFourByte || nextThreeByte) {
+        nextStart = j
+        break
+      }
+    }
+    
+    const nalSlice = data.slice(i, nextStart)
+    if (nalType === 7 && !sps) sps = nalSlice
+    if (nalType === 8 && !pps) pps = nalSlice
+    if (nalType === 5 && !idr) idr = nalSlice
+    
+    if (sps && pps && idr) {
+      const combined = new Uint8Array(sps.length + pps.length + idr.length)
+      combined.set(sps, 0)
+      combined.set(pps, sps.length)
+      combined.set(idr, sps.length + pps.length)
+      return combined
+    }
   }
   
-  return false
+  return null
 }
 
 // 监听设备切换
@@ -199,8 +222,11 @@ function connect() {
       // H.264 NAL 单元数据
       if (jmuxerInstance) {
         const videoData = new Uint8Array(event.data)
-        if (!initSegment && containsInitNals(videoData)) {
-          initSegment = videoData.slice()
+        if (!initSegment) {
+          const extracted = extractInitSegment(videoData)
+          if (extracted) {
+            initSegment = extracted
+          }
         }
         
         // 验证 NAL unit（调试用）

@@ -61,6 +61,7 @@ let initScanAttempts = 0
 const NAL_SPS = 7
 const NAL_PPS = 8
 const NAL_IDR = 5
+const MAX_INIT_SCAN_ATTEMPTS = 10
 const BYTE_ZERO = 0x00
 const START_CODE = 0x01
 const NAL_TYPE_MASK = 0x1f
@@ -74,6 +75,14 @@ function isStartCode(data, index) {
     matched: fourByte || threeByte,
     length: fourByte ? 4 : (threeByte ? 3 : 0)
   }
+}
+
+function combineInitSlices(sps, pps, idr) {
+  const combined = new Uint8Array(sps.length + pps.length + idr.length)
+  combined.set(sps, 0)
+  combined.set(pps, sps.length)
+  combined.set(idr, sps.length + pps.length)
+  return combined
 }
 
 function extractInitSegment(data) {
@@ -96,11 +105,7 @@ function extractInitSegment(data) {
         if (nalType === NAL_PPS) pps = nalSlice
         if (nalType === NAL_IDR) idr = nalSlice
         if (sps && pps && idr) {
-          const combined = new Uint8Array(sps.length + pps.length + idr.length)
-          combined.set(sps, 0)
-          combined.set(pps, sps.length)
-          combined.set(idr, sps.length + pps.length)
-          return combined
+          return combineInitSlices(sps, pps, idr)
         }
       }
     }
@@ -122,11 +127,7 @@ function extractInitSegment(data) {
   }
   
   if (sps && pps && idr) {
-    const combined = new Uint8Array(sps.length + pps.length + idr.length)
-    combined.set(sps, 0)
-    combined.set(pps, sps.length)
-    combined.set(idr, sps.length + pps.length)
-    return combined
+    return combineInitSlices(sps, pps, idr)
   }
   
   return null
@@ -253,14 +254,18 @@ function connect() {
       // H.264 NAL 单元数据
       if (jmuxerInstance) {
         const videoData = new Uint8Array(event.data)
-        if (!initSegment && initScanAttempts < 10 && !initScanComplete) {
-          initScanAttempts++
-          const extracted = extractInitSegment(videoData)
-          if (extracted) {
-            initSegment = extracted
+        if (!initSegment && !initScanComplete) {
+          if (initScanAttempts >= MAX_INIT_SCAN_ATTEMPTS) {
             initScanComplete = true
-          } else if (initScanAttempts >= 10) {
-            initScanComplete = true
+          } else {
+            initScanAttempts++
+            const extracted = extractInitSegment(videoData)
+            if (extracted) {
+              initSegment = extracted
+              initScanComplete = true
+            } else if (initScanAttempts >= MAX_INIT_SCAN_ATTEMPTS) {
+              initScanComplete = true
+            }
           }
         }
         

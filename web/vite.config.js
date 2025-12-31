@@ -24,7 +24,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': {
           target: `http://${apiHost}:${apiPort}`,
-          changeOrigin: true
+          changeOrigin: true,
+          ws: true
         },
         // 前端 WebSocket 连接到 API 服务器 (port 8000) 的 /api/v1/ws 端点
         '/ws': {
@@ -48,7 +49,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': {
           target: `http://${apiHost}:${apiPort}`,
-          changeOrigin: true
+          changeOrigin: true,
+          ws: true
         },
         // 前端 WebSocket 连接到 API 服务器 (port 8000) 的 /api/v1/ws 端点
         '/ws': {
@@ -81,4 +83,3 @@ export default defineConfig(({ mode }) => {
     }
   }
 })
-

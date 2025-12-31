@@ -198,6 +198,7 @@ const selectedDeviceId = ref('')
 const selectedDevice = ref(null) // 当前选中的设备完整信息
 const isPreviewActive = ref(false)
 const enableControl = ref(false)
+const previewMode = ref('realtime') // 默认使用实时模式
 const isStarting = ref(false)
 const isStopping = ref(false)
 const isLoading = ref(false)
@@ -853,4 +854,3 @@ onMounted(() => {
   }
 }
 </style>
-

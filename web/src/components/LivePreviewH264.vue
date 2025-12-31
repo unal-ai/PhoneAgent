@@ -79,29 +79,27 @@ function extractInitSegment(data) {
   let sps = null
   let pps = null
   let idr = null
+  const startPositions = []
   let i = 0
-  
   while (i < data.length) {
     const start = isStartCode(data, i)
-    if (!start.matched) {
+    if (start.matched) {
+      startPositions.push({ index: i, length: start.length })
+      i += start.length
+    } else {
       i++
-      continue
     }
+  }
+  
+  for (let idx = 0; idx < startPositions.length; idx++) {
+    const { index, length } = startPositions[idx]
+    const offset = index + length
+    if (offset >= data.length) continue
     
-    const offset = i + start.length
-    if (offset >= data.length) break
     const nalType = data[offset] & NAL_TYPE_MASK
+    const nextStart = idx + 1 < startPositions.length ? startPositions[idx + 1].index : data.length
+    const nalSlice = data.slice(index, nextStart)
     
-    // Find next start code to determine current NAL end
-    let nextStart = data.length
-    for (let j = offset + 1; j < data.length; j++) {
-      if (isStartCode(data, j).matched) {
-        nextStart = j
-        break
-      }
-    }
-    
-    const nalSlice = data.slice(i, nextStart)
     if (nalType === NAL_SPS) sps = nalSlice
     if (nalType === NAL_PPS) pps = nalSlice
     if (nalType === NAL_IDR) idr = nalSlice
@@ -113,8 +111,6 @@ function extractInitSegment(data) {
       combined.set(idr, sps.length + pps.length)
       return combined
     }
-    
-    i = nextStart
   }
   
   return null
@@ -243,9 +239,9 @@ function connect() {
         const videoData = new Uint8Array(event.data)
         if (!initSegment && !initScanComplete) {
           const extracted = extractInitSegment(videoData)
-          initScanComplete = true
           if (extracted) {
             initSegment = extracted
+            initScanComplete = true
           }
         }
         

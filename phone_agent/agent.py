@@ -28,7 +28,9 @@ class AgentConfig:
     max_steps: int = 100
     device_id: str | None = None
     system_prompt: str = SYSTEM_PROMPT
+    system_prompt: str = SYSTEM_PROMPT
     verbose: bool = True
+    max_history_images: int = 1  # 默认保留最近1张截图 (0=仅本次, 1=本次+上次)
 
 
 @dataclass
@@ -243,8 +245,31 @@ class PhoneAgent:
             logger.debug(json.dumps(action, ensure_ascii=False, indent=2))
             logger.debug("=" * 50)
 
-        # Remove image from context to save space
-        self._context[-1] = MessageBuilder.remove_images_from_message(self._context[-1])
+        # Manage history images based on configuration
+        # Identify all user messages with images
+        image_indices = []
+        for i, msg in enumerate(self._context):
+            if msg.get("role") == "user" and isinstance(msg.get("content"), list):
+                # Check if message has image content
+                has_image = any(item.get("type") == "image_url" for item in msg["content"])
+                if has_image:
+                    image_indices.append(i)
+        
+        # Keep only the last N images (max_history_images)
+        # Note: The current step's image is the last one in the list
+        images_to_keep = self.agent_config.max_history_images
+        
+        if len(image_indices) > images_to_keep:
+            # Indices to prune are the ones at the beginning of the list
+            # e.g. indices=[0, 2, 4], keep=1 -> prune [0, 2]
+            indices_to_prune = image_indices[:-images_to_keep] if images_to_keep > 0 else image_indices
+            
+            for idx in indices_to_prune:
+                self._context[idx] = MessageBuilder.remove_images_from_message(self._context[idx])
+                if self.agent_config.verbose:
+                    logger.debug(f"🧹 Removed history image from step index {idx}")
+        
+        # self._context[-1] = MessageBuilder.remove_images_from_message(self._context[-1])
 
         # Execute action
         try:

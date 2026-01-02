@@ -897,6 +897,7 @@ class AgentService:
                 device_id=adb_device_id,  # 使用 ADB 地址而不是逻辑设备 ID
                 max_steps=model_config_dict.get("max_steps", 100),
                 verbose=True,
+                max_history_images=config.MAX_HISTORY_IMAGES,
             )
 
             # 获取内核模式

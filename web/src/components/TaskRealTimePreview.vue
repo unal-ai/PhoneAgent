@@ -187,11 +187,11 @@
                 </div>
                 <div class="message-content">
                   <template v-if="typeof msg.content === 'string'">
-                    {{ truncateContent(msg.content) }}
+                    <pre class="full-content">{{ msg.content }}</pre>
                   </template>
                   <template v-else-if="Array.isArray(msg.content)">
                     <div v-for="(item, i) in msg.content" :key="i" class="content-item">
-                      <span v-if="item.type === 'text'">{{ truncateContent(item.text) }}</span>
+                      <pre v-if="item.type === 'text'" class="full-content">{{ item.text }}</pre>
                       <el-tag v-else-if="item.type === 'image_url'" type="warning" size="small">
                         [图片]
                       </el-tag>
@@ -633,6 +633,26 @@ onUnmounted(() => {
   height: 68px;
   display: flex;
   align-items: center;
+}
+
+.debug-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.full-content {
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  font-family: monospace;
+  font-size: 12px;
+  background-color: #f5f7fa;
+  padding: 8px;
+  border-radius: 4px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .task-header {

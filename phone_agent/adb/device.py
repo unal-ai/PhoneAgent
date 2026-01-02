@@ -9,11 +9,12 @@ import os
 import subprocess
 import time
 
+from typing import Optional
 from phone_agent.adb.anti_detection import get_anti_detection
 from phone_agent.config.apps import APP_PACKAGES
 
 
-def get_current_app(device_id: str | None = None) -> str:
+def get_current_app(device_id: Optional[str] = None) -> str:
     """
     Get the currently focused app name.
 
@@ -43,7 +44,7 @@ def get_current_app(device_id: str | None = None) -> str:
 def tap(
     x: int,
     y: int,
-    device_id: str | None = None,
+    device_id: Optional[str] = None,
     delay: float = 1.0,
     use_anti_detection: bool = True,
 ) -> None:
@@ -75,7 +76,7 @@ def tap(
         time.sleep(delay)
 
 
-def double_tap(x: int, y: int, device_id: str | None = None, delay: float = 1.0) -> None:
+def double_tap(x: int, y: int, device_id: Optional[str] = None, delay: float = 1.0) -> None:
     """
     Double tap at the specified coordinates.
 
@@ -101,7 +102,7 @@ def long_press(
     x: int,
     y: int,
     duration_ms: int = 3000,
-    device_id: str | None = None,
+    device_id: Optional[str] = None,
     delay: float = 1.0,
 ) -> None:
     """
@@ -129,8 +130,8 @@ def swipe(
     start_y: int,
     end_x: int,
     end_y: int,
-    duration_ms: int | None = None,
-    device_id: str | None = None,
+    duration_ms: Optional[int] = None,
+    device_id: Optional[str] = None,
     delay: float = 1.0,
     use_anti_detection: bool = True,
 ) -> None:
@@ -210,7 +211,7 @@ def swipe(
         time.sleep(delay)
 
 
-def back(device_id: str | None = None, delay: float = 1.0) -> None:
+def back(device_id: Optional[str] = None, delay: float = 1.0) -> None:
     """
     Press the back button.
 
@@ -226,7 +227,7 @@ def back(device_id: str | None = None, delay: float = 1.0) -> None:
     time.sleep(delay)
 
 
-def home(device_id: str | None = None, delay: float = 1.0) -> None:
+def home(device_id: Optional[str] = None, delay: float = 1.0) -> None:
     """
     Press the home button (go to home screen).
 
@@ -257,7 +258,7 @@ def home(device_id: str | None = None, delay: float = 1.0) -> None:
     time.sleep(delay)
 
 
-def launch_app(app_name: str, device_id: str | None = None, delay: float = 1.0) -> bool:
+def launch_app(app_name: str, device_id: Optional[str] = None, delay: float = 1.0) -> bool:
     """
     Launch an app by name using Activity Manager (AM).
 
@@ -405,7 +406,7 @@ def launch_app(app_name: str, device_id: str | None = None, delay: float = 1.0) 
     return False
 
 
-def _get_adb_prefix(device_id: str | None) -> list:
+def _get_adb_prefix(device_id: Optional[str]) -> list:
     """
     Get ADB command prefix with optional device specifier.
 
@@ -451,7 +452,7 @@ def _is_valid_device_id(device_id: str) -> bool:
 
 
 def run_adb_command(
-    command: list[str], device_id: str | None = None, timeout: int = 30, check_error: bool = True
+    command: list[str], device_id: Optional[str] = None, timeout: int = 30, check_error: bool = True
 ) -> str:
     """
     执行 ADB 命令的统一封装

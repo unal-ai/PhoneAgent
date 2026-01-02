@@ -23,6 +23,8 @@ App静态配置 - 143个预置应用的名称到包名映射
   app = manager.find_app("微信")  # 支持别名、分类等
 """
 
+from typing import Optional
+
 APP_PACKAGES: dict[str, str] = {
     # ========================================
     # 系统工具 (System & Utilities)
@@ -236,7 +238,7 @@ APP_PACKAGES: dict[str, str] = {
 }
 
 
-def get_package_name(app_name: str) -> str | None:
+def get_package_name(app_name: str) -> Optional[str]:
     """
     根据应用名称获取包名（静态查询）
 
@@ -287,7 +289,7 @@ def get_allowed_apps() -> list[str]:
     return list(APP_PACKAGES.keys())
 
 
-def get_app_name(package_name: str) -> str | None:
+def get_app_name(package_name: str) -> Optional[str]:
     """
     根据包名反查应用名称（静态查询）
 

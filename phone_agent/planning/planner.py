@@ -68,8 +68,8 @@ class PlanningAgent:
 
     def __init__(
         self,
-        model_config: ModelConfig | None = None,
-        device_id: str | None = None,
+        model_config: Optional[ModelConfig] = None,
+        device_id: Optional[str] = None,
     ):
         """
         Initialize planning agent.

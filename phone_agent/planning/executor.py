@@ -59,8 +59,8 @@ class PlanExecutor:
 
     def __init__(
         self,
-        device_id: str | None = None,
-        step_callback: Callable[[int, dict, bool, str], None] | None = None,
+        device_id: Optional[str] = None,
+        step_callback: Optional[Callable[[int, dict, bool, str], None]] = None,
         use_xml_positioning: bool = True,
     ):
         """

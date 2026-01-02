@@ -4,6 +4,7 @@ import logging
 import subprocess
 import time
 from dataclasses import dataclass
+from typing import Optional
 from enum import Enum
 
 logger = logging.getLogger(__name__)
@@ -24,8 +25,8 @@ class DeviceInfo:
     device_id: str
     status: str
     connection_type: ConnectionType
-    model: str | None = None
-    android_version: str | None = None
+    model: Optional[str] = None
+    android_version: Optional[str] = None
 
 
 class ADBConnection:
@@ -94,7 +95,7 @@ class ADBConnection:
         except Exception as e:
             return False, f"Connection error: {e}"
 
-    def disconnect(self, address: str | None = None) -> tuple[bool, str]:
+    def disconnect(self, address: Optional[str] = None) -> tuple[bool, str]:
         """
         Disconnect from a remote device.
 
@@ -172,7 +173,7 @@ class ADBConnection:
             logger.error(f"Error listing ADB devices: {e}", exc_info=True)
             return []
 
-    def get_device_info(self, device_id: str | None = None) -> DeviceInfo | None:
+    def get_device_info(self, device_id: Optional[str] = None) -> Optional[DeviceInfo]:
         """
         Get detailed information about a device.
 
@@ -196,7 +197,7 @@ class ADBConnection:
 
         return None
 
-    def is_connected(self, device_id: str | None = None) -> bool:
+    def is_connected(self, device_id: Optional[str] = None) -> bool:
         """
         Check if a device is connected.
 
@@ -216,7 +217,7 @@ class ADBConnection:
 
         return any(d.device_id == device_id and d.status == "device" for d in devices)
 
-    def enable_tcpip(self, port: int = 5555, device_id: str | None = None) -> tuple[bool, str]:
+    def enable_tcpip(self, port: int = 5555, device_id: Optional[str] = None) -> tuple[bool, str]:
         """
         Enable TCP/IP debugging on a USB-connected device.
 
@@ -252,7 +253,7 @@ class ADBConnection:
         except Exception as e:
             return False, f"Error enabling TCP/IP: {e}"
 
-    def get_device_ip(self, device_id: str | None = None) -> str | None:
+    def get_device_ip(self, device_id: Optional[str] = None) -> Optional[str]:
         """
         Get the IP address of a connected device.
 

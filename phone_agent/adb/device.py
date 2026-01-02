@@ -335,23 +335,30 @@ def launch_app(app_name: str, device_id: Optional[str] = None, delay: float = 1.
     logger.info(f"正在启动应用: {app_name} ({package}) [来源: {source}]")
 
     # ✅ Pre-launch validation: Check if app is actually installed on device
-    try:
-        check_result = subprocess.run(
-            adb_prefix + ["shell", "pm", "path", package],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if check_result.returncode != 0 or not check_result.stdout.strip():
-            logger.error(f"❌ 应用未安装: {app_name} (包名: {package})")
-            logger.info("该应用在配置中存在，但未安装在设备上")
-            logger.info("建议: 请先在设备上安装该应用，或使用其他已安装的应用")
-            return False
-        logger.debug(f"✓ 应用已安装验证通过: {package}")
-    except subprocess.TimeoutExpired:
-        logger.warning("应用安装检查超时，继续尝试启动...")
-    except Exception as e:
-        logger.warning(f"应用安装检查异常: {e}，继续尝试启动...")
+    # Controlled by ENABLE_APP_CHECK (default: True)
+    enable_check = os.getenv("ENABLE_APP_CHECK", "true").lower() == "true"
+    
+    if enable_check:
+        try:
+            check_result = subprocess.run(
+                adb_prefix + ["shell", "pm", "path", package],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if check_result.returncode != 0 or not check_result.stdout.strip():
+                logger.error(f"❌ 应用未安装: {app_name} (包名: {package})")
+                logger.info("该应用在配置中存在，但未安装在设备上")
+                logger.info("建议: 请先在设备上安装该应用，或使用其他已安装的应用")
+                logger.info("提示: 设置环境变量 ENABLE_APP_CHECK=false 可禁用此检查")
+                return False
+            logger.debug(f"✓ 应用已安装验证通过: {package}")
+        except subprocess.TimeoutExpired:
+            logger.warning("应用安装检查超时，继续尝试启动...")
+        except Exception as e:
+            logger.warning(f"应用安装检查失败 (将被忽略): {e}")
+    else:
+        logger.debug(f"⏭️ 跳过应用安装检查 (ENABLE_APP_CHECK=false)")
 
     # Method 1: Use Activity Manager (AM) - Most reliable and fast
     try:

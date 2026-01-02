@@ -111,6 +111,9 @@ class Config:
     MAX_DEVICES: int = int(os.getenv("MAX_DEVICES", "100"))  # 支持100台设备
     HEALTH_CHECK_INTERVAL: int = int(os.getenv("HEALTH_CHECK_INTERVAL", "60"))
 
+    # 应用检查配置 (Pre-launch Validation)
+    ENABLE_APP_CHECK: bool = os.getenv("ENABLE_APP_CHECK", "true").lower() == "true"
+
     # ============================================
     # 日志配置
     # ============================================
@@ -262,6 +265,7 @@ class Config:
                 f"  ADB 超时: {cls.ADB_TIMEOUT}s",
                 f"  截图超时: {cls.SCREENSHOT_TIMEOUT}s",
                 f"  任务超时: {cls.TASK_TIMEOUT}s",
+                f"  应用检查: {'启用' if cls.ENABLE_APP_CHECK else '禁用'}",
                 "",
                 "=" * 60 + "\n",
             ]

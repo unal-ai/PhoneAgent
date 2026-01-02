@@ -1648,7 +1648,10 @@ class AgentService:
             if not task:
                 return
 
-            # 1. 最终持久化到数据库
+            # 1. 保存任务上下文到文件（新增：在清理前保存上下文）
+            self._save_context_to_file(task_id)
+
+            # 2. 最终持久化到数据库
             await self._persist_task_to_db(task)
 
             # 2. 从内存移除
@@ -1667,9 +1670,30 @@ class AgentService:
                 f"🗑️ Task {task_id} completed and removed from memory (status: {task.status.value})"
             )
 
+    def _save_context_to_file(self, task_id: str):
+        """保存任务上下文到文件（用于调试历史任务）"""
+        agent = self._active_agents.get(task_id)
+        if not agent:
+            return
+
+        try:
+            context = agent.model_client.message_to_dict(agent._context)
+
+            # Ensure directory exists
+            context_dir = "data/contexts"
+            os.makedirs(context_dir, exist_ok=True)
+
+            file_path = os.path.join(context_dir, f"{task_id}.json")
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(context, f, ensure_ascii=False, indent=2)
+
+            logger.info(f"Saved context for task {task_id} to {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to save context for task {task_id}: {e}")
+
     def get_task_context(self, task_id: str) -> Optional[List[Dict[str, Any]]]:
         """
-        获取任务的 LLM 上下文（仅运行中任务有效）
+        获取任务的 LLM 上下文（支持运行中和已完成任务）
 
         Args:
             task_id: 任务 ID
@@ -1677,17 +1701,25 @@ class AgentService:
         Returns:
             上下文列表或 None
         """
+        # 1. 尝试从内存获取 (Active Agent)
         agent = self._active_agents.get(task_id)
-        if not agent:
-            # 尝试检查是否是 hybrid agent (如果未来恢复支持)
-            return None
+        if agent:
+            try:
+                # 直接访问 PhoneAgent 的 _context 属性
+                return agent.model_client.message_to_dict(agent._context)
+            except Exception as e:
+                logger.error(f"Failed to get context from memory for task {task_id}: {e}")
 
+        # 2. 尝试从文件获取 (History)
         try:
-            # 直接访问 PhoneAgent 的 _context 属性
-            # 注意：这是私有属性，但为了调试目的我们需要访问它
-            return agent.model_client.message_to_dict(agent._context)
+            file_path = os.path.join("data/contexts", f"{task_id}.json")
+            if os.path.exists(file_path):
+                with open(file_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
         except Exception as e:
-            logger.error(f"Failed to get context for task {task_id}: {e}")
+            logger.error(f"Failed to load context from file for task {task_id}: {e}")
+
+        return None
             return None
 
     def inject_comment(self, task_id: str, comment: str) -> bool:

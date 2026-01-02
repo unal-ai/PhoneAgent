@@ -436,12 +436,34 @@ async function loadContext() {
     const result = await taskApi.getContext(props.taskId)
     contextMessages.value = result.context || []
   } catch (error) {
-    ElMessage.error('获取上下文失败: ' + (error.response?.data?.detail || error.message))
+    // Only show error if not a "not found" error for completed tasks
+    if (!error.response?.data?.detail?.includes('not found')) {
+      ElMessage.error('获取上下文失败: ' + (error.response?.data?.detail || error.message))
+    }
     contextMessages.value = []
   } finally {
     isLoadingContext.value = false
   }
 }
+
+// Auto-refresh context when debug panel is opened
+let contextRefreshTimer = null
+
+watch(activeDebugPanel, (newVal) => {
+  if (newVal && newVal.length > 0) {
+    // Panel opened - load immediately and start auto-refresh
+    loadContext()
+    if (!contextRefreshTimer && currentTask.value?.status === 'running') {
+      contextRefreshTimer = setInterval(loadContext, 3000)
+    }
+  } else {
+    // Panel closed - stop auto-refresh
+    if (contextRefreshTimer) {
+      clearInterval(contextRefreshTimer)
+      contextRefreshTimer = null
+    }
+  }
+})
 
 // Helper: Get role display type
 function getRoleType(role) {
@@ -567,6 +589,11 @@ onMounted(async () => {
 onUnmounted(() => {
   stopPolling()
   stopElapsedTimer()
+  // Cleanup context refresh timer
+  if (contextRefreshTimer) {
+    clearInterval(contextRefreshTimer)
+    contextRefreshTimer = null
+  }
 })
 </script>
 

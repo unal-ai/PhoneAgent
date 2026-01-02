@@ -769,7 +769,8 @@ onUnmounted(() => {
   color: var(--primary-color);
 }
 
-.step-animating {
+/* Animation removed as per user request */
+/* .step-animating {
   animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -782,7 +783,7 @@ onUnmounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
-}
+} */
 
 /* Error reason display */
 .step-error-reason {

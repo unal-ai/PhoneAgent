@@ -255,7 +255,14 @@ def get_package_name(app_name: str) -> Optional[str]:
         >>> get_package_name("微信")
         'com.tencent.mm'
     """
-    return APP_PACKAGES.get(app_name)
+    pkg = APP_PACKAGES.get(app_name)
+    if pkg:
+        return pkg
+        
+    # Open Mode: If not found in preset list, return original name
+    # This allows agents to use package names directly (e.g. "com.example.app")
+    # satisfying the "no hardcoded whitelist" requirement
+    return app_name
 
 
 def get_allowed_apps() -> list[str]:

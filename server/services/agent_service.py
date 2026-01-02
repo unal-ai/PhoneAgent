@@ -438,6 +438,64 @@ class AgentService:
 
         logger.info("AgentService initialized (Hybrid Mode: Memory for running, DB for completed)")
 
+        # 尝试恢复已中断的任务状态
+        self.recover_tasks()
+
+    def recover_tasks(self):
+        """恢复/清理异常中断的任务（启动时调用）"""
+        try:
+            db = next(get_db())
+            try:
+                # 查找所有标记为 RUNNING 的任务
+                running_tasks = crud.list_tasks(db, status="running")
+                count = 0
+                for task in running_tasks:
+                    # 标记为失败
+                    logger.warning(
+                        f"Found orphaned running task {task.task_id}, marking as FAILED"
+                    )
+                    crud.update_task(
+                        db,
+                        task.task_id,
+                        status="failed",
+                        error="Task flow interrupted (server restart)",
+                        completed_at=datetime.now(timezone.utc),
+                    )
+                    count += 1
+
+                if count > 0:
+                    logger.info(f"Recovered {count} orphaned running tasks")
+
+                # 查找长时间 PENDING 的任务 (例如超过1小时)
+                from datetime import timedelta
+                pending_tasks = crud.list_tasks(db, status="pending")
+                cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+                
+                pending_count = 0
+                for task in pending_tasks:
+                   # 数据库时间通常是 naive UTC，需要处理时区
+                   created_at = task.created_at
+                   if created_at.tzinfo is None:
+                       created_at = created_at.replace(tzinfo=timezone.utc)
+                   
+                   if created_at < cutoff:
+                       logger.warning(f"Found stale pending task {task.task_id}, marking as FAILED")
+                       crud.update_task(
+                           db, 
+                           task.task_id, 
+                           status="failed", 
+                           error="Task timeout (stale pending)",
+                           completed_at=datetime.now(timezone.utc)
+                        )
+                       pending_count += 1
+                
+                if pending_count > 0:
+                    logger.info(f"Recovered {pending_count} stale pending tasks")
+            finally:
+                db.close()
+        except Exception as e:
+            logger.error(f"Failed to recover tasks: {e}")
+
     async def create_task(
         self,
         instruction: str,
@@ -527,6 +585,22 @@ class AgentService:
             # 更新状态
             task.status = TaskStatus.RUNNING
             task.started_at = datetime.now(timezone.utc)
+
+            # 立即持久化状态到数据库
+            db = None
+            try:
+                db = next(get_db())
+                crud.update_task(
+                    db,
+                    task.task_id,
+                    status="running",
+                    started_at=task.started_at,
+                )
+            except Exception as e:
+                logger.error(f"Failed to update task status to RUNNING in DB: {e}")
+            finally:
+                if db:
+                    db.close()
 
         # 启动异步任务
         asyncio_task = asyncio.create_task(self._run_agent(task, device_pool))

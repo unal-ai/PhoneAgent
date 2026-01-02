@@ -266,7 +266,8 @@
                   
                   <el-form-item label="AI厂商预设">
                     <el-radio-group v-model="aiProviderPreset" @change="handlePresetChange">
-                      <el-radio-button label="zhipu">智谱AI (默认)</el-radio-button>
+                      <el-radio-button label="default">✅ 服务端默认 (Server Default)</el-radio-button>
+                      <el-radio-button label="zhipu">智谱AI</el-radio-button>
                       <el-radio-button label="openai">OpenAI</el-radio-button>
                       <el-radio-button label="local">本地模型 (Local)</el-radio-button>
                       <el-radio-button label="custom">自定义</el-radio-button>
@@ -439,19 +440,24 @@ const taskForm = ref({
   ai_provider: 'zhipu',
   ai_base_url: '',
   ai_api_key: '',
-  ai_model: 'autoglm-phone', // 默认模型
+  ai_model: '', // 默认留空，使用服务端配置
 })
 
 // 🆕 AI厂商预设状态
-const aiProviderPreset = ref('zhipu')
+const aiProviderPreset = ref('default')
 
 // 🆕 处理预设变更
 const handlePresetChange = (val) => {
   taskForm.value.ai_provider = val
   switch (val) {
-    case 'zhipu':
+    case 'default':
       taskForm.value.ai_base_url = '' // 空表示使用默认
-      taskForm.value.ai_model = 'autoglm-phone'
+      taskForm.value.ai_api_key = ''
+      taskForm.value.ai_model = '' // 空表示使用默认
+      break
+    case 'zhipu':
+      taskForm.value.ai_base_url = 'https://open.bigmodel.cn/api/paas/v4/'
+      taskForm.value.ai_model = 'glm-4-flash'
       break
     case 'openai':
       taskForm.value.ai_base_url = 'https://api.openai.com/v1'

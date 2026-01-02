@@ -19,7 +19,7 @@ class CreateTaskRequest(BaseModel):
     )
     ai_provider: Optional[str] = Field("zhipu", description="AI模型提供商（固定为zhipu）")
     ai_model: Optional[str] = Field(
-        "autoglm-phone",
+        None,
         description="AI模型名称（推荐：autoglm-phone官方优化，glm-4.6v-flash免费最新，glm-4.6v付费旗舰，glm-4.6v-flashx付费极速）",
     )
     ai_api_key: Optional[str] = Field(None, description="AI模型API密钥（可选，使用环境变量）")

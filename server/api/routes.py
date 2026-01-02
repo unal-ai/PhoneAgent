@@ -369,7 +369,7 @@ async def create_task(request: CreateTaskRequest):
     # 构建模型配置
     # Warning: 已废弃XML/混合内核，统一使用Vision内核
     # 如果用户未明确指定模型，让智能选择器决定
-    should_use_selector = request.ai_model == "autoglm-phone"  # 默认值
+    should_use_selector = not request.ai_model or request.ai_model == "autoglm-phone"
 
     model_config = {
         "provider": request.ai_provider,
@@ -385,7 +385,7 @@ async def create_task(request: CreateTaskRequest):
         model_config["base_url"] = request.ai_base_url
 
     # 只有用户明确指定非默认模型时，才传递 model_name
-    if not should_use_selector:
+    if request.ai_model and request.ai_model != "autoglm-phone":
         model_config["model_name"] = request.ai_model
     # 否则让智能选择器在 agent_service._run_agent 中决定（会选择glm-4.6v-flash）
 

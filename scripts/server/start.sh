@@ -70,7 +70,7 @@ done
 
 # 3. 启动API服务器
 echo "3️⃣  启动 API 服务器..."
-nohup uvicorn server.api.app:app --host 0.0.0.0 --port 8000 > logs/api.log 2>&1 &
+nohup uvicorn server.api.app:app --host 0.0.0.0 --port 8000 --reload > logs/api.log 2>&1 &
 API_PID=$!
 echo -e "  ${GREEN}✓${NC} API 启动成功 (PID: $API_PID)"
 

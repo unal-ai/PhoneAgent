@@ -556,6 +556,87 @@ async def get_task_steps(task_id: str):
     }
 
 
+@router.get("/tasks/{task_id}/context", tags=["📋 任务管理"])
+async def get_task_context(task_id: str):
+    """
+    获取任务的 LLM 上下文（用于调试 Agent 思维链）
+
+    注意：
+    1. 仅能获取内存中运行的任务（或刚完成未被清理的任务）
+    2. 上下文包含完整的系统提示词、用户输入（含截图Base64）和模型响应
+    """
+    agent_service = get_agent_service()
+    context = agent_service.get_task_context(task_id)
+
+    if context is None:
+        # 如果是已完成的任务，上下文可能已被清理
+        raise HTTPException(
+            404,
+            "Context not found. The task might be completed and cleaned up from memory, "
+            "or it was never started."
+        )
+
+    # 过滤掉过大的 Base64 图片数据，避免响应过大
+    # 前端只需要知道这里有图片即可
+    filtered_context = []
+    for msg in context:
+        msg_copy = msg.copy()
+        # 递归查找 image_url 并替换 base64
+        if "content" in msg_copy and isinstance(msg_copy["content"], list):
+            new_content = []
+            for item in msg_copy["content"]:
+                item_copy = item.copy()
+                if item_copy.get("type") == "image_url":
+                    url = item_copy.get("image_url", {}).get("url", "")
+                    if url.startswith("data:image"):
+                        # 保留前缀以便识别，但截断内容
+                        item_copy["image_url"]["url"] = f"{url[:30]}...[BASE64_IMAGE_HIDDEN]"
+                new_content.append(item_copy)
+            msg_copy["content"] = new_content
+        filtered_context.append(msg_copy)
+
+    return {"task_id": task_id, "context": filtered_context}
+
+
+class InjectCommentRequest(BaseModel):
+    """用户评论注入请求"""
+    comment: str
+
+
+@router.post("/tasks/{task_id}/inject", tags=["📋 任务管理"])
+async def inject_comment(task_id: str, request: InjectCommentRequest):
+    """
+    向运行中的任务注入用户评论
+
+    注入的评论会作为[User Intervention]添加到LLM上下文中，
+    在下一步执行时被模型看到。
+
+    使用场景：
+    - 纠正Agent的错误判断
+    - 提供额外的上下文信息
+    - 引导Agent执行特定操作
+
+    注意：
+    - 仅对运行中的任务有效
+    - 评论会在下一个step生效
+    """
+    agent_service = get_agent_service()
+    success = agent_service.inject_comment(task_id, request.comment)
+
+    if not success:
+        raise HTTPException(
+            400,
+            f"Failed to inject comment. Task {task_id} might not be running "
+            "or already completed."
+        )
+
+    return {
+        "success": True,
+        "task_id": task_id,
+        "message": "Comment injected successfully. It will be visible to the model in the next step."
+    }
+
+
 @router.post("/tasks/{task_id}/cancel", tags=["📋 任务管理"])
 async def cancel_task(task_id: str):
     """取消正在执行的任务"""

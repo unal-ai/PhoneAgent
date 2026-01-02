@@ -28,7 +28,7 @@
       </template>
 
       <!-- 任务步骤实时流 -->
-      <div class="steps-stream">
+      <div ref="stepsStreamRef" class="steps-stream">
         <el-timeline>
           <el-timeline-item
             v-for="(step, index) in steps"
@@ -107,6 +107,88 @@
           suffix="秒"
         />
       </div>
+
+      <!-- 用户干预输入 -->
+      <el-divider v-if="currentTask.status === 'running'" />
+      <div v-if="currentTask.status === 'running'" class="inject-section">
+        <div class="inject-header">
+          <el-icon><Edit /></el-icon>
+          <span>用户干预</span>
+          <el-tooltip content="输入的内容会作为[User Intervention]添加到AI上下文，在下一步生效">
+            <el-icon><QuestionFilled /></el-icon>
+          </el-tooltip>
+        </div>
+        <div class="inject-input-row">
+          <el-input
+            v-model="injectComment"
+            type="textarea"
+            :rows="2"
+            placeholder="输入干预指令，例如：点击返回按钮、不要点击广告..."
+            :disabled="isInjecting"
+            maxlength="200"
+            show-word-limit
+          />
+          <el-button
+            type="primary"
+            :loading="isInjecting"
+            :disabled="!injectComment.trim()"
+            @click="handleInject"
+            class="inject-button"
+          >
+            <el-icon><Promotion /></el-icon>
+            发送
+          </el-button>
+        </div>
+      </div>
+
+      <!-- Debug 面板（折叠） -->
+      <el-divider />
+      <el-collapse v-model="activeDebugPanel">
+        <el-collapse-item title="🔍 调试面板 - LLM上下文" name="debug">
+          <div class="debug-panel">
+            <div class="debug-actions">
+              <el-button size="small" @click="loadContext" :loading="isLoadingContext">
+                <el-icon><Refresh /></el-icon>
+                刷新上下文
+              </el-button>
+              <el-tag type="info" size="small">
+                消息数: {{ contextMessages.length }}
+              </el-tag>
+            </div>
+            <div v-if="contextMessages.length === 0" class="debug-empty">
+              <el-empty description="点击刷新获取LLM上下文" :image-size="60" />
+            </div>
+            <div v-else class="context-messages">
+              <div 
+                v-for="(msg, idx) in contextMessages" 
+                :key="idx" 
+                class="context-message"
+                :class="msg.role"
+              >
+                <div class="message-header">
+                  <el-tag :type="getRoleType(msg.role)" size="small">
+                    {{ getRoleName(msg.role) }}
+                  </el-tag>
+                  <span class="message-index">#{{ idx + 1 }}</span>
+                </div>
+                <div class="message-content">
+                  <template v-if="typeof msg.content === 'string'">
+                    {{ truncateContent(msg.content) }}
+                  </template>
+                  <template v-else-if="Array.isArray(msg.content)">
+                    <div v-for="(item, i) in msg.content" :key="i" class="content-item">
+                      <span v-if="item.type === 'text'">{{ truncateContent(item.text) }}</span>
+                      <el-tag v-else-if="item.type === 'image_url'" type="warning" size="small">
+                        [图片]
+                      </el-tag>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-collapse-item>
+      </el-collapse>
     </el-card>
 
     <el-empty v-else description="暂无正在执行的任务" />
@@ -114,9 +196,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ChatDotRound, VideoPlay, View, Loading } from '@element-plus/icons-vue'
+import { ChatDotRound, VideoPlay, View, Loading, Edit, QuestionFilled, Promotion, Refresh } from '@element-plus/icons-vue'
 import { taskApi } from '@/api'
 
 const props = defineProps({
@@ -132,6 +214,17 @@ const isCancelling = ref(false)
 const elapsedTime = ref(0)
 const pollingTimer = ref(null)
 const pollingInterval = 1000 // Polling interval in ms
+const stepsStreamRef = ref(null) // Ref for auto-scroll
+
+// Inject comment state
+const injectComment = ref('')
+const isInjecting = ref(false)
+
+// Debug panel state
+const activeDebugPanel = ref([])
+const contextMessages = ref([])
+const isLoadingContext = ref(false)
+
 const totalTokens = computed(() => {
   return steps.value.reduce((sum, step) => {
     return sum + (step.tokens_used?.total_tokens || 0)
@@ -289,6 +382,74 @@ function stopElapsedTimer() {
   }
 }
 
+// Auto-scroll to bottom when new steps arrive
+function scrollToBottom() {
+  nextTick(() => {
+    if (stepsStreamRef.value) {
+      stepsStreamRef.value.scrollTop = stepsStreamRef.value.scrollHeight
+    }
+  })
+}
+
+// Handle user comment injection
+async function handleInject() {
+  if (!injectComment.value.trim() || !props.taskId) return
+  
+  isInjecting.value = true
+  try {
+    await taskApi.inject(props.taskId, injectComment.value.trim())
+    ElMessage.success('干预指令已发送，将在下一步生效')
+    injectComment.value = ''
+  } catch (error) {
+    ElMessage.error('发送失败: ' + (error.response?.data?.detail || error.message))
+  } finally {
+    isInjecting.value = false
+  }
+}
+
+// Load LLM context for debugging
+async function loadContext() {
+  if (!props.taskId) return
+  
+  isLoadingContext.value = true
+  try {
+    const result = await taskApi.getContext(props.taskId)
+    contextMessages.value = result.context || []
+  } catch (error) {
+    ElMessage.error('获取上下文失败: ' + (error.response?.data?.detail || error.message))
+    contextMessages.value = []
+  } finally {
+    isLoadingContext.value = false
+  }
+}
+
+// Helper: Get role display type
+function getRoleType(role) {
+  const types = {
+    system: 'warning',
+    user: 'primary',
+    assistant: 'success'
+  }
+  return types[role] || 'info'
+}
+
+// Helper: Get role display name
+function getRoleName(role) {
+  const names = {
+    system: '系统',
+    user: '用户',
+    assistant: 'AI'
+  }
+  return names[role] || role
+}
+
+// Helper: Truncate content for display
+function truncateContent(content, maxLen = 300) {
+  if (!content) return ''
+  if (content.length <= maxLen) return content
+  return content.substring(0, maxLen) + '...'
+}
+
 // Start polling for task updates
 function startPolling() {
   if (pollingTimer.value) return
@@ -325,6 +486,9 @@ function startPolling() {
           })
           
           steps.value = stepsData.steps
+          
+          // Auto-scroll to show new steps
+          scrollToBottom()
         }
       }
       
@@ -567,6 +731,104 @@ onUnmounted(() => {
   .steps-stream {
     max-height: 400px;
   }
+}
+
+/* Inject Section */
+.inject-section {
+  padding: 12px 0;
+}
+
+.inject-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+
+.inject-input-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.inject-input-row .el-textarea {
+  flex: 1;
+}
+
+.inject-button {
+  height: 60px;
+  min-width: 80px;
+}
+
+/* Debug Panel */
+.debug-panel {
+  padding: 12px 0;
+}
+
+.debug-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.debug-empty {
+  padding: 20px 0;
+}
+
+.context-messages {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.context-message {
+  padding: 12px;
+  border-radius: var(--radius-base);
+  border: 1px solid var(--border-light);
+}
+
+.context-message.system {
+  background: var(--warning-bg);
+  border-left: 3px solid var(--warning-color);
+}
+
+.context-message.user {
+  background: var(--info-bg);
+  border-left: 3px solid var(--primary-color);
+}
+
+.context-message.assistant {
+  background: var(--success-bg);
+  border-left: 3px solid var(--success-color);
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.message-index {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.message-content {
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-primary);
+}
+
+.content-item {
+  margin-bottom: 4px;
 }
 </style>
 

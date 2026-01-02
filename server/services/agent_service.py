@@ -18,7 +18,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from phone_agent.adb import get_screenshot
 from phone_agent.agent import AgentConfig, PhoneAgent
@@ -388,8 +388,17 @@ class AgentCallback:
 
     async def on_error(self, error: str):
         """错误"""
-        logger.error(f"Task {self.task.task_id} error: {error}")
-        self.task.error = error
+        import traceback
+        
+        # Get full traceback if available
+        tb_str = traceback.format_exc()
+        if tb_str and tb_str != "NoneType: None\n":
+             detailed_error = f"{error}\n\nTraceback:\n{tb_str}"
+        else:
+             detailed_error = error
+             
+        logger.error(f"Task {self.task.task_id} error: {detailed_error}")
+        self.task.error = detailed_error
         self.task.status = TaskStatus.FAILED
         self.task.completed_at = datetime.now(timezone.utc)
 
@@ -419,6 +428,9 @@ class AgentService:
 
         # asyncio.Task句柄管理（用于取消任务）
         self._running_task_handles: Dict[str, asyncio.Task] = {}
+
+        # 存储运行中的 Agent 实例（用于调试和访问上下文）
+        self._active_agents: Dict[str, Any] = {}
 
         self._lock = asyncio.Lock()
         self._websocket_broadcast_callback = None
@@ -945,6 +957,9 @@ class AgentService:
                     agent_config=agent_config,
                     step_callback=sync_callback,  # 🆕 传递回调
                 )
+
+                # Store active agent instance for context retrieval
+                self._active_agents[task.task_id] = agent
 
                 logger.info(f"⏱️  [Task {task.task_id}] Starting agent step-by-step execution...")
                 agent_run_start = time.time()
@@ -1569,9 +1584,59 @@ class AgentService:
             if task_id in self._running_task_handles:
                 del self._running_task_handles[task_id]
 
+            # 4. 清理 active agent 实例
+            if task_id in self._active_agents:
+                del self._active_agents[task_id]
+                logger.info(f"cleaned up active agent instance for task {task_id}")
+
             logger.info(
                 f"🗑️ Task {task_id} completed and removed from memory (status: {task.status.value})"
             )
+
+    def get_task_context(self, task_id: str) -> Optional[List[Dict[str, Any]]]:
+        """
+        获取任务的 LLM 上下文（仅运行中任务有效）
+
+        Args:
+            task_id: 任务 ID
+
+        Returns:
+            上下文列表或 None
+        """
+        agent = self._active_agents.get(task_id)
+        if not agent:
+            # 尝试检查是否是 hybrid agent (如果未来恢复支持)
+            return None
+
+        try:
+            # 直接访问 PhoneAgent 的 _context 属性
+            # 注意：这是私有属性，但为了调试目的我们需要访问它
+            return agent.model_client.message_to_dict(agent._context)
+        except Exception as e:
+            logger.error(f"Failed to get context for task {task_id}: {e}")
+            return None
+
+    def inject_comment(self, task_id: str, comment: str) -> bool:
+        """
+        向运行中的任务注入用户评论
+
+        Args:
+            task_id: 任务 ID
+            comment: 用户评论内容
+
+        Returns:
+            是否成功注入
+        """
+        agent = self._active_agents.get(task_id)
+        if not agent:
+            logger.warning(f"Cannot inject comment: task {task_id} not found or not running")
+            return False
+
+        try:
+            return agent.inject_comment(comment)
+        except Exception as e:
+            logger.error(f"Failed to inject comment for task {task_id}: {e}")
+            return False
 
 
 # 全局实例

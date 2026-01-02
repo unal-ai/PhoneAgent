@@ -40,23 +40,20 @@ class TestModelClient:
         client = ModelClient(mock_model_config)
         assert client.config == mock_model_config
 
-    @patch("phone_agent.model.client.httpx.Client")
-    def test_request_json_success(self, mock_httpx, mock_model_config, mock_model_response):
+    @patch("phone_agent.model.client.OpenAI")
+    def test_request_json_success(self, mock_openai, mock_model_config, mock_model_response):
         """Test successful JSON request."""
         from phone_agent.model.client import ModelClient
         
         # Setup mock
         mock_client = MagicMock()
-        mock_httpx.return_value.__enter__ = Mock(return_value=mock_client)
-        mock_httpx.return_value.__exit__ = Mock(return_value=False)
+        mock_openai.return_value = mock_client
         
-        mock_http_response = Mock()
-        mock_http_response.json.return_value = {
-            "choices": [{"message": {"content": '{"action": "done"}'}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}
-        }
-        mock_http_response.raise_for_status = Mock()
-        mock_client.post.return_value = mock_http_response
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock(message=MagicMock(content='{"action": "done"}'))]
+        mock_response.usage = MagicMock(prompt_tokens=100, completion_tokens=50, total_tokens=150)
+        
+        mock_client.chat.completions.create.return_value = mock_response
         
         client = ModelClient(mock_model_config)
         

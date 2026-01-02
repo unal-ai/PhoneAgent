@@ -143,6 +143,32 @@ class PhoneAgent:
         self._context = []
         self._step_count = 0
 
+    def inject_comment(self, comment: str) -> bool:
+        """
+        Inject a user comment into the conversation context.
+
+        This allows users to provide mid-execution guidance or corrections
+        to the agent. The comment will be included in the next LLM request.
+
+        Args:
+            comment: The user's comment/instruction to inject.
+
+        Returns:
+            True if injection was successful, False if context is empty.
+        """
+        if not self._context:
+            logger.warning("Cannot inject comment: context is empty")
+            return False
+
+        # Add as a user message (will be seen by the model in next step)
+        self._context.append(
+            MessageBuilder.create_user_message(
+                text=f"[User Intervention] {comment}"
+            )
+        )
+        logger.info(f"Injected user comment: {comment[:50]}...")
+        return True
+
     def _execute_step(self, user_prompt: str | None = None, is_first: bool = False) -> StepResult:
         """Execute a single step of the agent loop."""
         self._step_count += 1

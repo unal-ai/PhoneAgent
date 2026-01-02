@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/presets", tags=["Presets"])
+router = APIRouter(tags=["Presets"])
 
 DATA_DIR = "data"
 SHORTCUTS_FILE = os.path.join(DATA_DIR, "shortcuts.json")

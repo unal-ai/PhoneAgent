@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import { requestMonitor } from './request-monitor'
 
 // 从环境变量获取 API 地址
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL}/api/v1`
   : '/api/v1'
 
@@ -37,7 +37,7 @@ request.interceptors.request.use(
     // 生成请求ID
     const requestId = generateRequestId()
     config.requestId = requestId
-    
+
     // 动态设置超时时间
     if (config.url?.includes('/speech/stt') || config.url?.includes('/speech/tts')) {
       config.timeout = TIMEOUT_CONFIG.upload
@@ -55,14 +55,14 @@ request.interceptors.request.use(
     } else if (config.url?.includes('/stream')) {
       config.timeout = TIMEOUT_CONFIG.stream
     }
-    
+
     // 开始监控
     requestMonitor.startRequest(requestId, config)
-    
+
     if (import.meta.env.DEV) {
       console.log(`[API] ${config.method?.toUpperCase()} ${config.url} (timeout: ${config.timeout}ms)`)
     }
-    
+
     // 可以在这里添加 token
     return config
   },
@@ -80,7 +80,7 @@ request.interceptors.response.use(
     if (requestId) {
       requestMonitor.endRequest(requestId, true)
     }
-    
+
     return response.data
   },
   error => {
@@ -89,20 +89,20 @@ request.interceptors.response.use(
     if (requestId) {
       requestMonitor.endRequest(requestId, false, error)
     }
-    
+
     // 友好的错误提示
     let message = '请求失败'
-    
+
     // 超时错误特殊处理
     if (error.code === 'ECONNABORTED' && error.message?.includes('timeout')) {
       const timeout = error.config?.timeout || TIMEOUT_CONFIG.default
-      message = `请求超时（${timeout/1000}秒），可能原因：\n1. 网络连接不稳定\n2. 服务器响应缓慢\n3. 操作耗时过长`
+      message = `请求超时（${timeout / 1000}秒），可能原因：\n1. 网络连接不稳定\n2. 服务器响应缓慢\n3. 操作耗时过长`
       ElMessage.error({
         message,
         duration: 5000,
         showClose: true
       })
-      
+
       console.error(`[TIMEOUT] ${error.config?.url}`, {
         timeout: `${timeout}ms`,
         method: error.config?.method
@@ -123,7 +123,7 @@ request.interceptors.response.use(
         ElMessage.error(message)
       }
     }
-    
+
     return Promise.reject(error)
   }
 )
@@ -137,30 +137,30 @@ export const deviceApi = {
   async list(status = null) {
     try {
       const scannedDevices = await request.get('/devices/scanned')
-      
+
       // 如果scannedDevices有devices字段，返回devices数组
       if (scannedDevices && scannedDevices.devices) {
         return scannedDevices.devices
       }
-      
+
       // 否则返回整个响应
       return scannedDevices
     } catch (error) {
       console.warn('V2 API failed, fallback to V1:', error)
-      
+
       // V1 API已废弃，直接返回空数组
       console.warn('V2 API failed, V1 API已废弃:', error)
-      
+
       // 返回空数组
       if (error.response?.status === 404) {
         console.info('No devices API available, returning empty list')
         return []
       }
-      
+
       throw error
     }
   },
-  
+
   // 获取设备详情
   get(deviceId) {
     return request.get(`/devices/${deviceId}`)
@@ -176,35 +176,45 @@ export const taskApi = {
   create(data) {
     return request.post('/tasks', data)
   },
-  
+
   // 获取任务列表
   list(params = {}) {
     return request.get('/tasks', { params })
   },
-  
+
   // 获取任务详情
   get(taskId) {
     return request.get(`/tasks/${taskId}`)
   },
-  
+
   // 获取任务步骤详情
   getSteps(taskId) {
     return request.get(`/tasks/${taskId}/steps`)
   },
-  
+
   // 取消任务
   cancel(taskId) {
     return request.post(`/tasks/${taskId}/cancel`)
   },
-  
+
   // 删除任务
   delete(taskId) {
     return request.delete(`/tasks/${taskId}`)
   },
-  
+
   // 批量删除任务
   deleteBatch(taskIds) {
     return request.post('/tasks/delete-batch', { task_ids: taskIds })
+  },
+
+  // 获取任务LLM上下文（用于调试）
+  getContext(taskId) {
+    return request.get(`/tasks/${taskId}/context`)
+  },
+
+  // 向任务注入用户评论
+  inject(taskId, comment) {
+    return request.post(`/tasks/${taskId}/inject`, { comment })
   }
 }
 
@@ -228,32 +238,32 @@ export const shortcutApi = {
   list(category = null) {
     return request.get('/shortcuts', { params: { category } })
   },
-  
+
   // 获取快捷指令详情
   get(shortcutId) {
     return request.get(`/shortcuts/${shortcutId}`)
   },
-  
+
   // 创建快捷指令
   create(data) {
     return request.post('/shortcuts', data)
   },
-  
+
   // 更新快捷指令
   update(shortcutId, data) {
     return request.put(`/shortcuts/${shortcutId}`, data)
   },
-  
+
   // 删除快捷指令
   delete(shortcutId) {
     return request.delete(`/shortcuts/${shortcutId}`)
   },
-  
+
   // 执行快捷指令
   execute(shortcutId, deviceId = null) {
     return request.post(`/shortcuts/${shortcutId}/execute`, { device_id: deviceId })
   },
-  
+
   // 获取分类列表
   getCategories() {
     return request.get('/shortcuts/categories')
@@ -269,17 +279,17 @@ export const planningApi = {
   generate(data) {
     return request.post('/planning/generate', data)
   },
-  
+
   // 执行已生成的计划
   execute(data) {
     return request.post('/planning/execute', data)
   },
-  
+
   // 直接执行（生成+执行）
   executeDirect(data) {
     return request.post('/planning/execute-direct', data)
   },
-  
+
   // 列出可用的提示词卡片
   listPromptCards() {
     return request.get('/planning/prompt-cards')
@@ -296,17 +306,17 @@ export const speechApi = {
     const { apiKey, prompt } = options
     const formData = new FormData()
     formData.append('file', audioBlob, 'audio.webm')
-    
+
     // 如果提供了API Key，添加到表单数据中
     if (apiKey && apiKey.trim()) {
       formData.append('api_key', apiKey.trim())
     }
-    
+
     // 如果提供了提示词，添加到表单数据中
     if (prompt && prompt.trim()) {
       formData.append('prompt', prompt.trim())
     }
-    
+
     try {
       // 使用正确的STT端点
       const response = await request.post('/speech/stt', formData, {
@@ -314,7 +324,7 @@ export const speechApi = {
           'Content-Type': 'multipart/form-data'
         }
       })
-      
+
       // 返回识别结果
       return {
         text: response.text || '',
@@ -325,11 +335,11 @@ export const speechApi = {
       throw new Error('语音识别失败')
     }
   },
-  
+
   // 文字转语音（智谱AI TTS）
   async textToSpeech(text, options = {}) {
     const { apiKey, voice = 'tongtong', speed = 1.0 } = options
-    
+
     try {
       // 使用新的TTS API
       const response = await request.post('/speech/tts', {
@@ -341,10 +351,10 @@ export const speechApi = {
       }, {
         responseType: 'blob'
       })
-      
+
       // 创建音频URL并播放
       const audioUrl = URL.createObjectURL(response)
-      
+
       return new Promise((resolve, reject) => {
         const audio = new Audio(audioUrl)
         audio.oncanplaythrough = () => {

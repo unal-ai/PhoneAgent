@@ -7,6 +7,9 @@
       muted 
       playsinline
       @click="handleClick"
+      @playing="onVideoPlaying"
+      @stalled="onVideoStalled"
+      @error="onVideoError"
       :class="{ 'clickable': enableControl }"
       class="video-player"
     />
@@ -16,6 +19,45 @@
       <el-tag :type="statusType" size="small">{{ status }}</el-tag>
       <span v-if="fps > 0" class="fps-indicator">{{ fps }} FPS</span>
       <span v-if="latency > 0" class="latency-indicator">{{ latency }}ms</span>
+      <el-button 
+        size="small" 
+        type="info" 
+        circle 
+        @click="showDebug = !showDebug"
+        class="debug-toggle"
+      >
+        🔍
+      </el-button>
+    </div>
+    
+    <!-- Debug 面板 -->
+    <div v-if="showDebug" class="debug-overlay">
+      <div class="debug-title">🔍 视频流调试</div>
+      <div class="debug-row">
+        <span>NAL 单元:</span>
+        <span>{{ debugStats.nalCount }}</span>
+      </div>
+      <div class="debug-row">
+        <span>接收字节:</span>
+        <span>{{ formatBytes(debugStats.totalBytes) }}</span>
+      </div>
+      <div class="debug-row">
+        <span>视频状态:</span>
+        <span :class="videoState.class">{{ videoState.text }}</span>
+      </div>
+      <div class="debug-row">
+        <span>初始化:</span>
+        <span :class="debugStats.hasReceivedInit ? 'good' : 'bad'">
+          {{ debugStats.hasReceivedInit ? '✓ 已接收' : '✗ 等待中' }}
+        </span>
+      </div>
+      <div class="debug-row">
+        <span>播放时间:</span>
+        <span>{{ videoRef?.currentTime?.toFixed(2) || 0 }}s</span>
+      </div>
+      <el-button size="small" type="warning" @click="forceReconnect">
+        强制重连
+      </el-button>
     </div>
     
     <!-- 加载指示 -->
@@ -27,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import jMuxer from 'jmuxer'
 import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
@@ -61,10 +103,69 @@ let initScanAttempts = 0
 const NAL_SPS = 7
 const NAL_PPS = 8
 const NAL_IDR = 5
+const NAL_SLICE = 1  // Non-IDR slice
 const MAX_INIT_SCAN_ATTEMPTS = 10
 const BYTE_ZERO = 0x00
 const START_CODE = 0x01
 const NAL_TYPE_MASK = 0x1f
+
+// Debug stats
+const debugStats = ref({
+  totalBytes: 0,
+  nalCount: 0,
+  hasReceivedInit: false,
+  lastNalType: 0,
+  hasPlayedFirstFrame: false
+})
+
+// Debug panel visibility
+const showDebug = ref(false)
+
+// Video state computed property for debug display
+const videoState = computed(() => {
+  if (!videoRef.value) {
+    return { text: '未就绪', class: 'bad' }
+  }
+  if (videoRef.value.paused) {
+    return { text: '暂停', class: 'warn' }
+  }
+  if (videoRef.value.currentTime > 0) {
+    return { text: '播放中', class: 'good' }
+  }
+  return { text: '等待数据', class: 'warn' }
+})
+
+// Format bytes for display
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+}
+
+// Force reconnect function
+function forceReconnect() {
+  console.log('[Debug] Force reconnecting...')
+  reconnect()
+}
+
+// Video event handlers
+function onVideoPlaying() {
+  console.log('[Video] Started playing')
+  debugStats.value.hasPlayedFirstFrame = true
+  status.value = '已连接'
+  statusType.value = 'success'
+}
+
+function onVideoStalled() {
+  console.warn('[Video] Stalled - waiting for data')
+  status.value = '缓冲中...'
+}
+
+function onVideoError(e) {
+  console.error('[Video] Error:', e)
+  status.value = '播放错误'
+  statusType.value = 'danger'
+}
 
 function isStartCode(data, index) {
   const fourByte = index + 3 < data.length &&
@@ -279,7 +380,12 @@ function connect() {
             hasStartCode,
             preview: Array.from(videoData.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join(' ')
           })
+          debugStats.value.hasReceivedInit = true
         }
+        
+        // Update debug stats
+        debugStats.value.totalBytes += videoData.length
+        debugStats.value.nalCount++
         
         // Feed 数据到 jMuxer
         jmuxerInstance.feed({
@@ -287,6 +393,18 @@ function connect() {
         })
         
         frameCount++
+        
+        // Check for black screen after receiving data
+        // If we've received 30+ frames but video is not playing, warn user
+        if (frameCount === 30 && videoRef.value) {
+          setTimeout(() => {
+            if (videoRef.value && videoRef.value.currentTime === 0) {
+              console.warn('[jMuxer] Video not playing after 30 frames, possible decode issue')
+              status.value = '解码中...'
+              // Consider auto-reconnect after more frames
+            }
+          }, 1000)
+        }
       }
     }
     
@@ -342,6 +460,13 @@ function reconnect() {
   initSegment = null
   initScanComplete = false
   initScanAttempts = 0
+  debugStats.value = {
+    totalBytes: 0,
+    nalCount: 0,
+    hasReceivedInit: false,
+    lastNalType: 0,
+    hasPlayedFirstFrame: false
+  }
   
   // 300ms 后重新连接（让资源释放）
   setTimeout(connect, 300)
@@ -486,5 +611,55 @@ onUnmounted(() => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Debug Panel Styles */
+.debug-toggle {
+  margin-left: 8px;
+}
+
+.debug-overlay {
+  position: absolute;
+  top: 60px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 180px;
+  z-index: 30;
+  font-size: 12px;
+}
+
+.debug-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #444;
+  color: #fff;
+}
+
+.debug-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  color: #ccc;
+}
+
+.debug-row .good {
+  color: #67C23A;
+}
+
+.debug-row .warn {
+  color: #E6A23C;
+}
+
+.debug-row .bad {
+  color: #F56C6C;
+}
+
+.debug-overlay .el-button {
+  width: 100%;
+  margin-top: 8px;
 }
 </style>

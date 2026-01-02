@@ -80,15 +80,30 @@ class DeviceScanner:
         return f"device_{frp_port}"
 
     async def check_port_listening(self, port: int) -> bool:
-        """检查端口是否有进程监听"""
+        """检查端口是否有进程监听（跨平台支持）"""
+        import platform
+
         try:
-            result = subprocess.run(["netstat", "-tlnp"], capture_output=True, text=True, timeout=2)
-
-            for line in result.stdout.split("\n"):
-                if f":{port}" in line and "LISTEN" in line:
-                    return True
-
-            return False
+            if platform.system() == "Darwin":  # macOS
+                # macOS 使用 lsof
+                result = subprocess.run(
+                    ["lsof", "-i", f":{port}", "-sTCP:LISTEN"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2,
+                )
+                return bool(result.stdout.strip())
+            else:  # Linux
+                result = subprocess.run(
+                    ["netstat", "-tlnp"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2,
+                )
+                for line in result.stdout.split("\n"):
+                    if f":{port}" in line and "LISTEN" in line:
+                        return True
+                return False
 
         except Exception as e:
             logger.debug(f"[DeviceScanner] 检查端口{port}失败: {e}")

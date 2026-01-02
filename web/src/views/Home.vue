@@ -1076,6 +1076,13 @@ onMounted(async () => {
   await taskStore.fetchTasks()
   await loadShortcuts()
   await loadPromptCards()
+  
+  // Auto-resume viewing a running task
+  const runningTask = taskStore.tasks.find(t => t.status === 'running')
+  if (runningTask) {
+    console.log('[Home] Found running task, resuming live view:', runningTask.task_id)
+    currentTaskId.value = runningTask.task_id
+  }
 })
 
 onUnmounted(() => {

@@ -64,12 +64,16 @@
             <el-tag :type="getStatusType(task.status)" size="small">
               {{ getStatusText(task.status) }}
             </el-tag>
+            <span class="task-id-link" @click.stop="showTaskDetail(task)" :title="'点击查看详情: ' + task.task_id">
+              {{ task.task_id.substring(0, 8) }}...
+            </span>
           </div>
           <span class="task-time">{{ formatTime(task.created_at) }}</span>
         </div>
 
-        <div class="task-instruction" @click="showTaskDetail(task)">
+        <div class="task-instruction clickable" @click="showTaskDetail(task)">
           {{ task.instruction }}
+          <el-icon class="view-detail-icon"><ArrowRight /></el-icon>
         </div>
 
         <div class="task-footer">
@@ -251,7 +255,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Cellphone, Timer, Picture, Delete, Coin } from '@element-plus/icons-vue'
+import { Refresh, Cellphone, Timer, Picture, Delete, Coin, ArrowRight } from '@element-plus/icons-vue'
 import { useTaskStore } from '@/stores/task'
 import { taskApi } from '@/api'
 import TopNavigation from '@/components/TopNavigation.vue'
@@ -563,6 +567,42 @@ onMounted(() => {
   margin-bottom: 12px;
   color: var(--el-text-color-primary);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-base);
+  transition: background-color 0.2s ease;
+}
+
+.task-instruction.clickable:hover {
+  background-color: var(--info-bg);
+}
+
+.task-instruction .view-detail-icon {
+  color: var(--el-text-color-secondary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.task-instruction.clickable:hover .view-detail-icon {
+  opacity: 1;
+}
+
+.task-id-link {
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--primary-color);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--info-bg);
+  transition: all 0.2s ease;
+}
+
+.task-id-link:hover {
+  background: var(--primary-color);
+  color: white;
 }
 
 .task-footer {

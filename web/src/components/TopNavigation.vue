@@ -182,7 +182,7 @@ const openGitHub = () => {
 
 .logo-unified {
   display: flex;
-  align-items: center;
+  align-items: end;
   gap: var(--space-sm);
   font-size: 20px;
   font-weight: 600;

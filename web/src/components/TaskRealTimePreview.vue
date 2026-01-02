@@ -82,6 +82,13 @@
                   Token: {{ step.tokens_used.total_tokens || 0 }}
                 </span>
               </div>
+              
+              <!-- 失败原因（仅失败时显示） -->
+              <div v-if="!step.success && step.observation" class="step-error-reason">
+                <el-icon><WarningFilled /></el-icon>
+                <strong>失败原因:</strong>
+                <span>{{ step.observation }}</span>
+              </div>
             </el-card>
           </el-timeline-item>
 
@@ -198,7 +205,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ChatDotRound, VideoPlay, View, Loading, Edit, QuestionFilled, Promotion, Refresh } from '@element-plus/icons-vue'
+import { ChatDotRound, VideoPlay, View, Loading, Edit, QuestionFilled, Promotion, Refresh, WarningFilled } from '@element-plus/icons-vue'
 import { taskApi } from '@/api'
 
 const props = defineProps({
@@ -336,12 +343,20 @@ async function loadTask() {
   
   try {
     currentTask.value = await taskApi.get(props.taskId)
+    console.log('[TaskPreview] Loaded task:', currentTask.value?.task_id, 'status:', currentTask.value?.status)
     
     const stepsData = await taskApi.getSteps(props.taskId)
+    console.log('[TaskPreview] Steps response:', {
+      total_steps: stepsData.total_steps,
+      steps_length: stepsData.steps?.length,
+      first_step: stepsData.steps?.[0],
+      last_step: stepsData.steps?.[stepsData.steps?.length - 1]
+    })
     
     // Load initial steps (WebSocket will update in real-time)
     if (stepsData.steps && Array.isArray(stepsData.steps)) {
       steps.value = stepsData.steps
+      console.log('[TaskPreview] Set steps.value, now has', steps.value.length, 'steps')
     }
   } catch (error) {
     console.error('[TaskPreview] Failed to load task:', error)
@@ -708,6 +723,30 @@ onUnmounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Error reason display */
+.step-error-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--danger-bg, #fef0f0);
+  border-left: 3px solid var(--danger-color, #f56c6c);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--danger-color, #f56c6c);
+}
+
+.step-error-reason .el-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-error-reason strong {
+  flex-shrink: 0;
 }
 
 .task-stats {

@@ -334,6 +334,25 @@ def launch_app(app_name: str, device_id: Optional[str] = None, delay: float = 1.
     adb_prefix = _get_adb_prefix(device_id)
     logger.info(f"正在启动应用: {app_name} ({package}) [来源: {source}]")
 
+    # ✅ Pre-launch validation: Check if app is actually installed on device
+    try:
+        check_result = subprocess.run(
+            adb_prefix + ["shell", "pm", "path", package],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if check_result.returncode != 0 or not check_result.stdout.strip():
+            logger.error(f"❌ 应用未安装: {app_name} (包名: {package})")
+            logger.info("该应用在配置中存在，但未安装在设备上")
+            logger.info("建议: 请先在设备上安装该应用，或使用其他已安装的应用")
+            return False
+        logger.debug(f"✓ 应用已安装验证通过: {package}")
+    except subprocess.TimeoutExpired:
+        logger.warning("应用安装检查超时，继续尝试启动...")
+    except Exception as e:
+        logger.warning(f"应用安装检查异常: {e}，继续尝试启动...")
+
     # Method 1: Use Activity Manager (AM) - Most reliable and fast
     try:
         result = subprocess.run(

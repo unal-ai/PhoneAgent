@@ -390,7 +390,7 @@ function startElapsedTimer() {
     if (currentTask.value?.started_at && currentTask.value.status === 'running') {
       const start = new Date(currentTask.value.started_at)
       const now = new Date()
-      elapsedTime.value = ((now - start) / 1000).toFixed(0)
+      elapsedTime.value = Math.floor((now - start) / 1000)
     }
   }, 1000)
 }

@@ -31,8 +31,8 @@
       <div ref="stepsStreamRef" class="steps-stream">
         <el-timeline>
           <el-timeline-item
-            v-for="(step, index) in steps"
-            :key="index"
+            v-for="(step, index) in validSteps"
+            :key="step.step || index"
             :timestamp="formatTime(step.timestamp)"
             :color="getStepColor(step)"
             placement="top"
@@ -72,8 +72,8 @@
 
               <!-- 步骤状态 -->
               <div class="step-footer">
-                <el-tag :type="step.success ? 'success' : 'danger'" size="small">
-                  {{ step.success ? '✓ 成功' : '✗ 失败' }}
+                <el-tag :type="step.success === true ? 'success' : (step.success === false ? 'danger' : 'info')" size="small">
+                  {{ step.success === true ? '✓ 成功' : (step.success === false ? '✗ 失败' : '进行中') }}
                 </el-tag>
                 <span v-if="step.duration_ms" class="step-duration">
                   耗时: {{ (step.duration_ms / 1000).toFixed(2) }}s
@@ -84,7 +84,7 @@
               </div>
               
               <!-- 失败原因（仅失败时显示） -->
-              <div v-if="!step.success && step.observation" class="step-error-reason">
+              <div v-if="step.success === false && step.observation" class="step-error-reason">
                 <el-icon><WarningFilled /></el-icon>
                 <strong>失败原因:</strong>
                 <span>{{ step.observation }}</span>
@@ -234,8 +234,13 @@ const isLoadingContext = ref(false)
 
 const totalTokens = computed(() => {
   return steps.value.reduce((sum, step) => {
-    return sum + (step.tokens_used?.total_tokens || 0)
+    return sum + (step?.tokens_used?.total_tokens || 0)
   }, 0)
+})
+
+// Filter out invalid steps to prevent rendering errors
+const validSteps = computed(() => {
+  return steps.value.filter(step => step && typeof step === 'object')
 })
 
 let elapsedTimer = null

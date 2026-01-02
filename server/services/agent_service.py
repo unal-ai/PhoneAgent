@@ -389,14 +389,14 @@ class AgentCallback:
     async def on_error(self, error: str):
         """错误"""
         import traceback
-        
+
         # Get full traceback if available
         tb_str = traceback.format_exc()
         if tb_str and tb_str != "NoneType: None\n":
-             detailed_error = f"{error}\n\nTraceback:\n{tb_str}"
+            detailed_error = f"{error}\n\nTraceback:\n{tb_str}"
         else:
-             detailed_error = error
-             
+            detailed_error = error
+
         logger.error(f"Task {self.task.task_id} error: {detailed_error}")
         self.task.error = detailed_error
         self.task.status = TaskStatus.FAILED
@@ -451,9 +451,7 @@ class AgentService:
                 count = 0
                 for task in running_tasks:
                     # 标记为失败
-                    logger.warning(
-                        f"Found orphaned running task {task.task_id}, marking as FAILED"
-                    )
+                    logger.warning(f"Found orphaned running task {task.task_id}, marking as FAILED")
                     crud.update_task(
                         db,
                         task.task_id,
@@ -468,27 +466,30 @@ class AgentService:
 
                 # 查找长时间 PENDING 的任务 (例如超过1小时)
                 from datetime import timedelta
+
                 pending_tasks = crud.list_tasks(db, status="pending")
                 cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
-                
+
                 pending_count = 0
                 for task in pending_tasks:
-                   # 数据库时间通常是 naive UTC，需要处理时区
-                   created_at = task.created_at
-                   if created_at.tzinfo is None:
-                       created_at = created_at.replace(tzinfo=timezone.utc)
-                   
-                   if created_at < cutoff:
-                       logger.warning(f"Found stale pending task {task.task_id}, marking as FAILED")
-                       crud.update_task(
-                           db, 
-                           task.task_id, 
-                           status="failed", 
-                           error="Task timeout (stale pending)",
-                           completed_at=datetime.now(timezone.utc)
+                    # 数据库时间通常是 naive UTC，需要处理时区
+                    created_at = task.created_at
+                    if created_at.tzinfo is None:
+                        created_at = created_at.replace(tzinfo=timezone.utc)
+
+                    if created_at < cutoff:
+                        logger.warning(
+                            f"Found stale pending task {task.task_id}, marking as FAILED"
                         )
-                       pending_count += 1
-                
+                        crud.update_task(
+                            db,
+                            task.task_id,
+                            status="failed",
+                            error="Task timeout (stale pending)",
+                            completed_at=datetime.now(timezone.utc),
+                        )
+                        pending_count += 1
+
                 if pending_count > 0:
                     logger.info(f"Recovered {pending_count} stale pending tasks")
             finally:

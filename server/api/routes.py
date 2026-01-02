@@ -573,7 +573,7 @@ async def get_task_context(task_id: str):
         raise HTTPException(
             404,
             "Context not found. The task might be completed and cleaned up from memory, "
-            "or it was never started."
+            "or it was never started.",
         )
 
     # 过滤掉过大的 Base64 图片数据，避免响应过大
@@ -600,6 +600,7 @@ async def get_task_context(task_id: str):
 
 class InjectCommentRequest(BaseModel):
     """用户评论注入请求"""
+
     comment: str
 
 
@@ -627,13 +628,13 @@ async def inject_comment(task_id: str, request: InjectCommentRequest):
         raise HTTPException(
             400,
             f"Failed to inject comment. Task {task_id} might not be running "
-            "or already completed."
+            "or already completed.",
         )
 
     return {
         "success": True,
         "task_id": task_id,
-        "message": "Comment injected successfully. It will be visible to the model in the next step."
+        "message": "Comment injected successfully. It will be visible to the model in the next step.",
     }
 
 

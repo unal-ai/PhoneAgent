@@ -162,9 +162,7 @@ class PhoneAgent:
 
         # Add as a user message (will be seen by the model in next step)
         self._context.append(
-            MessageBuilder.create_user_message(
-                text=f"[User Intervention] {comment}"
-            )
+            MessageBuilder.create_user_message(text=f"[User Intervention] {comment}")
         )
         logger.info(f"Injected user comment: {comment[:50]}...")
         return True

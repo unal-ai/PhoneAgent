@@ -133,119 +133,22 @@
       </div>
 
       <!-- 任务详情对话框 -->
+    <!-- 任务详情对话框 (Unified View) -->
     <el-dialog
       v-model="detailDialogVisible"
       title="任务详情"
       width="90%"
       :fullscreen="isMobile"
+      top="5vh"
+      destroy-on-close
+      class="task-detail-dialog"
     >
-      <el-tabs v-if="selectedTask" type="border-card">
-        <!-- 基本信息 -->
-        <el-tab-pane label="基本信息">
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="任务ID">
-              {{ selectedTask.task_id }}
-            </el-descriptions-item>
-            <el-descriptions-item label="状态">
-              <el-tag :type="getStatusType(selectedTask.status)">
-                {{ getStatusText(selectedTask.status) }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="指令">
-              {{ selectedTask.instruction }}
-            </el-descriptions-item>
-            <el-descriptions-item label="设备">
-              {{ selectedTask.device_id || '自动分配' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="创建时间">
-              {{ formatFullTime(selectedTask.created_at) }}
-            </el-descriptions-item>
-            <el-descriptions-item label="开始时间" v-if="selectedTask.started_at">
-              {{ formatFullTime(selectedTask.started_at) }}
-            </el-descriptions-item>
-            <el-descriptions-item label="完成时间" v-if="selectedTask.completed_at">
-              {{ formatFullTime(selectedTask.completed_at) }}
-            </el-descriptions-item>
-            <el-descriptions-item label="执行时长" v-if="selectedTask.duration">
-              {{ selectedTask.duration.toFixed(2) }} 秒
-            </el-descriptions-item>
-            <el-descriptions-item label="执行步骤">
-              {{ taskDetailSteps.length }} 步
-            </el-descriptions-item>
-            <el-descriptions-item label="Token用量" v-if="selectedTask.total_tokens > 0">
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                <span>总计: {{ selectedTask.total_tokens || 0 }}</span>
-                <span class="token-detail-text">
-                  输入: {{ selectedTask.total_prompt_tokens || 0 }} | 
-                  输出: {{ selectedTask.total_completion_tokens || 0 }}
-                </span>
-              </div>
-            </el-descriptions-item>
-            <el-descriptions-item label="结果" v-if="selectedTask.result">
-              {{ selectedTask.result }}
-            </el-descriptions-item>
-            <el-descriptions-item label="错误" v-if="selectedTask.error">
-              <el-text type="danger">{{ selectedTask.error }}</el-text>
-            </el-descriptions-item>
-          </el-descriptions>
-        </el-tab-pane>
-        
-        <!-- 执行轨迹（带截图） -->
-        <el-tab-pane label="执行轨迹">
-          <el-empty v-if="taskDetailSteps.length === 0" description="暂无执行步骤" />
-          
-          <el-timeline v-else>
-            <el-timeline-item
-              v-for="(step, index) in taskDetailSteps"
-              :key="index"
-              :timestamp="formatFullTime(step.timestamp)"
-              placement="top"
-              :color="step.success ? '#67C23A' : '#F56C6C'"
-            >
-              <el-card shadow="never" class="step-card">
-                <template #header>
-                  <div class="step-header">
-                    <el-tag :type="step.success ? 'success' : 'danger'" size="small">
-                      {{ step.success ? '✓ 成功' : '✗ 失败' }}
-                    </el-tag>
-                  </div>
-                </template>
-                
-                <!-- 操作描述 -->
-                <div class="step-action">
-                  <strong>操作：</strong>{{ step.action }}
-                </div>
-                
-                <!-- AI观察 -->
-                <div v-if="step.observation" class="step-observation">
-                  <strong>AI观察：</strong>{{ step.observation }}
-                </div>
-                
-                <!-- AI决策 -->
-                <div v-if="step.thinking" class="step-thinking">
-                  <strong>AI决策：</strong>{{ step.thinking }}
-                </div>
-                
-                <!-- 截图 -->
-                <div v-if="step.screenshot" class="step-screenshot">
-                  <el-image
-                    :src="getScreenshotUrl(step.screenshot)"
-                    :preview-src-list="[getScreenshotUrl(step.screenshot, 'medium')]"
-                    fit="cover"
-                    style="width: 200px; height: auto; cursor: pointer;"
-                  >
-                    <template #error>
-                      <div class="image-slot">
-                        <el-icon><Picture /></el-icon>
-                      </div>
-                    </template>
-                  </el-image>
-                </div>
-              </el-card>
-            </el-timeline-item>
-          </el-timeline>
-        </el-tab-pane>
-      </el-tabs>
+      <div v-if="selectedTask" class="detail-container" style="height: 80vh">
+        <TaskRealTimePreview 
+          :task-id="selectedTask.task_id" 
+          class="dialog-preview"
+        />
+      </div>
     </el-dialog>
     </div>
   </div>
@@ -255,11 +158,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Cellphone, Timer, Picture, Delete, Coin, ArrowRight } from '@element-plus/icons-vue'
+import { Refresh, Cellphone, Timer, Delete, Coin, ArrowRight } from '@element-plus/icons-vue'
 import { useTaskStore } from '@/stores/task'
 import { taskApi } from '@/api'
 import TopNavigation from '@/components/TopNavigation.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import TaskRealTimePreview from '@/components/TaskRealTimePreview.vue'
 
 const router = useRouter()
 const taskStore = useTaskStore()
@@ -267,7 +171,6 @@ const taskStore = useTaskStore()
 const filterStatus = ref('')
 const detailDialogVisible = ref(false)
 const selectedTask = ref(null)
-const taskDetailSteps = ref([])  // 任务详细步骤（包含截图）
 const selectedTaskIds = ref([])  // 选中的任务ID列表
 const selectAll = ref(false)  // 全选状态
 
@@ -372,50 +275,12 @@ function handleSelectAll(val) {
 }
 
 // 显示任务详情
-async function showTaskDetail(task) {
+function showTaskDetail(task) {
   selectedTask.value = task
   detailDialogVisible.value = true
-  
-  // 获取完整的任务详情（包含步骤）
-  try {
-    const fullTask = await taskApi.get(task.task_id)
-    if (fullTask && fullTask.steps) {
-      // steps可能是数组（完整步骤信息）或数字（步骤数）
-      if (Array.isArray(fullTask.steps)) {
-        taskDetailSteps.value = fullTask.steps
-      } else {
-        taskDetailSteps.value = []
-      }
-    } else {
-      taskDetailSteps.value = []
-    }
-  } catch (error) {
-    console.error('Failed to load task details:', error)
-    taskDetailSteps.value = []
-  }
 }
 
-// 获取截图URL
-function getScreenshotUrl(screenshotPath, size = 'small') {
-  if (!screenshotPath) return ''
-  
-  // 如果是完整URL，直接返回
-  if (screenshotPath.startsWith('http://') || screenshotPath.startsWith('https://')) {
-    return screenshotPath
-  }
-  
-  // 如果是相对路径（如 screenshots/task_xxx/step_001_small.jpg）
-  if (screenshotPath.startsWith('screenshots/')) {
-    // 替换尺寸后缀
-    const basePath = screenshotPath.replace(/_[a-z]+\.jpg$/, '')
-    return `${apiBaseUrl}/api/v1/${basePath}_${size}.jpg`
-  }
-  
-  // 如果只是文件名（如 step_001_small.jpg）
-  const fileName = screenshotPath.split('/').pop()
-  const baseName = fileName.replace(/_[a-z]+\.jpg$/, '')
-  return `${apiBaseUrl}/api/v1/screenshots/${selectedTask.value.task_id}/${baseName}_${size}.jpg`
-}
+// 获取截图URL (Removed - handled by TaskRealTimePreview)
 
 // 状态类型
 function getStatusType(status) {
@@ -472,26 +337,7 @@ function formatTime(dateString) {
   return date.toLocaleDateString('zh-CN')
 }
 
-// 格式化完整时间
-function formatFullTime(dateString) {
-  if (!dateString) return '-'
-  
-  // 同样的UTC时间处理
-  let isoString = dateString
-  if (!isoString.endsWith('Z') && isoString.includes('T') && !isoString.includes('+')) {
-    isoString = dateString + 'Z'
-  }
-  
-  return new Date(isoString).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  })
-}
+// 格式化完整时间 (Removed)
 
 // 生命周期
 

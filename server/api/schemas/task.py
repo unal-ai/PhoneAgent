@@ -21,6 +21,7 @@ class CreateTaskRequest(BaseModel):
     )
     ai_api_key: Optional[str] = Field(None, description="AI模型API密钥（可选，使用环境变量）")
     max_steps: Optional[int] = Field(None, description="最大步骤数（默认从环境变量获取）")
+    max_history_images: Optional[int] = Field(None, description="保留历史截图数（默认从环境变量获取）")
     prompt_card_ids: Optional[List[int]] = Field(None, description="提示词卡片ID列表")
     # Warning: 已废弃：kernel_mode（保留字段用于API兼容，但不再使用）
     kernel_mode: Optional[str] = Field(

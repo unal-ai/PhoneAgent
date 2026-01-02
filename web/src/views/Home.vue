@@ -245,8 +245,24 @@
                 <span>{{ transcriptionProgress }}</span>
               </div>
 
-              <!-- ✅ 移除高级选项：所有配置由后端环境变量控制 -->
-              <!-- 最大执行步数、AI模型配置、API Key 等均在服务端 .env 文件配置 -->
+              <!-- 高级设置 -->
+              <el-collapse class="advanced-settings-collapse">
+                <el-collapse-item name="advanced">
+                  <template #title>
+                    <div class="advanced-settings-title">
+                      <el-icon><Setting /></el-icon> ⚙️ 高级设置
+                    </div>
+                  </template>
+                  <el-form-item label="最大步骤数">
+                    <el-input-number v-model="taskForm.max_steps" :min="10" :max="300" :step="10" />
+                    <div class="form-hint-text">任务执行的最大步数限制 (默认: 100)</div>
+                  </el-form-item>
+                  <el-form-item label="历史截图记忆 (Visual Memory)">
+                    <el-input-number v-model="taskForm.max_history_images" :min="0" :max="5" />
+                    <div class="form-hint-text">保留最近 N 张截图，帮助AI感知界面变化 (0=仅当前, 1=当前+上一步)</div>
+                  </el-form-item>
+                </el-collapse-item>
+              </el-collapse>
             </el-form>
           </el-card>
         </div>
@@ -385,7 +401,9 @@ const taskForm = ref({
   // max_steps, speech_platform, speech_api_key 等均由服务端配置
   prompt_card_ids: [],  // 选中的提示词卡片ID列表
   execution_mode: 'step_by_step',  // 执行模式: 'step_by_step' | 'planning'
-  preview_plan: true  // 规划模式是否预览计划
+  preview_plan: true, // 默认开启预览
+  max_steps: 100,
+  max_history_images: 1,
 })
 
 // 当前任务ID(用于实时预览)

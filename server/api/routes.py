@@ -374,6 +374,7 @@ async def create_task(request: CreateTaskRequest):
     model_config = {
         "provider": request.ai_provider,
         "max_steps": request.max_steps or config.MAX_TASK_STEPS,  # 使用环境变量默认值
+        "max_history_images": request.max_history_images if request.max_history_images is not None else config.MAX_HISTORY_IMAGES,
         "kernel_mode": "vision",  # 强制使用vision内核
     }
 

@@ -839,14 +839,15 @@ class AgentService:
             # phone_agent.model.ModelConfig 不支持 'provider' 参数
             model_params = {}
 
+            # 初始化配置
+            from server.config import Config
+            config = Config()
+
             # API Key（必需）
             if "api_key" in model_config_dict:
                 model_params["api_key"] = model_config_dict["api_key"]
             else:
                 # 如果没有提供，尝试使用环境变量
-                from server.config import Config
-
-                config = Config()
                 if config.ZHIPU_API_KEY:
                     model_params["api_key"] = config.ZHIPU_API_KEY
                     logger.info("Using ZHIPU_API_KEY from environment")
@@ -897,7 +898,7 @@ class AgentService:
                 device_id=adb_device_id,  # 使用 ADB 地址而不是逻辑设备 ID
                 max_steps=model_config_dict.get("max_steps", 100),
                 verbose=True,
-                max_history_images=config.MAX_HISTORY_IMAGES,
+                max_history_images=model_config_dict.get("max_history_images", config.MAX_HISTORY_IMAGES),
             )
 
             # 获取内核模式

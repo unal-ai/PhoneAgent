@@ -1316,8 +1316,11 @@ class AgentService:
 
             # 清理
             # 新增: 清理已完成任务（移出内存）
+            # 新增: 清理已完成任务（移出内存）
             if task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED):
-                await self._cleanup_completed_task(task.task_id)
+                # 暂时禁用自动清理，以便前端调试面板可以查看历史上下文
+                logger.info(f"Task {task.task_id} completed/failed, keeping context in memory for debugging")
+                # await self._cleanup_completed_task(task.task_id)
             else:
                 # 仅清理asyncio句柄，保留运行中任务
                 if task.task_id in self._running_task_handles:

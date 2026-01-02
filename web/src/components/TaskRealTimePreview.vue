@@ -257,6 +257,23 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
 
 function getScreenshotUrl(path) {
   if (!path) return ''
+  
+  // Absolute URL
+  if (path.startsWith('http')) return path
+  
+  // Relative path (already contains screenshots/...)
+  if (path.startsWith('screenshots/')) {
+      return `${apiBaseUrl}/${path}`
+  }
+  
+  // Filename only (construct full path using taskId)
+  // Ensure we have a task ID to construct the path
+  const taskId = props.taskId || currentTask.value?.task_id
+  if (taskId) {
+      return `${apiBaseUrl}/screenshots/${taskId}/${path}`
+  }
+  
+  // Fallback
   return `${apiBaseUrl}/${path}`
 }
 

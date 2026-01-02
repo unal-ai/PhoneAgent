@@ -358,17 +358,9 @@ async function loadTask() {
     currentTask.value = await taskApi.get(props.taskId)
     console.log('[TaskPreview] Loaded task:', currentTask.value?.task_id, 'status:', currentTask.value?.status)
     
-    const stepsData = await taskApi.getSteps(props.taskId)
-    console.log('[TaskPreview] Steps response:', {
-      total_steps: stepsData.total_steps,
-      steps_length: stepsData.steps?.length,
-      first_step: stepsData.steps?.[0],
-      last_step: stepsData.steps?.[stepsData.steps?.length - 1]
-    })
-    
-    // Load initial steps (WebSocket will update in real-time)
-    if (stepsData.steps && Array.isArray(stepsData.steps)) {
-      steps.value = stepsData.steps
+    // Use steps from task object directly
+    if (currentTask.value?.steps && Array.isArray(currentTask.value.steps)) {
+      steps.value = currentTask.value.steps
       console.log('[TaskPreview] Set steps.value, now has', steps.value.length, 'steps')
     }
   } catch (error) {
@@ -521,24 +513,16 @@ function startPolling() {
         currentTask.value.error = task.error
       }
       
-      // 获取最新步骤
-      const stepsData = await taskApi.getSteps(props.taskId)
-      if (stepsData.steps && Array.isArray(stepsData.steps)) {
-        // 检查是否有新步骤
-        if (stepsData.steps.length > steps.value.length) {
-          // 标记新步骤（用于动画）
-          const newSteps = stepsData.steps.slice(steps.value.length)
-          newSteps.forEach(step => {
-            step.isNew = true
-            setTimeout(() => {
-              step.isNew = false
-            }, 1000)
-          })
-          
-          steps.value = stepsData.steps
-          
+      // Update steps from task object directly
+      if (task.steps && Array.isArray(task.steps)) {
+        // Check for new steps
+        if (task.steps.length > steps.value.length) {
+          steps.value = task.steps
           // Auto-scroll to show new steps
           scrollToBottom()
+        } else {
+            // Update existing steps (in case of status change)
+            steps.value = task.steps
         }
       }
       

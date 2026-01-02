@@ -261,6 +261,37 @@
                     <el-input-number v-model="taskForm.max_history_images" :min="0" :max="5" />
                     <div class="form-hint-text">保留最近 N 张截图，帮助AI感知界面变化 (0=仅当前, 1=当前+上一步)</div>
                   </el-form-item>
+                  
+                  <el-divider content-position="left">模型配置 (AI Model)</el-divider>
+                  
+                  <el-form-item label="AI厂商预设">
+                    <el-radio-group v-model="aiProviderPreset" @change="handlePresetChange">
+                      <el-radio-button label="zhipu">智谱AI (默认)</el-radio-button>
+                      <el-radio-button label="openai">OpenAI</el-radio-button>
+                      <el-radio-button label="local">本地模型 (Local)</el-radio-button>
+                      <el-radio-button label="custom">自定义</el-radio-button>
+                    </el-radio-group>
+                  </el-form-item>
+
+                  <el-form-item label="Base URL">
+                    <el-input v-model="taskForm.ai_base_url" placeholder="例如: https://open.bigmodel.cn/api/paas/v4/" />
+                    <div class="form-hint-text">API 服务地址 (Base URL)</div>
+                  </el-form-item>
+
+                  <el-form-item label="API Key">
+                    <el-input 
+                      v-model="taskForm.ai_api_key" 
+                      type="password" 
+                      placeholder="留空则使用服务端环境变量配置" 
+                      show-password
+                    />
+                  </el-form-item>
+
+                  <el-form-item label="模型名称">
+                    <el-input v-model="taskForm.ai_model" placeholder="例如: autoglm-phone, glm-4-flash, gpt-4o" />
+                    <div class="form-hint-text">推荐: autoglm-phone (官方优化), glm-4-flash (便宜速度快)</div>
+                  </el-form-item>
+
                 </el-collapse-item>
               </el-collapse>
             </el-form>
@@ -404,7 +435,37 @@ const taskForm = ref({
   preview_plan: true, // 默认开启预览
   max_steps: 100,
   max_history_images: 1,
+  // 🆕 模型配置
+  ai_provider: 'zhipu',
+  ai_base_url: '',
+  ai_api_key: '',
+  ai_model: 'autoglm-phone', // 默认模型
 })
+
+// 🆕 AI厂商预设状态
+const aiProviderPreset = ref('zhipu')
+
+// 🆕 处理预设变更
+const handlePresetChange = (val) => {
+  taskForm.value.ai_provider = val
+  switch (val) {
+    case 'zhipu':
+      taskForm.value.ai_base_url = '' // 空表示使用默认
+      taskForm.value.ai_model = 'autoglm-phone'
+      break
+    case 'openai':
+      taskForm.value.ai_base_url = 'https://api.openai.com/v1'
+      taskForm.value.ai_model = 'gpt-4o'
+      break
+    case 'local':
+      taskForm.value.ai_base_url = 'http://localhost:8000/v1'
+      taskForm.value.ai_model = 'vicuna-7b-v1.5'
+      break
+    case 'custom':
+      // 保持当前值，让用户修改
+      break
+  }
+}
 
 // 当前任务ID(用于实时预览)
 const currentTaskId = ref(null)

@@ -258,7 +258,7 @@ def get_package_name(app_name: str) -> Optional[str]:
     pkg = APP_PACKAGES.get(app_name)
     if pkg:
         return pkg
-        
+
     # Open Mode: If not found in preset list, return original name
     # This allows agents to use package names directly (e.g. "com.example.app")
     # satisfying the "no hardcoded whitelist" requirement

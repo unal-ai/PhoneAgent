@@ -12,11 +12,9 @@ from unittest.mock import Mock, patch
 def mock_model_config():
     """Create a mock ModelConfig for testing."""
     from phone_agent.model import ModelConfig
-    
+
     return ModelConfig(
-        api_key="test-api-key",
-        base_url="https://test.example.com/api/",
-        model_name="test-model"
+        api_key="test-api-key", base_url="https://test.example.com/api/", model_name="test-model"
     )
 
 
@@ -33,9 +31,5 @@ def mock_model_response():
     """Mock model API response."""
     mock_response = Mock()
     mock_response.raw_content = '{"action": "done", "reason": "Task completed"}'
-    mock_response.usage = {
-        "prompt_tokens": 100,
-        "completion_tokens": 50,
-        "total_tokens": 150
-    }
+    mock_response.usage = {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}
     return mock_response

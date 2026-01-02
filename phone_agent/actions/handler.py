@@ -109,6 +109,8 @@ class ActionHandler:
             "Note": self._handle_note,
             "Call_API": self._handle_call_api,
             "Interact": self._handle_interact,
+            "GetInstalledApps": self._handle_get_installed_apps,
+            "UpdateMemory": self._handle_update_memory,
         }
         return handlers.get(action_name)
 
@@ -253,6 +255,38 @@ class ActionHandler:
     def _default_takeover(message: str) -> None:
         """Default takeover callback using console input."""
         input(f"{message}\nPress Enter after completing manual operation...")
+
+    def _handle_get_installed_apps(self, action: dict, width: int, height: int) -> ActionResult:
+        """Handle GetInstalledApps action."""
+        # 暂时只支持获取第三方应用，因为系统应用太多
+        from phone_agent.adb.app_discovery import get_third_party_packages
+        import asyncio
+
+        # 这里的 execute 是同步的，但 device_pool 可能是异步的
+        # 不过 adb.app_discovery 是 async 的
+        # 由于 handler 方法都在同步上下文中调用 (agent.py -> action_handler.execute)
+        # 我们需要在这里运行 async 代码
+
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        apps = loop.run_until_complete(get_third_party_packages(self.device_id))
+
+        app_list_str = ", ".join(apps)
+        return ActionResult(
+            success=True, should_finish=False, message=f"Installed 3rd-party apps: {app_list_str}"
+        )
+
+    def _handle_update_memory(self, action: dict, width: int, height: int) -> ActionResult:
+        """Handle UpdateMemory action."""
+        content = action.get("content", "")
+        # The actual state update happens in PhoneAgent class
+        return ActionResult(
+            success=True, should_finish=False, message=f"Memory updated to: {content[:50]}..."
+        )
 
 
 def parse_action(response: str) -> dict[str, Any]:

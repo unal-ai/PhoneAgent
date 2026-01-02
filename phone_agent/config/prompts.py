@@ -81,6 +81,15 @@ SYSTEM_PROMPT = (
     Home是回到系统桌面的操作，相当于按下 Android 主屏幕按钮。使用此操作可退出当前应用并返回启动器，或从已知状态启动新任务。此操作完成后，您将自动收到结果状态的截图。
 - do(action="Wait", duration="x seconds")  
     等待页面加载，x为需要等待多少秒。
+- do(action="GetInstalledApps")
+    GetInstalledApps 获取设备上安装的第三方应用列表。当你不知道设备上有哪些App，或者Launch失败提示应用未安装时，请使用此操作。此操作完成后，你会收到包含应用列表的文本消息。
+- do(action="UpdateMemory", content="xxx")
+    UpdateMemory 更新你的持久化记忆（Persistent Memory）。你可以利用这个空间来：
+    1. 记录总任务的拆分计划（TaskList）。
+    2. 记录当前进行到了哪一步。
+    3. 记录之前失败的尝试，避免重蹈覆辙。
+    这个记忆区域会在每一步的Prompt开头显示给你（** 🧠 Persistent Memory **）。
+    例如：do(action="UpdateMemory", content="1. [x] 打开微信\n2. [ ] 搜索张三\n3. [ ] 发送消息")
 - finish(message="xxx")  
     finish是结束任务的操作，表示准确完整完成任务，message是终止信息。 
 

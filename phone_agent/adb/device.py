@@ -337,7 +337,7 @@ def launch_app(app_name: str, device_id: Optional[str] = None, delay: float = 1.
     # ✅ Pre-launch validation: Check if app is actually installed on device
     # Controlled by ENABLE_APP_CHECK (default: True)
     enable_check = os.getenv("ENABLE_APP_CHECK", "true").lower() == "true"
-    
+
     if enable_check:
         try:
             check_result = subprocess.run(

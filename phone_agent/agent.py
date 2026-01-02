@@ -89,6 +89,7 @@ class PhoneAgent:
 
         self._context: list[dict[str, Any]] = []
         self._step_count = 0
+        self._scratchpad: str = ""  # 🧠 Persistent Memory
 
         # 新增：步骤回调支持
         from phone_agent.kernel.callback import NoOpCallback
@@ -194,6 +195,10 @@ class PhoneAgent:
             screen_info = MessageBuilder.build_screen_info(current_app)
             text_content = f"{user_prompt}\n\n{screen_info}"
 
+            # 🧠 如果有记忆，注入到Prompt中
+            if self._scratchpad:
+                text_content = f"** 🧠 Persistent Memory (Update with UpdateMemory) **\n{self._scratchpad}\n\n{text_content}"
+
             self._context.append(
                 MessageBuilder.create_user_message(
                     text=text_content, image_base64=screenshot.base64_data
@@ -202,6 +207,10 @@ class PhoneAgent:
         else:
             screen_info = MessageBuilder.build_screen_info(current_app)
             text_content = f"** Screen Info **\n\n{screen_info}"
+
+            # 🧠 如果有记忆，注入到Prompt中
+            if self._scratchpad:
+                text_content = f"** 🧠 Persistent Memory (Update with UpdateMemory) **\n{self._scratchpad}\n\n{text_content}"
 
             self._context.append(
                 MessageBuilder.create_user_message(
@@ -231,6 +240,14 @@ class PhoneAgent:
                 traceback.print_exc()
             action = finish(message=response.action)
 
+        # 🧠 Handle Memory Update (Before Callback)
+        if action.get("action") == "UpdateMemory":
+            old_memory = self._scratchpad
+            new_memory = action.get("content", "")
+            self._scratchpad = new_memory
+            if self.agent_config.verbose:
+                logger.debug(f"🧠 Memory Updated: {old_memory[:20]}... -> {new_memory[:20]}...")
+
         # 🆕 通知步骤开始（此时已有 thinking 和 action）
         action_json = json.dumps(action, ensure_ascii=False) if action else "{}"
         # 将 thinking 和 action 组合传递
@@ -259,21 +276,23 @@ class PhoneAgent:
                 has_image = any(item.get("type") == "image_url" for item in msg["content"])
                 if has_image:
                     image_indices.append(i)
-        
+
         # Keep only the last N images (max_history_images)
         # Note: The current step's image is the last one in the list
         images_to_keep = self.agent_config.max_history_images
-        
+
         if len(image_indices) > images_to_keep:
             # Indices to prune are the ones at the beginning of the list
             # e.g. indices=[0, 2, 4], keep=1 -> prune [0, 2]
-            indices_to_prune = image_indices[:-images_to_keep] if images_to_keep > 0 else image_indices
-            
+            indices_to_prune = (
+                image_indices[:-images_to_keep] if images_to_keep > 0 else image_indices
+            )
+
             for idx in indices_to_prune:
                 self._context[idx] = MessageBuilder.remove_images_from_message(self._context[idx])
                 if self.agent_config.verbose:
                     logger.debug(f"🧹 Removed history image from step index {idx}")
-        
+
         # self._context[-1] = MessageBuilder.remove_images_from_message(self._context[-1])
 
         # Execute action

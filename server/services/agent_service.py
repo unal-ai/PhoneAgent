@@ -841,6 +841,7 @@ class AgentService:
 
             # 初始化配置
             from server.config import Config
+
             config = Config()
 
             # API Key（必需）
@@ -898,7 +899,9 @@ class AgentService:
                 device_id=adb_device_id,  # 使用 ADB 地址而不是逻辑设备 ID
                 max_steps=model_config_dict.get("max_steps", 100),
                 verbose=True,
-                max_history_images=model_config_dict.get("max_history_images", config.MAX_HISTORY_IMAGES),
+                max_history_images=model_config_dict.get(
+                    "max_history_images", config.MAX_HISTORY_IMAGES
+                ),
             )
 
             # 获取内核模式
@@ -1078,7 +1081,9 @@ class AgentService:
                         consecutive_failures = 0
                     else:
                         consecutive_failures += 1
-                        logger.warning(f"⚠️ Action failed ({consecutive_failures}/5): {step_result.action}")
+                        logger.warning(
+                            f"⚠️ Action failed ({consecutive_failures}/5): {step_result.action}"
+                        )
 
                     step_end = time.time()
                     duration_ms = int((step_end - step_start) * 1000)
@@ -1096,31 +1101,53 @@ class AgentService:
 
                         # 新增: 记录模型调用统计（异步，不阻塞）
                         try:
+                            model_params = {
+                                "model_name": task.model_name or "autoglm-phone",
+                                "api_key": model_config_dict.get("api_key")
+                                or config.ZHIPU_AI_API_KEY,
+                                "base_url": model_config_dict.get("base_url")
+                                or config.ZHIPU_AI_BASE_URL,
+                            }
                             await track_model_call(
                                 task_id=task.task_id,
-                                model_name=task.model_name or "unknown",
+                                model_name=model_params[
+                                    "model_name"
+                                ],  # Use model_params for model_name
                                 kernel_mode=task.kernel_mode,
                                 usage=step_result.usage,
                                 latency_ms=duration_ms,
                                 success=step_result.success,
+                                api_key=model_params["api_key"],  # Pass api_key
+                                base_url=model_params["base_url"],  # Pass base_url
                             )
                         except Exception as e:
                             logger.error(f"Failed to track model call: {e}")
 
                     # 记录步骤详情（使用step而不是step_index，保持一致性）
                     step_timestamp = datetime.now(timezone.utc).isoformat()
-                    task.steps.append(
-                        {
-                            "step": step_index,
-                            "timestamp": step_timestamp,
-                            "thinking": step_result.thinking,
-                            "action": step_result.action,
-                            "duration_ms": duration_ms,
-                            "tokens_used": step_result.usage,
-                            "success": step_result.success,
-                            "status": "running",  # 初始状态
-                        }
-                    )
+                    # Find existing step to update (created by AgentCallback.on_step_start)
+                    target_step = next((s for s in task.steps if s.get("step") == step_index), None)
+
+                    step_data_update = {
+                        "step": step_index,
+                        "timestamp": step_timestamp,  # This updates timestamp to completion time? ideally keep start time
+                        "thinking": step_result.thinking,
+                        "action": step_result.action,
+                        "observation": step_result.message,  # Store observation in the step
+                        "duration_ms": duration_ms,
+                        "tokens_used": step_result.usage,
+                        "success": step_result.success,
+                        "status": "completed" if step_result.success else "failed",
+                    }
+
+                    if target_step:
+                        # Keep original start timestamp if possible
+                        if "timestamp" in target_step:
+                            del step_data_update["timestamp"]
+                        target_step.update(step_data_update)
+                    else:
+                        # Fallback: append if not found
+                        task.steps.append(step_data_update)
 
                     # 立即广播步骤开始状态（包含 thinking 和 action）
                     if self._websocket_broadcast_callback:
@@ -1324,7 +1351,9 @@ class AgentService:
             # 新增: 清理已完成任务（移出内存）
             if task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED):
                 # 暂时禁用自动清理，以便前端调试面板可以查看历史上下文
-                logger.info(f"Task {task.task_id} completed/failed, keeping context in memory for debugging")
+                logger.info(
+                    f"Task {task.task_id} completed/failed, keeping context in memory for debugging"
+                )
                 # await self._cleanup_completed_task(task.task_id)
             else:
                 # 仅清理asyncio句柄，保留运行中任务
@@ -1760,7 +1789,7 @@ class AgentService:
         """
         logger.info(f"[Inject] Attempting to inject comment for task {task_id}")
         logger.info(f"[Inject] Active agents: {list(self._active_agents.keys())}")
-        
+
         agent = self._active_agents.get(task_id)
         if not agent:
             logger.warning(f"Cannot inject comment: task {task_id} not found in active agents")
@@ -1772,6 +1801,7 @@ class AgentService:
 
             # 🆕 Log user intervention to timeline
             from datetime import datetime
+
             task = self.running_tasks.get(task_id)
             if task and result:
                 # Create a virtual step for user input

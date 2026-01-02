@@ -96,7 +96,9 @@ class Config:
     # 任务执行配置
     # 任务执行配置
     MAX_TASK_STEPS: int = int(os.getenv("MAX_TASK_STEPS", "100"))  # 默认最大执行步数
-    MAX_HISTORY_IMAGES: int = int(os.getenv("MAX_HISTORY_IMAGES", "1"))  # 保留历史截图数量（0=仅当前，1=当前+上一步）
+    MAX_HISTORY_IMAGES: int = int(
+        os.getenv("MAX_HISTORY_IMAGES", "1")
+    )  # 保留历史截图数量（0=仅当前，1=当前+上一步）
 
     # ============================================
     # 服务器配置

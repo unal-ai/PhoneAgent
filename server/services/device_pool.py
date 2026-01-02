@@ -68,6 +68,9 @@ class Device:
     success_tasks: int = 0  # 成功任务数
     failed_tasks: int = 0  # 失败任务数
 
+    # 应用缓存
+    installed_apps: List[str] = field(default_factory=list)  # 已安装应用列表
+
     # 元数据
     registered_at: datetime = field(default_factory=datetime.utcnow)
     last_active: datetime = field(default_factory=datetime.utcnow)
@@ -347,10 +350,26 @@ class DevicePool:
             if device.frp_connected and device.ws_connected:
                 if device.current_task is None and device.status != DeviceStatus.ERROR:
                     device.status = DeviceStatus.ONLINE
+                    # 如果应用列表为空，触发一次发现
+                    if not device.installed_apps:
+                        asyncio.create_task(self._refresh_installed_apps(device_id))
             else:
                 device.status = DeviceStatus.OFFLINE
 
             return True
+
+    async def _refresh_installed_apps(self, device_id: str):
+        """刷新已安装应用列表"""
+        try:
+            from phone_agent.adb.app_discovery import get_third_party_packages
+
+            device = self.devices.get(device_id)
+            if device:
+                apps = await get_third_party_packages(device_id)
+                device.installed_apps = apps
+                logger.info(f"Discovered {len(apps)} apps for {device_id}")
+        except Exception as e:
+            logger.error(f"Failed to discover apps for {device_id}: {e}")
 
     async def assign_task(self, device_id: str, task_id: str) -> bool:
         """

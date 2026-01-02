@@ -374,9 +374,15 @@ async def create_task(request: CreateTaskRequest):
     model_config = {
         "provider": request.ai_provider,
         "max_steps": request.max_steps or config.MAX_TASK_STEPS,  # 使用环境变量默认值
-        "max_history_images": request.max_history_images if request.max_history_images is not None else config.MAX_HISTORY_IMAGES,
+        "max_history_images": (
+            request.max_history_images
+            if request.max_history_images is not None
+            else config.MAX_HISTORY_IMAGES
+        ),
         "kernel_mode": "vision",  # 强制使用vision内核
     }
+    if request.ai_base_url:
+        model_config["base_url"] = request.ai_base_url
 
     # 只有用户明确指定非默认模型时，才传递 model_name
     if not should_use_selector:

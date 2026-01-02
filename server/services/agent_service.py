@@ -1703,7 +1703,7 @@ class AgentService:
             return
 
         try:
-            context = agent.model_client.message_to_dict(agent._context)
+            context = agent.context
 
             # Ensure directory exists
             context_dir = "data/contexts"
@@ -1732,7 +1732,7 @@ class AgentService:
         if agent:
             try:
                 # 直接访问 PhoneAgent 的 _context 属性
-                return agent.model_client.message_to_dict(agent._context)
+                return agent.context
             except Exception as e:
                 logger.error(f"Failed to get context from memory for task {task_id}: {e}")
 

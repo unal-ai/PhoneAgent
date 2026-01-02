@@ -1720,7 +1720,6 @@ class AgentService:
             logger.error(f"Failed to load context from file for task {task_id}: {e}")
 
         return None
-            return None
 
     def inject_comment(self, task_id: str, comment: str) -> bool:
         """

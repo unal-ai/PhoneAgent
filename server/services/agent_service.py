@@ -1733,13 +1733,19 @@ class AgentService:
         Returns:
             是否成功注入
         """
+        logger.info(f"[Inject] Attempting to inject comment for task {task_id}")
+        logger.info(f"[Inject] Active agents: {list(self._active_agents.keys())}")
+        
         agent = self._active_agents.get(task_id)
         if not agent:
-            logger.warning(f"Cannot inject comment: task {task_id} not found or not running")
+            logger.warning(f"Cannot inject comment: task {task_id} not found in active agents")
+            logger.warning(f"Available agents: {list(self._active_agents.keys())}")
             return False
 
         try:
-            return agent.inject_comment(comment)
+            result = agent.inject_comment(comment)
+            logger.info(f"[Inject] Comment injected successfully: {result}")
+            return result
         except Exception as e:
             logger.error(f"Failed to inject comment for task {task_id}: {e}")
             return False

@@ -18,6 +18,8 @@ from phone_agent.config import SYSTEM_PROMPT
 from phone_agent.model import ModelClient, ModelConfig
 from phone_agent.model.client import MessageBuilder
 
+from phone_agent.utils.stabilizer import wait_for_ui_stabilization
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +29,6 @@ class AgentConfig:
 
     max_steps: int = 100
     device_id: str | None = None
-    system_prompt: str = SYSTEM_PROMPT
     system_prompt: str = SYSTEM_PROMPT
     verbose: bool = True
     max_history_images: int = 1  # 默认保留最近1张截图 (0=仅本次, 1=本次+上次)
@@ -176,8 +177,11 @@ class PhoneAgent:
         # Warning: 不在这里调用 on_step_start，因为此时还没有 thinking 和 action
         # on_step_start 会在 LLM 响应后、执行动作前调用
 
-        # Capture current screen state
-        screenshot = get_screenshot(self.agent_config.device_id)
+        # Capture current screen state (with stabilization)
+        if self.agent_config.enable_stabilization:
+            screenshot = wait_for_ui_stabilization(self.agent_config.device_id)
+        else:
+            screenshot = get_screenshot(self.agent_config.device_id)
         current_app = get_current_app(self.agent_config.device_id)
 
         # Build messages

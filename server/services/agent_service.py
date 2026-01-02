@@ -1083,6 +1083,9 @@ class AgentService:
                     step_end = time.time()
                     duration_ms = int((step_end - step_start) * 1000)
 
+                    # 🛡️ 实时持久化上下文：防止服务重启导致日志丢失
+                    self._save_context_to_file(task.task_id)
+
                     # 累计token消耗
                     if step_result.usage:
                         task.total_prompt_tokens += step_result.usage.get("prompt_tokens", 0)

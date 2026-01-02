@@ -442,6 +442,8 @@ function reconnect() {
   // 清理旧连接
   if (ws) {
     try {
+      // Prevent triggering onclose which schedules another reconnect
+      ws.onclose = null
       ws.close()
     } catch {}
     ws = null
@@ -520,6 +522,7 @@ onUnmounted(() => {
   
   if (ws) {
     try {
+      ws.onclose = null
       ws.close()
     } catch {}
   }

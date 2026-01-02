@@ -1044,12 +1044,22 @@ class AgentService:
                 step_index = 0
                 is_first = True
                 result_message = None
+                consecutive_failures = 0  # 🆕 连续失败计数器
 
                 while step_index < agent_config.max_steps:
                     # 检查任务是否被取消
                     if task.status == TaskStatus.CANCELLED:
                         logger.warning(f" Task {task.task_id} cancelled, stopping execution")
                         result_message = "Task cancelled by user"
+                        break
+
+                    # 🆕 检查连续失败
+                    if consecutive_failures >= 5:
+                        logger.error(f"❌ Task {task.task_id} aborted: 5 consecutive failures")
+                        result_message = "Task aborted due to 5 consecutive operation failures"
+                        # 标记最后一步失败以便记录
+                        if task.steps:
+                            task.steps[-1]["status"] = "failed"
                         break
 
                     step_start = time.time()
@@ -1060,6 +1070,13 @@ class AgentService:
                         is_first = False
                     else:
                         step_result = await loop.run_in_executor(None, agent.step, None)
+
+                    # 🆕 更新连续失败计数器
+                    if step_result.success:
+                        consecutive_failures = 0
+                    else:
+                        consecutive_failures += 1
+                        logger.warning(f"⚠️ Action failed ({consecutive_failures}/5): {step_result.action}")
 
                     step_end = time.time()
                     duration_ms = int((step_end - step_start) * 1000)

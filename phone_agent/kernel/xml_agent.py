@@ -31,7 +31,21 @@ XML Kernel Agent - 基于UI树的智能体
 核心逻辑集成自 Android Action Kernel (MIT License)
 """
 
+import json
+import logging
+import time
 import warnings
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
+from phone_agent.adb import back, double_tap, home, long_press, swipe, tap
+from phone_agent.adb.device import launch_app
+from phone_agent.adb.ui_hierarchy import get_ui_hierarchy_robust as get_ui_hierarchy
+from phone_agent.adb.xml_tree import UIElement, format_elements_for_llm
+from phone_agent.kernel.callback import NoOpCallback, StepCallback
+from phone_agent.model import ModelClient, ModelConfig
+
+logger = logging.getLogger(__name__)
 
 warnings.warn(
     "XMLKernelAgent 已废弃，请使用 PhoneAgent (Vision Kernel) 替代。\n"
@@ -39,23 +53,6 @@ warnings.warn(
     DeprecationWarning,
     stacklevel=2,
 )
-
-import json
-import logging
-import time
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
-
-from phone_agent.adb import back, double_tap, home, long_press, swipe, tap
-from phone_agent.adb.device import launch_app
-
-# 🆕 使用鲁棒的UI层级获取
-from phone_agent.adb.ui_hierarchy import get_ui_hierarchy_robust as get_ui_hierarchy
-from phone_agent.adb.xml_tree import UIElement, format_elements_for_llm
-from phone_agent.kernel.callback import NoOpCallback, StepCallback
-from phone_agent.model import ModelClient, ModelConfig
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass

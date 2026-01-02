@@ -51,7 +51,7 @@ You can interact with Android phones through these actions:
 
 # Output Format
 
-CRITICAL: You MUST respond with ONLY a valid JSON object. 
+CRITICAL: You MUST respond with ONLY a valid JSON object.
 - NO markdown code blocks (no ```json or ```)
 - NO explanations before or after the JSON
 - NO natural language text

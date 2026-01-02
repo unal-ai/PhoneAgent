@@ -359,11 +359,11 @@ def select_model_by_complexity(
 
     if complexity == "simple":
         # Use free/cheap model for simple tasks
-        logger.info(f"Task complexity: simple → using glm-4.6v-flash")
+        logger.info("Task complexity: simple → using glm-4.6v-flash")
         return "glm-4.6v-flash"
     else:
         # Use standard model for complex tasks
-        logger.info(f"Task complexity: complex → using autoglm-phone")
+        logger.info("Task complexity: complex → using autoglm-phone")
         return "autoglm-phone"
 
 

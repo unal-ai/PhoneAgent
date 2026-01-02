@@ -160,7 +160,7 @@ def _try_uiautomator(
         # 清理
         try:
             os.remove(local_path)
-        except:
+        except Exception:
             pass
 
         return elements

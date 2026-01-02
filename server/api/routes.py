@@ -21,21 +21,24 @@ from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from server.api.anti_detection_config import router as anti_detection_router
+from server.api.model_stats import router as model_stats_router
+from server.api.planning import router as planning_router
+from server.api.presets import router as presets_router
 from server.api.schemas.task import CreateTaskRequest, TaskResponse
+from server.api.scrcpy import router as scrcpy_router
+from server.api.speech_api import router as speech_router
 from server.services import get_agent_service, get_device_pool
 from server.services.agent_service import TaskStatus
+from server.services.device_scanner import get_device_scanner
+from server.websocket.connection_manager import get_connection_manager
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# 导入子路由
-from server.api.anti_detection_config import router as anti_detection_router
-from server.api.model_stats import router as model_stats_router
-from server.api.planning import router as planning_router
-from server.api.presets import router as presets_router
-from server.api.scrcpy import router as scrcpy_router
-from server.api.speech_api import router as speech_router
+
+# 注册子路由（带标签分类）
 
 # 注册子路由（带标签分类）
 # 按照功能模块分类，方便API文档查看和维护
@@ -97,8 +100,6 @@ async def find_available_port(start: int = 6100, end: int = 6199):
         return {"available": False, "message": f"No available ports in range {start}-{end}"}
 
 
-# 导入设备扫描器
-from server.services.device_scanner import get_device_scanner
 
 # ============================================
 # Pydantic Models (请求/响应模型)
@@ -729,7 +730,6 @@ async def get_stats():
 # WebSocket 实时通信
 # ============================================
 
-from server.websocket.connection_manager import get_connection_manager
 
 manager = get_connection_manager()
 
@@ -916,7 +916,7 @@ async def get_device_screenshot(device_id: str, size: str = "medium"):
             for path in compressed_paths.values():
                 if path and os.path.exists(path):
                     os.unlink(path)
-        except:
+        except Exception:
             pass
 
         # 返回图片数据
@@ -972,14 +972,14 @@ async def get_logs(
         :1
     ]  # 只读最近1个文件（从3个减少到1个）
 
-    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB 限制
+    max_file_size = 10 * 1024 * 1024  # 10MB 限制
 
     for log_file in log_files:
         try:
             file_path = os.path.join(log_dir, log_file)
 
             # 优化：检查文件大小，跳过过大的文件
-            if os.path.getsize(file_path) > MAX_FILE_SIZE:
+            if os.path.getsize(file_path) > max_file_size:
                 logger.warning(f"Log file {log_file} too large, skipping")
                 continue
 
@@ -996,7 +996,7 @@ async def get_logs(
                     # 尝试解析JSON格式的日志
                     try:
                         log_entry = json.loads(line)
-                    except:
+                    except Exception:
                         # 如果不是JSON，解析文本格式
                         # 格式: timestamp - name - level - [file:line] - message
                         parts = line.split(" - ")

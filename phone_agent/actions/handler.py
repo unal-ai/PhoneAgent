@@ -259,8 +259,9 @@ class ActionHandler:
     def _handle_get_installed_apps(self, action: dict, width: int, height: int) -> ActionResult:
         """Handle GetInstalledApps action."""
         # 暂时只支持获取第三方应用，因为系统应用太多
-        from phone_agent.adb.app_discovery import get_third_party_packages
         import asyncio
+
+        from phone_agent.adb.app_discovery import get_third_party_packages
 
         # 这里的 execute 是同步的，但 device_pool 可能是异步的
         # 不过 adb.app_discovery 是 async 的

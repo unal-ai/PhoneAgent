@@ -6,6 +6,7 @@ Central registry for all VLM providers
 from typing import Any, Type
 
 from phone_agent.model.providers.base import BaseVLMProvider
+from phone_agent.model.providers.zhipu_provider import ZhipuAIProvider
 
 
 class ModelRegistry:
@@ -138,7 +139,7 @@ def register_provider(name: str, aliases: list[str] | None = None):
     return decorator
 
 
+
 # Register built-in providers (只注册智谱AI)
-from phone_agent.model.providers.zhipu_provider import ZhipuAIProvider
 
 ModelRegistry.register("zhipu", ZhipuAIProvider, aliases=["glm", "zhipuai", "chatglm"])

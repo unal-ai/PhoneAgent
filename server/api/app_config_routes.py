@@ -6,12 +6,15 @@
 应用配置管理 API
 """
 
+import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel, Field
 
 from phone_agent.config.app_manager import AppConfig, get_app_manager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

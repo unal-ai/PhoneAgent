@@ -198,11 +198,9 @@ async def execute_plan(request: ExecutePlanRequest):
         # 🆕 将计划数据附加到任务
         task = agent_service.get_task(task_id)
         if task:
-            task.kernel_mode = "planning"  # 标记为规划模式
             # 直接执行任务（在后台）
-            from server.services import get_device_pool
-
-            device_pool = get_device_pool()
+            # from server.services import get_device_pool
+            # device_pool = get_device_pool()
 
             # 启动异步任务执行（规划模式需要特殊处理）
             async def execute_planning_task():

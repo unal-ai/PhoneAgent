@@ -3,7 +3,8 @@ App discovery module for querying installed packages via ADB.
 """
 
 import logging
-from typing import List, Dict, Optional
+from typing import List
+
 from phone_agent.adb.connection import ADBConnection
 
 logger = logging.getLogger(__name__)

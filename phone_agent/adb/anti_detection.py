@@ -14,9 +14,14 @@
 5. 探索行为 - 模拟真人寻找过程
 """
 
+import json
+import logging
+import os
 import random
 import time
 from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 
 def bezier_curve(
@@ -350,15 +355,12 @@ def load_config_from_file(file_path: str = "data/anti_detection_config.json") ->
     Returns:
         配置字典
     """
-    import json
-    import os
-
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
+    try:
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
                 return json.load(f)
-        except Exception as e:
-            logger.warning(f"Failed to load anti-detection config from {file_path}: {e}")
+    except Exception as e:
+        logger.warning(f"Failed to load anti-detection config from {file_path}: {e}")
 
     return {}
 
@@ -371,12 +373,12 @@ def save_config_to_file(config: Dict[str, Any], file_path: str = "data/anti_dete
         config: 配置字典
         file_path: 配置文件路径
     """
-    import json
-    import os
-
-    os.makedirs("data", exist_ok=True)
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
+    try:
+        os.makedirs("data", exist_ok=True)
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.warning(f"Failed to save anti-detection config to {file_path}: {e}")
 
 
 def init_from_config_file():

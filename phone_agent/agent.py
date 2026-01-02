@@ -17,7 +17,6 @@ from phone_agent.adb import get_current_app, get_screenshot
 from phone_agent.config import SYSTEM_PROMPT
 from phone_agent.model import ModelClient, ModelConfig
 from phone_agent.model.client import MessageBuilder
-
 from phone_agent.utils.stabilizer import wait_for_ui_stabilization
 
 logger = logging.getLogger(__name__)

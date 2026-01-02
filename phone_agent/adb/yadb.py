@@ -396,7 +396,7 @@ def force_screenshot_base64(
                     "height": img.height,
                     "is_sensitive": False,
                 }
-            except:
+            except Exception:
                 pass
 
         return base64_data

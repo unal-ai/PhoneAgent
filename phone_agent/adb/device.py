@@ -8,8 +8,8 @@
 import os
 import subprocess
 import time
-
 from typing import Optional
+
 from phone_agent.adb.anti_detection import get_anti_detection
 from phone_agent.config.apps import APP_PACKAGES
 
@@ -152,14 +152,14 @@ def swipe(
     ad = get_anti_detection()
 
     # 配置常量：滑动时长范围（毫秒）
-    MIN_SWIPE_DURATION_MS = 1000
-    MAX_SWIPE_DURATION_MS = 2000
+    min_swipe_duration_ms = 1000
+    max_swipe_duration_ms = 2000
 
     if duration_ms is None:
         # Calculate duration based on distance
         dist_sq = (start_x - end_x) ** 2 + (start_y - end_y) ** 2
         duration_ms = int(dist_sq / 1000)
-        duration_ms = max(MIN_SWIPE_DURATION_MS, min(duration_ms, MAX_SWIPE_DURATION_MS))
+        duration_ms = max(min_swipe_duration_ms, min(duration_ms, max_swipe_duration_ms))
 
     # 防风控：使用贝塞尔曲线生成滑动路径
     if use_anti_detection and ad.enabled and ad.config.get("enable_bezier_swipe", True):
@@ -358,7 +358,7 @@ def launch_app(app_name: str, device_id: Optional[str] = None, delay: float = 1.
         except Exception as e:
             logger.warning(f"应用安装检查失败 (将被忽略): {e}")
     else:
-        logger.debug(f"⏭️ 跳过应用安装检查 (ENABLE_APP_CHECK=false)")
+        logger.debug("⏭️ 跳过应用安装检查 (ENABLE_APP_CHECK=false)")
 
     # Method 1: Use Activity Manager (AM) - Most reliable and fast
     try:

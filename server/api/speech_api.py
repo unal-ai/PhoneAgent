@@ -204,7 +204,7 @@ async def speech_to_text(
             ):
                 try:
                     os.unlink(converted_file)
-                except:
+                except Exception:
                     pass
 
         # 获取文本
@@ -227,7 +227,7 @@ async def speech_to_text(
         if temp_file and os.path.exists(temp_file.name):
             try:
                 os.unlink(temp_file.name)
-            except:
+            except Exception:
                 pass
 
 

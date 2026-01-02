@@ -4,8 +4,9 @@ PhoneAgent Test Configuration
 Pytest fixtures and shared test utilities.
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 
 @pytest.fixture

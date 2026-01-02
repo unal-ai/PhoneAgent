@@ -200,7 +200,7 @@ class AgentCallback:
                     f"📡 [AgentCallback] Broadcasting step start: task_id={self.task.task_id}, step={step}"
                 )
                 # 使用 run_coroutine_threadsafe 从同步线程调度到事件循环
-                future = asyncio.run_coroutine_threadsafe(
+                asyncio.run_coroutine_threadsafe(
                     self.websocket_broadcast_callback(
                         {
                             "type": "task_step_update",

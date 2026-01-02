@@ -306,7 +306,7 @@ class AppConfigManager:
 
         # 获取现有应用包名集合
         existing_packages = set(self._apps.keys())
-        device_packages = {app["package"] for app in installed_apps}
+        {app["package"] for app in installed_apps}
 
         if merge_mode == "replace":
             # 完全替换模式：记录要删除的应用

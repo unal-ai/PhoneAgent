@@ -168,7 +168,7 @@ async def stream_websocket(websocket: WebSocket, device_id: str):
                 # 超时，检查连接状态
                 try:
                     await websocket.send_json({"type": "ping"})
-                except:
+                except Exception:
                     # 连接断开
                     break
 
@@ -179,13 +179,13 @@ async def stream_websocket(websocket: WebSocket, device_id: str):
         logger.error(f"WebSocket error: {e}", exc_info=True)
         try:
             await websocket.send_json({"error": str(e)})
-        except:
+        except Exception:
             pass
 
     finally:
         try:
             await websocket.close()
-        except:
+        except Exception:
             pass
         logger.info(f"🛑 H.264 stream ended for {device_id}")
 

@@ -28,16 +28,8 @@
 >>> agent = PhoneAgent(model_config)
 """
 
-import warnings
-
-warnings.warn(
-    "HybridAgent 已废弃，请直接使用 PhoneAgent (Vision Kernel)。\n"
-    "详见 PROJECT_ASSESSMENT.md 和 ROADMAP.md",
-    DeprecationWarning,
-    stacklevel=2,
-)
-
 import logging
+import warnings
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, Optional
@@ -48,6 +40,13 @@ from phone_agent.kernel.xml_agent import XMLKernelAgent, XMLKernelConfig
 from phone_agent.model import ModelConfig
 
 logger = logging.getLogger(__name__)
+
+warnings.warn(
+    "HybridAgent 已废弃，请直接使用 PhoneAgent (Vision Kernel)。\n"
+    "详见 PROJECT_ASSESSMENT.md 和 ROADMAP.md",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 class ExecutionMode(str, Enum):

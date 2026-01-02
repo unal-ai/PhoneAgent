@@ -4,8 +4,7 @@ Tests for phone_agent.model.client
 Unit tests for the ModelClient class.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 class TestModelConfig:

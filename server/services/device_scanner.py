@@ -201,7 +201,7 @@ class DeviceScanner:
                     if "level:" in line:
                         try:
                             specs["battery"] = int(line.split(":")[1].strip())
-                        except:
+                        except Exception:
                             pass
                         break
 
@@ -219,14 +219,14 @@ class DeviceScanner:
                             kb = int(line.split()[1])
                             gb = round(kb / 1024 / 1024, 1)
                             specs["memory_total"] = f"{gb}GB"
-                        except:
+                        except Exception:
                             pass
                     elif "MemAvailable:" in line:
                         try:
                             kb = int(line.split()[1])
                             gb = round(kb / 1024 / 1024, 1)
                             specs["memory_available"] = f"{gb}GB"
-                        except:
+                        except Exception:
                             pass
 
             # 获取存储信息
@@ -243,7 +243,7 @@ class DeviceScanner:
                     if len(parts) >= 4:
                         try:
                             total_kb = int(parts[1].replace("K", ""))
-                            used_kb = int(parts[2].replace("K", ""))
+                            # used_kb = int(parts[2].replace("K", ""))
                             avail_kb = int(parts[3].replace("K", ""))
 
                             total_gb = round(total_kb / 1024 / 1024, 1)
@@ -251,7 +251,7 @@ class DeviceScanner:
 
                             specs["storage_total"] = f"{total_gb}GB"
                             specs["storage_available"] = f"{avail_gb}GB"
-                        except:
+                        except Exception:
                             pass
 
         except Exception as e:
@@ -341,7 +341,7 @@ class DeviceScanner:
                                 ["adb", "disconnect", adb_serial], capture_output=True, timeout=2
                             )
                             logger.info(f"[DeviceScanner] 🔌 已断开冲突设备: {adb_serial}")
-                        except:
+                        except Exception:
                             pass
 
                         continue

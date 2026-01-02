@@ -4,8 +4,8 @@ import logging
 import subprocess
 import time
 from dataclasses import dataclass
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

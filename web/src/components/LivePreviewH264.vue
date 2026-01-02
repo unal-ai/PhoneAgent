@@ -271,29 +271,11 @@ function connect() {
         console.error('[jMuxer] Error:', error)
         
         // 智能错误恢复
+        // 智能错误恢复
         if (error.name === 'InvalidStateError' && error.error === 'buffer error') {
-          console.log('[jMuxer] Buffer error, attempting reset...')
-          try {
-            jmuxerInstance?.reset()
-            if (initSegment) {
-              try {
-                jmuxerInstance.feed({ video: initSegment })
-                console.log('[jMuxer] Re-initialized with cached SPS/PPS/IDR')
-              } catch (feedError) {
-                console.error('[jMuxer] Re-init feed failed, reconnecting...', feedError)
-                reconnect()
-                return
-              }
-            } else {
-              reconnect()
-              return
-            }
-            console.log('[jMuxer] Reset successful')
-          } catch (resetError) {
-            console.error('[jMuxer] Reset failed:', resetError)
-            ElMessage.error('视频解码器错误，正在重连...')
-            reconnect()
-          }
+          console.warn('[jMuxer] Buffer error, forcing reconnect...')
+          // Soft reset often fails in this state, so we force a full reconnect
+          reconnect()
         }
       },
       onMissingVideoFrames: (frames) => {

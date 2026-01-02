@@ -32,6 +32,7 @@ class AgentConfig:
     system_prompt: str = SYSTEM_PROMPT
     verbose: bool = True
     max_history_images: int = 1  # 默认保留最近1张截图 (0=仅本次, 1=本次+上次)
+    enable_stabilization: bool = True  # 是否开启截图防抖
 
 
 @dataclass

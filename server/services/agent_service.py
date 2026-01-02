@@ -1764,6 +1764,39 @@ class AgentService:
 
         try:
             result = agent.inject_comment(comment)
+
+            # 🆕 Log user intervention to timeline
+            from datetime import datetime
+            task = self.running_tasks.get(task_id)
+            if task and result:
+                # Create a virtual step for user input
+                step_record = {
+                    "step": len(task.steps),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "thinking": "👥 用户介入 (User Input)",
+                    "action": {"action": "user_input", "message": comment},
+                    "success": True,
+                    "status": "user_input",
+                    "duration_ms": 0,
+                    "tokens_used": {},
+                }
+                task.steps.append(step_record)
+
+                # Broadcast immediately
+                if self._websocket_broadcast_callback:
+                    asyncio.run_coroutine_threadsafe(
+                        self._websocket_broadcast_callback(
+                            {
+                                "type": "task_step_update",
+                                "data": {
+                                    "task_id": task.task_id,
+                                    **step_record,
+                                },
+                            }
+                        ),
+                        asyncio.get_event_loop(),
+                    )
+
             logger.info(f"[Inject] Comment injected successfully: {result}")
             return result
         except Exception as e:

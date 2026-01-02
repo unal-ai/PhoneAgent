@@ -46,8 +46,15 @@
                 <div class="thinking-content">{{ getTruncatedThinking(step.thinking) }}</div>
               </div>
 
+              <!-- 用户干预 (New) -->
+              <div v-if="step.action && step.action.action === 'user_input'" class="step-user-input">
+                <el-icon><Edit /></el-icon>
+                <strong>用户干预:</strong>
+                <div class="user-input-content">{{ step.action.message }}</div>
+              </div>
+
               <!-- 执行动作 -->
-              <div v-if="step.action" class="step-action">
+              <div v-else-if="step.action" class="step-action">
                 <el-icon><VideoPlay /></el-icon>
                 <strong>动作:</strong>
                 <div class="action-content">{{ formatAction(step.action) }}</div>
@@ -331,6 +338,7 @@ function getStatusText(status) {
 }
 
 function getStepColor(step) {
+  if (step.status === 'user_input') return '#8e44ad' // Purple for user input
   if (step.success === undefined) return '#409eff'
   return step.success ? '#67c23a' : '#f56c6c'
 }
@@ -702,6 +710,25 @@ onUnmounted(() => {
 .step-observation {
   background: var(--error-bg);
   border-left: 3px solid var(--error-color);
+}
+
+.step-user-input {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: var(--radius-base);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #f3e5f5; /* Light purple */
+  border-left: 3px solid #8e44ad; /* Purple */
+}
+
+.user-input-content {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-weight: 500;
+  color: #8e44ad;
 }
 
 .thinking-content,

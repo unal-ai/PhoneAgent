@@ -139,7 +139,6 @@ def register_provider(name: str, aliases: list[str] | None = None):
     return decorator
 
 
-
 # Register built-in providers (只注册智谱AI)
 
 ModelRegistry.register("zhipu", ZhipuAIProvider, aliases=["glm", "zhipuai", "chatglm"])

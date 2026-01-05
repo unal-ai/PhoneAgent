@@ -253,6 +253,13 @@ class PhoneAgent:
             screenshot = get_screenshot(self.agent_config.device_id)
         current_app = get_current_app(self.agent_config.device_id)
 
+        # 🛡️ 数据完整性检查
+        if not screenshot.base64_data or screenshot.base64_data == "None" or len(screenshot.base64_data) < 100:
+            logger.error(
+                f"Invalid screenshot data detected! len={len(screenshot.base64_data) if screenshot.base64_data else 'None'}, data[:20]={screenshot.base64_data[:20] if screenshot.base64_data else 'None'}"
+            )
+
+
         # Build messages
         if is_first:
             self._context.append(

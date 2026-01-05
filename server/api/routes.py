@@ -465,8 +465,97 @@ async def create_task(request: CreateTaskRequest):
         duration=task.duration,
         result=task.result,
         error=task.error,
+    return TaskResponse(
+        task_id=task.task_id,
+        instruction=task.instruction,
+        device_id=task.device_id,
+        status=task.status.value,
+        created_at=task.created_at.isoformat(),
         steps=task.steps,  # 修复：返回完整步骤列表
     )
+
+
+@router.post("/model/test", summary="测试AI模型连接", tags=["🤖 模型管理"])
+async def test_model_connection(request: ModelTestRequest):
+    """
+    测试AI模型连接
+    
+    验证提供的模型配置是否有效，尝试生成简单的回复
+    """
+    from phone_agent.model.client import ModelClient, ModelConfig
+    from server.config import Config
+    from server.utils.model_config_helper import get_model_config_from_env
+    
+    config = Config()
+    
+    # 准备模型配置
+    base_url = request.base_url
+    api_key = request.api_key
+    model_name = request.model_name
+    
+    # 如果未提供，尝试从环境变量加载
+    # 类似于 create_task 中的逻辑
+    if not api_key:
+        env_config = get_model_config_from_env("vision")
+        
+        # 这里的逻辑需要根据provider调整，但为简单起见，我们优先使用用户提供的
+        # 如果是 default/zhipu 且为空，尝试加载环境配置
+        if request.provider in ["default", "zhipu"]:
+            if not base_url:
+                base_url = env_config.get("base_url")
+            if not model_name:
+                model_name = env_config.get("model_name")
+            if not api_key and env_config.get("api_key") != "EMPTY":
+                api_key = env_config.get("api_key")
+        
+        # 本地模型特殊处理
+        if request.provider == "local" or config.MODEL_PROVIDER == "local":
+            if not api_key:
+                api_key = "EMPTY"
+            if not base_url:
+                base_url = request.base_url or env_config.get("base_url", "http://localhost:8000/v1")
+    
+    # 构建完整配置
+    # 如果 model_name 依然为空，使用默认值
+    if not model_name and request.provider == "zhipu":
+        model_name = "glm-4-flash"
+    elif not model_name and request.provider == "local":
+        model_name = "vicuna-7b-v1.5"
+    elif not model_name:
+        model_name = "autoglm-phone"
+
+    model_config = ModelConfig(
+        base_url=base_url or "https://open.bigmodel.cn/api/paas/v4/", # 兜底默认值
+        api_key=api_key or "EMPTY",
+        model_name=model_name,
+        max_tokens=20, # 测试只需要生成少量token
+        temperature=0.1,
+    )
+    
+    try:
+        # 初始化客户端
+        client = ModelClient(model_config)
+        
+        # 发送简单测试请求
+        messages = [{"role": "user", "content": "Hi"}]
+        start_time = datetime.now()
+        response = client.request(messages)
+        duration = (datetime.now() - start_time).total_seconds()
+        
+        return {
+            "success": True,
+            "message": "Connection successful",
+            "latency_ms": int(duration * 1000),
+            "response": response.raw_content[:200] + "..." if len(response.raw_content) > 200 else response.raw_content,
+            "model_used": model_config.model_name
+        }
+    except Exception as e:
+        logger.error(f"Model connection test failed: {e}")
+        return {
+            "success": False,
+            "message": str(e),
+            "error_type": type(e).__name__
+        }
 
 
 @router.get("/tasks", response_model=List[TaskResponse], tags=["📋 任务管理"])

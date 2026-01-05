@@ -23,6 +23,7 @@ class ModelConfig:
     temperature: float = 0.0
     top_p: float = 0.85
     frequency_penalty: float = 0.2
+    timeout: float = 120.0  # 🆕 LLM请求超时（秒），默认120秒
     extra_body: dict[str, Any] = field(default_factory=lambda: {"skip_special_tokens": False})
 
 
@@ -46,7 +47,12 @@ class ModelClient:
 
     def __init__(self, config: ModelConfig | None = None):
         self.config = config or ModelConfig()
-        self.client = OpenAI(base_url=self.config.base_url, api_key=self.config.api_key)
+        # 🆕 配置超时时间，防止 LLM 调用永久挂起
+        self.client = OpenAI(
+            base_url=self.config.base_url,
+            api_key=self.config.api_key,
+            timeout=self.config.timeout,
+        )
 
     def request(self, messages: list[dict[str, Any]]) -> ModelResponse:
         """

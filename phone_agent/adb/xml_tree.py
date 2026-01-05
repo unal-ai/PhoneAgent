@@ -59,7 +59,7 @@ def get_ui_hierarchy(device_id: str | None = None) -> List[UIElement]:
     """
     获取设备的UI层级结构（增强版）
 
-    🆕 V2.0 改进:
+    V2.0 改进:
     - 智能降级: yadb → uiautomator → uiautomator --nohup
     - 自动重试: 失败后自动尝试其他方法
     - 策略缓存: 记住每个设备的最佳方法
@@ -163,7 +163,7 @@ def parse_ui_xml(xml_content: str) -> List[UIElement]:
             )
         )
 
-    # 🆕 调试日志
+    # 调试日志
     if elements:
         logger.debug(
             f"XML解析: 总节点={total_nodes}, 可交互={interactive_nodes}, 最终保留={len(elements)}"
@@ -176,40 +176,87 @@ def parse_ui_xml(xml_content: str) -> List[UIElement]:
     return elements
 
 
-def format_elements_for_llm(elements: List[UIElement], max_elements: int = 20) -> str:
+def format_elements_for_llm(elements: List[UIElement], max_elements: int = 15) -> str:
     """
-    格式化UI元素为LLM可读的JSON
+    格式化UI元素为LLM可读的紧凑JSON
 
-
+    优化：
+    1. 过滤状态栏元素（battery, wifi, clock, date等）
+    2. 只保留可交互元素或有实际内容的元素
+    3. 减少JSON冗余字段
     """
     import json
 
+    # Status bar resource_id blacklist
+    status_bar_ids = {
+        "clock",
+        "date",
+        "battery",
+        "wifi",
+        "mobile",
+        "signal",
+        "battery_percentage",
+        "batteryRemainingIcon",
+        "wifi_combo",
+        "mobile_combo",
+        "status_bar",
+        "notification_icon",
+    }
+
+    # Filter function
+    def should_include(elem: UIElement) -> bool:
+        # Exclude status bar elements
+        elem_id_lower = elem.resource_id.lower() if elem.resource_id else ""
+        for blacklist_id in status_bar_ids:
+            if blacklist_id in elem_id_lower:
+                return False
+
+        # 排除顶部状态栏区域 (y < 100 通常是状态栏)
+        if elem.center[1] < 100:
+            return False
+
+        # 必须是可交互的，或者有实际有用的文本
+        is_interactive = elem.clickable or elem.focusable
+        has_useful_text = bool(elem.text and len(elem.text.strip()) > 0)
+
+        return is_interactive or has_useful_text
+
+    # 优先级排序：可交互 + 有文本 > 仅可交互 > 仅有文本
     def priority(elem: UIElement) -> int:
         score = 0
-        if elem.text:
+        if elem.clickable:
+            score += 3
+        if elem.focusable:
             score += 2
-        if elem.resource_id:
+        if elem.text:
             score += 1
         return score
 
-    sorted_elements = sorted(elements, key=priority, reverse=True)
+    # 过滤和排序
+    filtered = [e for e in elements if should_include(e)]
+    sorted_elements = sorted(filtered, key=priority, reverse=True)
     selected = sorted_elements[:max_elements]
 
+    # 紧凑格式输出
     elements_data = []
     for elem in selected:
-        item = {
-            "text": elem.text,
-            "type": elem.element_type,
-            "center": list(elem.center),
-            "clickable": elem.clickable,  # 保留：明确元素是否可点击
-            "focusable": elem.focusable,  # 保留：明确元素是否可聚焦/输入
-            "action": "tap" if elem.clickable else ("input" if elem.focusable else "read"),
-        }
+        # 最小化输出：只保留必要字段
+        item = {"xy": list(elem.center)}
+
+        if elem.text:
+            item["text"] = elem.text
         if elem.resource_id:
             item["id"] = elem.resource_id
+
+        # 简化类型标记
+        if elem.clickable:
+            item["tap"] = True
+        elif elem.focusable:
+            item["input"] = True
+
         elements_data.append(item)
 
-    return json.dumps(elements_data, ensure_ascii=False, indent=2)
+    return json.dumps(elements_data, ensure_ascii=False, separators=(",", ":"))
 
 
 # 向后兼容的辅助函数

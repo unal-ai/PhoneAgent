@@ -662,7 +662,7 @@ class AgentService:
                 logger.warning(f" Task {task.task_id} cancelled before preprocessing")
                 return
 
-            # 🆕 Phase 1: 任务预处理
+            # Phase 1: 任务预处理
             from phone_agent.preprocessing import RuleEngineExecutor, TaskPreprocessor
 
             preprocessor = TaskPreprocessor()
@@ -676,10 +676,10 @@ class AgentService:
                 f"{execution_plan.executor.value} (置信度: {execution_plan.confidence:.2f})"
             )
 
-            # 🆕 如果可以直接执行（高置信度的纯系统指令，且非复合任务）
+            # 如果可以直接执行（高置信度的纯系统指令，且非复合任务）
             if (
                 execution_plan.direct_action
-                and execution_plan.skip_llm  # 🆕 只有skip_llm=True才完全跳过
+                and execution_plan.skip_llm  # 只有skip_llm=True才完全跳过
                 and execution_plan.confidence >= 0.9
                 and adb_device_id
             ):
@@ -774,7 +774,7 @@ class AgentService:
                 logger.warning(f" Task {task.task_id} cancelled before compound task execution")
                 return
 
-            # 🆕 复合任务处理：先执行系统命令部分，再继续LLM流程
+            # 复合任务处理：先执行系统命令部分，再继续LLM流程
             elif (
                 execution_plan.direct_action
                 and not execution_plan.skip_llm  # 复合任务
@@ -869,7 +869,7 @@ class AgentService:
             if "model_name" in model_config_dict:
                 model_params["model_name"] = model_config_dict["model_name"]
             else:
-                # 🆕 使用模型选择器根据内核模式动态选择模型
+                # 使用模型选择器根据内核模式动态选择模型
                 kernel_mode = model_config_dict.get("kernel_mode", "auto")
 
                 from phone_agent.model.selector import select_model_for_kernel
@@ -941,7 +941,7 @@ class AgentService:
                     task=task, websocket_broadcast_callback=self._websocket_broadcast_callback
                 )
 
-                # 🆕 使用同步适配器包装异步回调（传递事件循环以支持实时广播）
+                # 使用同步适配器包装异步回调（传递事件循环以支持实时广播）
                 from phone_agent.kernel import AsyncStepCallback
 
                 loop = asyncio.get_event_loop()
@@ -950,7 +950,7 @@ class AgentService:
                 agent = HybridAgent(
                     model_config=model_config,
                     config=hybrid_config,
-                    step_callback=sync_callback,  # 🆕 传递同步适配器
+                    step_callback=sync_callback,  # 传递同步适配器
                 )
 
                 # 再次检查任务是否已被取消（Agent执行前的最后一次检查）
@@ -975,7 +975,7 @@ class AgentService:
                     logger.warning(f" Task {task.task_id} was cancelled")
                     return
 
-                # 🆕 实时广播版本不需要flush（已在每步自动广播）
+                # 实时广播版本不需要flush（已在每步自动广播）
                 logger.debug(f"[Task {task.task_id}] All steps broadcasted in real-time")
 
                 # 处理结果
@@ -1029,7 +1029,7 @@ class AgentService:
                     loop=loop,  # 传递事件循环，确保回调能正确广播
                 )
 
-                # 🆕 使用同步适配器包装异步回调（传递事件循环以支持实时广播）
+                # 使用同步适配器包装异步回调（传递事件循环以支持实时广播）
                 from phone_agent.kernel import AsyncStepCallback
 
                 sync_callback = AsyncStepCallback(async_callback, loop=loop)
@@ -1052,11 +1052,11 @@ class AgentService:
                 agent = PhoneAgent(
                     model_config=model_config,
                     agent_config=agent_config,
-                    step_callback=sync_callback,  # 🆕 传递回调
-                    installed_apps=installed_apps,  # 🆕 传递已安装应用列表
+                    step_callback=sync_callback,  # 传递回调
+                    installed_apps=installed_apps,  # 传递已安装应用列表
                     stream_callback=lambda token: self._broadcast_stream_token(
                         task.task_id, token
-                    ),  # 🆕 流式 token 回调
+                    ),  # 流式 token 回调
                 )
 
                 # Store active agent instance for context retrieval
@@ -1070,7 +1070,7 @@ class AgentService:
                 step_index = 0
                 is_first = True
                 result_message = None
-                consecutive_failures = 0  # 🆕 连续失败计数器
+                consecutive_failures = 0  # 连续失败计数器
 
                 while step_index < agent_config.max_steps:
                     # 检查任务是否被取消
@@ -1079,7 +1079,7 @@ class AgentService:
                         result_message = "Task cancelled by user"
                         break
 
-                    # 🆕 检查任务是否被暂停
+                    # 检查任务是否被暂停
                     while task.status == TaskStatus.PAUSED:
                         logger.info(f"⏸️ Task {task.task_id} is paused, waiting for resume...")
                         await asyncio.sleep(1)  # 每秒检查一次
@@ -1093,7 +1093,7 @@ class AgentService:
                         result_message = "Task cancelled by user"
                         break
 
-                    # 🆕 检查连续失败
+                    # 检查连续失败
                     if consecutive_failures >= 5:
                         logger.error(f"❌ Task {task.task_id} aborted: 5 consecutive failures")
                         result_message = "Task aborted due to 5 consecutive operation failures"
@@ -1111,7 +1111,7 @@ class AgentService:
                     else:
                         step_result = await loop.run_in_executor(None, agent.step, None)
 
-                    # 🆕 更新连续失败计数器
+                    # 更新连续失败计数器
                     if step_result.success:
                         consecutive_failures = 0
                     else:
@@ -1123,10 +1123,8 @@ class AgentService:
                     step_end = time.time()
                     duration_ms = int((step_end - step_start) * 1000)
 
-
-                    # 🆕 保存截图
+                    # 保存截图
                     screenshot_paths = await self._save_step_screenshot(task, step_index)
-
 
                     # 🛡️ 实时持久化上下文：防止服务重启导致日志丢失
                     self._save_context_to_file(task.task_id)
@@ -1279,16 +1277,15 @@ class AgentService:
                     f"📊 [Task {task.task_id}] Total tokens: {task.total_tokens} (prompt: {task.total_prompt_tokens}, completion: {task.total_completion_tokens})"
                 )
 
-
                 # 完成回调（同步方法）
                 # on_task_complete 需要改为异步调用或直接处理状态
                 # 直接更新任务状态和广播
-                
-                # 🆕 修复：根据最后一步的成功状态决定任务最终状态
+
+                # 修复：根据最后一步的成功状态决定任务最终状态
                 is_success = True
-                if 'step_result' in locals() and step_result:
+                if "step_result" in locals() and step_result:
                     is_success = step_result.success
-                
+
                 task.status = TaskStatus.COMPLETED if is_success else TaskStatus.FAILED
                 task.result = result_message
                 task.completed_at = datetime.now(timezone.utc)
@@ -1590,14 +1587,14 @@ class AgentService:
         logger.info(f"WebSocket broadcast callback set: {callback}")
 
     def _broadcast_stream_token(self, task_id: str, token: str):
-        """🆕 同步广播流式 token（用于实时 UI 更新）"""
+        """同步广播流式 token（用于实时 UI 更新）"""
         if self._websocket_broadcast_callback:
             try:
                 import asyncio
 
                 # 使用 run_coroutine_threadsafe 从工作线程安全调度
                 # 需要一个已存储的主事件循环引用
-                if hasattr(self, '_main_loop') and self._main_loop:
+                if hasattr(self, "_main_loop") and self._main_loop:
                     asyncio.run_coroutine_threadsafe(
                         self._websocket_broadcast_callback(
                             {
@@ -1608,7 +1605,7 @@ class AgentService:
                                 },
                             }
                         ),
-                        self._main_loop
+                        self._main_loop,
                     )
             except Exception:
                 # 静默失败，避免影响主流程
@@ -1976,7 +1973,7 @@ class AgentService:
         try:
             result = agent.inject_comment(comment)
 
-            # 🆕 Log user intervention to timeline
+            # Log user intervention to timeline
             from datetime import datetime
 
             task = self.running_tasks.get(task_id)
@@ -2014,7 +2011,6 @@ class AgentService:
         except Exception as e:
             logger.error(f"Failed to inject comment for task {task_id}: {e}")
             return False
-
 
     async def _save_step_screenshot(self, task: Task, step: int) -> Optional[Dict[str, str]]:
         """
@@ -2069,6 +2065,7 @@ class AgentService:
         except Exception as e:
             logger.error(f"Failed to save screenshot for step {step}: {e}")
             return None
+
 
 # 全局实例
 _agent_service: Optional[AgentService] = None

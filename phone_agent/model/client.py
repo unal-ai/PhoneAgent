@@ -25,8 +25,8 @@ class ModelConfig:
     top_p: float = 0.85
     frequency_penalty: float = 0.2
     timeout: float = 120.0  # LLM请求总超时（秒），默认120秒
-    stream_timeout: float = 60.0  # 🆕 流式输出 token 间隔超时（秒）
-    enable_streaming: bool = True  # 🆕 启用流式输出
+    stream_timeout: float = 60.0  # 流式输出 token 间隔超时（秒）
+    enable_streaming: bool = True  # 启用流式输出
     extra_body: dict[str, Any] = field(default_factory=lambda: {"skip_special_tokens": False})
 
 
@@ -50,7 +50,7 @@ class ModelClient:
 
     def __init__(self, config: ModelConfig | None = None):
         self.config = config or ModelConfig()
-        # 🆕 配置超时时间，防止 LLM 调用永久挂起
+        # 配置超时时间，防止 LLM 调用永久挂起
         self.client = OpenAI(
             base_url=self.config.base_url,
             api_key=self.config.api_key,
@@ -121,7 +121,7 @@ class ModelClient:
         on_token: Callable[[str], None] | None = None,
     ) -> ModelResponse:
         """
-        🆕 流式请求模型，支持智能超时和实时 token 回调。
+        流式请求模型，支持智能超时和实时 token 回调。
 
         Args:
             messages: 消息列表（OpenAI 格式）
@@ -139,7 +139,7 @@ class ModelClient:
             "max_tokens": self.config.max_tokens,
             "temperature": self.config.temperature,
             "top_p": self.config.top_p,
-            "stream": True,  # 🆕 启用流式输出
+            "stream": True,  # 启用流式输出
         }
 
         if self.config.frequency_penalty != 0.0:
@@ -214,7 +214,7 @@ class ModelClient:
             "max_tokens": self.config.max_tokens,
             "temperature": temperature if temperature is not None else self.config.temperature,
             "top_p": self.config.top_p,
-            "response_format": {"type": "json_object"},  # 🆕 强制JSON输出
+            "response_format": {"type": "json_object"},  # 强制JSON输出
         }
 
         # 只有当 frequency_penalty 不为 0 时才添加

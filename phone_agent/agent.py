@@ -36,7 +36,7 @@ class AgentConfig:
     verbose: bool = True
     max_history_images: int = 3  # 默认保留最近3张历史截图 (不含当前) -> Logically 4 total
     enable_stabilization: bool = True  # 是否开启截图防抖
-    enable_xml_hierarchy: bool = True  # 🆕 是否获取XML UI层级信息
+    enable_xml_hierarchy: bool = True  # 是否获取XML UI层级信息
 
 
 @dataclass
@@ -81,7 +81,7 @@ class PhoneAgent:
         takeover_callback: Callable[[str], None] | None = None,
         step_callback: Any | None = None,
         installed_apps: list[dict[str, str]] | None = None,  # 已安装应用列表
-        stream_callback: Callable[[str], None] | None = None,  # 🆕 流式 token 回调
+        stream_callback: Callable[[str], None] | None = None,  # 流式 token 回调
     ):
         self.model_config = model_config or ModelConfig()
         self.agent_config = agent_config or AgentConfig()
@@ -104,12 +104,13 @@ class PhoneAgent:
         self._context: list[dict[str, Any]] = []
         self._step_count = 0
         self._scratchpad: str = ""  # 🧠 Persistent Memory
+        self._last_action_result: str | None = None  # 上一步操作结果
 
         # 新增：步骤回调支持
         from phone_agent.kernel.callback import NoOpCallback
 
         self.step_callback = step_callback or NoOpCallback()
-        self.stream_callback = stream_callback  # 🆕 流式 token 回调
+        self.stream_callback = stream_callback  # 流式 token 回调
 
     async def _compress_history_images(self, image_indices: list[int]):
         """
@@ -139,8 +140,14 @@ class PhoneAgent:
                             try:
                                 base64_data = image_url.split("base64,")[1]
                                 # 🛡️ 防御性检查
-                                if not base64_data or base64_data == "None" or len(base64_data) < 100:
-                                    logger.warning(f"Skipping compression for invalid image data at index {idx}")
+                                if (
+                                    not base64_data
+                                    or base64_data == "None"
+                                    or len(base64_data) < 100
+                                ):
+                                    logger.warning(
+                                        f"Skipping compression for invalid image data at index {idx}"
+                                    )
                                     continue
 
                                 image_bytes = base64.b64decode(base64_data)
@@ -166,12 +173,54 @@ class PhoneAgent:
 
                                 # 更新消息内容
                                 item["image_url"]["url"] = f"data:image/jpeg;base64,{new_base64}"
-                                logger.info(f"Using Smart Compression for history image at index {idx}")
+                                logger.info(
+                                    f"Using Smart Compression for history image at index {idx}"
+                                )
                             except Exception as e:
-                                logger.warning(f"Error during image compression at index {idx}: {e}")
+                                logger.warning(
+                                    f"Error during image compression at index {idx}: {e}"
+                                )
                                 continue
             except Exception as e:
                 logger.warning(f"Failed to compress history image at index {idx}: {e}")
+
+    def _strip_xml_from_history(self):
+        """
+        Strip XML/ui_hierarchy data from historical user messages to save tokens.
+        Only the most recent user message should contain XML data.
+        """
+        import re
+
+        # Find all user messages except the last one
+        user_msg_indices = [i for i, msg in enumerate(self._context) if msg.get("role") == "user"]
+
+        if len(user_msg_indices) <= 1:
+            return  # No history to strip
+
+        # Strip XML from all but the last user message
+        for idx in user_msg_indices[:-1]:
+            msg = self._context[idx]
+            content = msg.get("content")
+
+            if isinstance(content, list):
+                # Multi-part message (text + image)
+                for item in content:
+                    if item.get("type") == "text":
+                        original_text = item.get("text", "")
+                        # Remove ui_hierarchy JSON from the text
+                        cleaned = re.sub(
+                            r'"ui_hierarchy"\s*:\s*".*?"',
+                            '"ui_hierarchy":""',
+                            original_text,
+                            flags=re.DOTALL,
+                        )
+                        item["text"] = cleaned
+            elif isinstance(content, str):
+                # Simple text message
+                cleaned = re.sub(
+                    r'"ui_hierarchy"\s*:\s*".*?"', '"ui_hierarchy":""', content, flags=re.DOTALL
+                )
+                self._context[idx]["content"] = cleaned
 
     def run(self, task: str) -> str:
         """
@@ -277,13 +326,16 @@ class PhoneAgent:
             )
 
         # 🛡️ 数据完整性检查
-        if not screenshot.base64_data or screenshot.base64_data == "None" or screenshot.base64_data.strip() == "None":
+        if (
+            not screenshot.base64_data
+            or screenshot.base64_data == "None"
+            or screenshot.base64_data.strip() == "None"
+        ):
             logger.error(
                 f"Invalid screenshot data detected! len={len(screenshot.base64_data) if screenshot.base64_data else 'None'}"
             )
             # 强制修正为 None，避免后续流程报错
             screenshot.base64_data = None
-
 
         # Get UI Hierarchy (XML) - Optional but recommended
         ui_elements_str = ""
@@ -321,7 +373,13 @@ class PhoneAgent:
             screen_info = MessageBuilder.build_screen_info(
                 current_app, ui_hierarchy=ui_elements_str
             )
-            text_content = f"** Screen Info **\n\n{screen_info}"
+
+            # 注入上一步操作结果（关键反馈）
+            action_feedback = ""
+            if self._last_action_result:
+                action_feedback = f"** Last Action Result **\n{self._last_action_result}\n\n"
+
+            text_content = f"{action_feedback}** Screen Info **\n\n{screen_info}"
 
             # 🧠 如果有记忆，注入到Prompt中
             if self._scratchpad:
@@ -333,7 +391,7 @@ class PhoneAgent:
                 )
             )
 
-        # Get model response (🆕 支持流式输出)
+        # Get model response (支持流式输出)
         try:
             if self.model_config.enable_streaming:
                 response = self.model_client.request_stream(
@@ -343,18 +401,22 @@ class PhoneAgent:
             else:
                 response = self.model_client.request(self._context)
         except Exception as e:
-            # 🆕 错误处理：如果遇到 BadRequestError (400)，尝试移除最新的一张图片重试
+            # 错误处理：如果遇到 BadRequestError (400)，尝试移除最新的一张图片重试
             # 错误特征: 'Non-base64 digit found' 或 'BadRequestError'
             error_str = str(e)
             if "BadRequestError" in error_str or "Non-base64" in error_str or "400" in error_str:
-                logger.warning(f"Model request failed with 400 Error: {e}. Retrying without ANY images...")
-                
+                logger.warning(
+                    f"Model request failed with 400 Error: {e}. Retrying without ANY images..."
+                )
+
                 # 移除整个上下文中的所有图片（不仅是最后一条）
                 # 这是为了防止历史消息中残留无效的图片数据导致持续报错
                 if self._context:
                     for i in range(len(self._context)):
-                        self._context[i] = MessageBuilder.remove_images_from_message(self._context[i])
-                    
+                        self._context[i] = MessageBuilder.remove_images_from_message(
+                            self._context[i]
+                        )
+
                     try:
                         logger.info("Retrying request with text only (all images removed)...")
                         if self.model_config.enable_streaming:
@@ -402,7 +464,7 @@ class PhoneAgent:
             if self.agent_config.verbose:
                 logger.debug(f"🧠 Memory Updated: {old_memory[:20]}... -> {new_memory[:20]}...")
 
-        # 🆕 通知步骤开始（此时已有 thinking 和 action）
+        # 通知步骤开始（此时已有 thinking 和 action）
         action_json = json.dumps(action, ensure_ascii=False) if action else "{}"
         # 将 thinking 和 action 组合传递
         step_info = {"thinking": response.thinking, "action": action_json}
@@ -448,7 +510,7 @@ class PhoneAgent:
                 self._context[idx] = MessageBuilder.remove_images_from_message(msg)
                 logger.debug(f"Removed history image from message index {idx}")
 
-        # 🆕 智能压缩历史图片：保持最新的图片为高清，其余压缩为标清
+        # 智能压缩历史图片：保持最新的图片为高清，其余压缩为标清
         # 重新获取包含图片的索引（因为上面可能移除了部分）
         remaining_image_indices = []
         for i, msg in enumerate(self._context):
@@ -469,7 +531,10 @@ class PhoneAgent:
             loop = asyncio.new_event_loop()
             loop.run_until_complete(self._compress_history_images(remaining_image_indices))
             loop.close()
-        # self._context[-1] = MessageBuilder.remove_images_from_message(self._context[-1])
+
+        # Strip XML from older messages to save context tokens
+        # Only keep XML in the current (last) user message
+        self._strip_xml_from_history()
 
         # Execute action
         try:
@@ -481,6 +546,17 @@ class PhoneAgent:
                 finish(message=str(e)), screenshot.width, screenshot.height
             )
 
+        # Store action result for next step's feedback
+        action_name = action.get("action", action.get("_metadata", "unknown"))
+        if result.success:
+            self._last_action_result = f"✓ {action_name} executed successfully"
+            if result.message:
+                self._last_action_result += f": {result.message}"
+        else:
+            self._last_action_result = f"✗ {action_name} failed"
+            if result.message:
+                self._last_action_result += f": {result.message}"
+
         # Add assistant response to context
         self._context.append(
             MessageBuilder.create_assistant_message(
@@ -491,7 +567,7 @@ class PhoneAgent:
         # Check if finished
         finished = action.get("_metadata") == "finish" or result.should_finish
 
-        # 🆕 通知步骤完成
+        # 通知步骤完成
         self.step_callback.on_step_complete(
             self._step_count,
             result.success,

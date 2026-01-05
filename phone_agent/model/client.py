@@ -428,7 +428,7 @@ class MessageBuilder:
         """
         content = []
 
-        if image_base64 and image_base64 != "None":
+        if image_base64 and str(image_base64).strip() != "None":
             # 🛡️ 防御性检查：确保 base64_data 是有效字符串且不包含 "None"
             if len(image_base64) < 100:
                  # 太短不可能是有效图片，可能是错误信息

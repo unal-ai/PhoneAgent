@@ -647,15 +647,100 @@ watch(() => props.taskId, async (newTaskId, oldTaskId) => {
   }
 }, { immediate: false })
 
+
+// Real-time Event Handlers
+
+function handleStreamToken(event) {
+  const data = event.detail
+  if (data.task_id !== props.taskId) return
+  
+  // Find current step to update
+  // Usually it's the last step
+  if (steps.value.length === 0) {
+    // Should have been initialized by task_step_update or initial load
+    return
+  }
+  
+  const lastStep = steps.value[steps.value.length - 1]
+  
+  // Update thinking content
+  if (!lastStep.thinking) {
+    lastStep.thinking = ''
+  }
+  
+  lastStep.thinking += data.token
+  
+  // Auto-scroll on new content
+  scrollToBottom()
+}
+
+function handleTaskStepUpdate(event) {
+  const data = event.detail
+  if (data.task_id !== props.taskId) return
+  
+  const stepIndex = data.step
+  
+  // Find existing step or append new one
+  const existingStepIndex = steps.value.findIndex(s => s.step === stepIndex || s.step_index === stepIndex)
+  
+  if (existingStepIndex !== -1) {
+    // Update existing step
+    const step = steps.value[existingStepIndex]
+    
+    // Preserve existing thinking if it's more complete (from streaming)
+    // unless the update provides a full new thinking string
+    const newThinking = data.thinking || ''
+    const currentThinking = step.thinking || ''
+    
+    // Merge data
+    Object.assign(step, {
+      ...data,
+      // If new thinking is shorter than current (and we were streaming), keep current
+      // This prevents "flicker" if the update event happens to carry partial data
+      // BUT if it's a completion event, we should trust it
+      thinking: (data.status === 'completed' || newThinking.length > currentThinking.length) 
+        ? newThinking 
+        : currentThinking
+    })
+  } else {
+    // New step
+    steps.value.push(data)
+    scrollToBottom()
+  }
+}
+
+// Function to handle task status changes (e.g. completion)
+function handleTaskStatusChange(event) {
+  const data = event.detail
+  if (data.task_id !== props.taskId) return
+  
+  if (currentTask.value) {
+    currentTask.value.status = data.status
+    if (data.message) currentTask.value.result = data.message
+    if (data.error) currentTask.value.error = data.error
+    
+    // Stop polling if done
+    if (['completed', 'failed', 'cancelled'].includes(data.status)) {
+      stopPolling()
+      stopElapsedTimer()
+    }
+  }
+}
+
 onMounted(async () => {
   await loadTask()
   
-  // 启动轮询（如果任务正在执行）
+  // 启动轮询（作为兜底 sync）
   if (currentTask.value && currentTask.value.status === 'running') {
     startPolling()
   }
   
   startElapsedTimer()
+  
+  // Add Event Listeners
+  window.addEventListener('stream-token', handleStreamToken)
+  window.addEventListener('task-step-update', handleTaskStepUpdate)
+  window.addEventListener('task-status-change', handleTaskStatusChange)
 })
 
 onUnmounted(() => {
@@ -666,6 +751,11 @@ onUnmounted(() => {
     clearInterval(contextRefreshTimer)
     contextRefreshTimer = null
   }
+  
+  // Remove Event Listeners
+  window.removeEventListener('stream-token', handleStreamToken)
+  window.removeEventListener('task-step-update', handleTaskStepUpdate)
+  window.removeEventListener('task-status-change', handleTaskStatusChange)
 })
 </script>
 

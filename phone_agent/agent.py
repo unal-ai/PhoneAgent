@@ -135,31 +135,40 @@ class PhoneAgent:
                         # 这里简单通过检测是否包含 "image/png" 来判断是否是原始高清图
                         if "data:image/png" in image_url:
                             # 提取 base64
-                            base64_data = image_url.split("base64,")[1]
-                            image_bytes = base64.b64decode(base64_data)
+                            try:
+                                base64_data = image_url.split("base64,")[1]
+                                # 🛡️ 防御性检查
+                                if not base64_data or base64_data == "None" or len(base64_data) < 100:
+                                    logger.warning(f"Skipping compression for invalid image data at index {idx}")
+                                    continue
 
-                            # 加载并处理
-                            img = Image.open(io.BytesIO(image_bytes))
+                                image_bytes = base64.b64decode(base64_data)
 
-                            # 调整大小：最大边长 512px
-                            max_dimension = 512
-                            if max(img.size) > max_dimension:
-                                img.thumbnail(
-                                    (max_dimension, max_dimension), Image.Resampling.LANCZOS
-                                )
+                                # 加载并处理
+                                img = Image.open(io.BytesIO(image_bytes))
 
-                            # 转为 JPEG 格式以进一步压缩体积 (Quality=70)
-                            buffer = io.BytesIO()
-                            # 转换为 RGB (JPEG 不支持 RGBA)
-                            if img.mode in ("RGBA", "P"):
-                                img = img.convert("RGB")
-                            img.save(buffer, format="JPEG", quality=70)
+                                # 调整大小：最大边长 512px
+                                max_dimension = 512
+                                if max(img.size) > max_dimension:
+                                    img.thumbnail(
+                                        (max_dimension, max_dimension), Image.Resampling.LANCZOS
+                                    )
 
-                            new_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                                # 转为 JPEG 格式以进一步压缩体积 (Quality=70)
+                                buffer = io.BytesIO()
+                                # 转换为 RGB (JPEG 不支持 RGBA)
+                                if img.mode in ("RGBA", "P"):
+                                    img = img.convert("RGB")
+                                img.save(buffer, format="JPEG", quality=70)
 
-                            # 更新消息内容
-                            item["image_url"]["url"] = f"data:image/jpeg;base64,{new_base64}"
-                            logger.info(f"Using Smart Compression for history image at index {idx}")
+                                new_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+                                # 更新消息内容
+                                item["image_url"]["url"] = f"data:image/jpeg;base64,{new_base64}"
+                                logger.info(f"Using Smart Compression for history image at index {idx}")
+                            except Exception as e:
+                                logger.warning(f"Error during image compression at index {idx}: {e}")
+                                continue
             except Exception as e:
                 logger.warning(f"Failed to compress history image at index {idx}: {e}")
 
@@ -254,10 +263,12 @@ class PhoneAgent:
         current_app = get_current_app(self.agent_config.device_id)
 
         # 🛡️ 数据完整性检查
-        if not screenshot.base64_data or screenshot.base64_data == "None" or len(screenshot.base64_data) < 100:
+        if not screenshot.base64_data or screenshot.base64_data == "None" or screenshot.base64_data.strip() == "None":
             logger.error(
-                f"Invalid screenshot data detected! len={len(screenshot.base64_data) if screenshot.base64_data else 'None'}, data[:20]={screenshot.base64_data[:20] if screenshot.base64_data else 'None'}"
+                f"Invalid screenshot data detected! len={len(screenshot.base64_data) if screenshot.base64_data else 'None'}"
             )
+            # 强制修正为 None，避免后续流程报错
+            screenshot.base64_data = None
 
 
         # Build messages
@@ -302,15 +313,47 @@ class PhoneAgent:
             else:
                 response = self.model_client.request(self._context)
         except Exception as e:
-            if self.agent_config.verbose:
-                traceback.print_exc()
-            return StepResult(
-                success=False,
-                finished=True,
-                action=None,
-                thinking="",
-                message=f"Model error: {e}",
-            )
+            # 🆕 错误处理：如果遇到 BadRequestError (400)，尝试移除最新的一张图片重试
+            # 错误特征: 'Non-base64 digit found' 或 'BadRequestError'
+            error_str = str(e)
+            if "BadRequestError" in error_str or "Non-base64" in error_str or "400" in error_str:
+                logger.warning(f"Model request failed with 400 Error: {e}. Retrying without image...")
+
+                # 移除最后一条消息中的图片
+                if self._context:
+                    last_msg = self._context[-1]
+                    self._context[-1] = MessageBuilder.remove_images_from_message(last_msg)
+
+                    try:
+                        logger.info("Retrying request without image...")
+                        if self.model_config.enable_streaming:
+                            response = self.model_client.request_stream(
+                                self._context,
+                                on_token=self.stream_callback,
+                            )
+                        else:
+                            response = self.model_client.request(self._context)
+                    except Exception as retry_e:
+                        logger.error(f"Retry also failed: {retry_e}")
+                        if self.agent_config.verbose:
+                            traceback.print_exc()
+                        return StepResult(
+                            success=False,
+                            finished=True,
+                            action=None,
+                            thinking="",
+                            message=f"Model error (after retry): {retry_e}",
+                        )
+            else:
+                if self.agent_config.verbose:
+                    traceback.print_exc()
+                return StepResult(
+                    success=False,
+                    finished=True,
+                    action=None,
+                    thinking="",
+                    message=f"Model error: {e}",
+                )
 
         # Parse action from response
         try:

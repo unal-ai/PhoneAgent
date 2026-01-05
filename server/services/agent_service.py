@@ -1278,10 +1278,17 @@ class AgentService:
                     f"📊 [Task {task.task_id}] Total tokens: {task.total_tokens} (prompt: {task.total_prompt_tokens}, completion: {task.total_completion_tokens})"
                 )
 
+
                 # 完成回调（同步方法）
                 # on_task_complete 需要改为异步调用或直接处理状态
                 # 直接更新任务状态和广播
-                task.status = TaskStatus.COMPLETED
+                
+                # 🆕 修复：根据最后一步的成功状态决定任务最终状态
+                is_success = True
+                if 'step_result' in locals() and step_result:
+                    is_success = step_result.success
+                
+                task.status = TaskStatus.COMPLETED if is_success else TaskStatus.FAILED
                 task.result = result_message
                 task.completed_at = datetime.now(timezone.utc)
                 # duration 是自动计算的 @property，不需要赋值
@@ -1294,7 +1301,7 @@ class AgentService:
                                 "type": "task_status_change",
                                 "data": {
                                     "task_id": task.task_id,
-                                    "status": TaskStatus.COMPLETED.value,
+                                    "status": task.status.value,
                                     "message": result_message,
                                     "timestamp": task.completed_at.isoformat(),
                                     "duration": task.duration,
@@ -2010,11 +2017,11 @@ class AgentService:
     async def _save_step_screenshot(self, task: Task, step: int) -> Optional[Dict[str, str]]:
         """
         保存步骤截图并压缩
-        
+
         Args:
             task: 任务对象
             step: 步骤索引
-            
+
         Returns:
             截图路径字典 {ai: path, medium: path, small: path}
         """

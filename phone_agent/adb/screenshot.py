@@ -124,9 +124,9 @@ def _get_screenshot_standard(
 
         # 🆕 调整图片大小，防止 API 报错 (Code 1210)
         # 限制最大边长为 1080px
-        MAX_DIMENSION = 1080
-        if max(img.size) > MAX_DIMENSION:
-            img.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
+        max_dimension = 1080
+        if max(img.size) > max_dimension:
+            img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
             # 重新保存到 BytesIO
             buffer = BytesIO()
             img.save(buffer, format="PNG")
@@ -182,14 +182,14 @@ def _get_screenshot_yadb(
             height = result["height"]
 
             # 🆕 调整图片大小，防止 API 报错 (Code 1210)
-            MAX_DIMENSION = 1080
-            if max(width, height) > MAX_DIMENSION:
+            max_dimension = 1080
+            if max(width, height) > max_dimension:
                 try:
                     # 解码
                     image_data = base64.b64decode(base64_data)
                     img = Image.open(BytesIO(image_data))
                     # 调整大小
-                    img.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
+                    img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
                     # 重新编码
                     buffer = BytesIO()
                     img.save(buffer, format="PNG")

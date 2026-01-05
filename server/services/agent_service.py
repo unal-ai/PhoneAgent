@@ -1053,6 +1053,9 @@ class AgentService:
                     agent_config=agent_config,
                     step_callback=sync_callback,  # 🆕 传递回调
                     installed_apps=installed_apps,  # 🆕 传递已安装应用列表
+                    stream_callback=lambda token: self._broadcast_stream_token(
+                        task.task_id, token
+                    ),  # 🆕 流式 token 回调
                 )
 
                 # Store active agent instance for context retrieval
@@ -1567,6 +1570,30 @@ class AgentService:
         """设置WebSocket广播回调"""
         self._websocket_broadcast_callback = callback
         logger.info(f"WebSocket broadcast callback set: {callback}")
+
+    def _broadcast_stream_token(self, task_id: str, token: str):
+        """🆕 同步广播流式 token（用于实时 UI 更新）"""
+        if self._websocket_broadcast_callback:
+            try:
+                import asyncio
+
+                # 在事件循环中异步广播
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(
+                        self._websocket_broadcast_callback(
+                            {
+                                "type": "stream_token",
+                                "data": {
+                                    "task_id": task_id,
+                                    "token": token,
+                                },
+                            }
+                        )
+                    )
+            except Exception:
+                # 静默失败，避免影响主流程
+                pass
 
     def get_task(self, task_id: str) -> Optional[Task]:
         """

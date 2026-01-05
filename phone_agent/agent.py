@@ -75,7 +75,8 @@ class PhoneAgent:
         confirmation_callback: Callable[[str], bool] | None = None,
         takeover_callback: Callable[[str], None] | None = None,
         step_callback: Any | None = None,
-        installed_apps: list[dict[str, str]] | None = None,  # 新增：已安装应用列表
+        installed_apps: list[dict[str, str]] | None = None,  # 已安装应用列表
+        stream_callback: Callable[[str], None] | None = None,  # 🆕 流式 token 回调
     ):
         self.model_config = model_config or ModelConfig()
         self.agent_config = agent_config or AgentConfig()
@@ -103,6 +104,7 @@ class PhoneAgent:
         from phone_agent.kernel.callback import NoOpCallback
 
         self.step_callback = step_callback or NoOpCallback()
+        self.stream_callback = stream_callback  # 🆕 流式 token 回调
 
     def run(self, task: str) -> str:
         """
@@ -226,9 +228,15 @@ class PhoneAgent:
                 )
             )
 
-        # Get model response
+        # Get model response (🆕 支持流式输出)
         try:
-            response = self.model_client.request(self._context)
+            if self.model_config.enable_streaming:
+                response = self.model_client.request_stream(
+                    self._context,
+                    on_token=self.stream_callback,
+                )
+            else:
+                response = self.model_client.request(self._context)
         except Exception as e:
             if self.agent_config.verbose:
                 traceback.print_exc()

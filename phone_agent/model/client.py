@@ -6,8 +6,9 @@
 """Model client for AI inference using OpenAI-compatible API."""
 
 import json
+import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from openai import OpenAI
 
@@ -23,7 +24,9 @@ class ModelConfig:
     temperature: float = 0.0
     top_p: float = 0.85
     frequency_penalty: float = 0.2
-    timeout: float = 120.0  # 🆕 LLM请求超时（秒），默认120秒
+    timeout: float = 120.0  # LLM请求总超时（秒），默认120秒
+    stream_timeout: float = 60.0  # 🆕 流式输出 token 间隔超时（秒）
+    enable_streaming: bool = True  # 🆕 启用流式输出
     extra_body: dict[str, Any] = field(default_factory=lambda: {"skip_special_tokens": False})
 
 
@@ -111,6 +114,74 @@ class ModelClient:
                 }
 
         return ModelResponse(thinking=thinking, action=action, raw_content=raw_content, usage=usage)
+
+    def request_stream(
+        self,
+        messages: list[dict[str, Any]],
+        on_token: Callable[[str], None] | None = None,
+    ) -> ModelResponse:
+        """
+        🆕 流式请求模型，支持智能超时和实时 token 回调。
+
+        Args:
+            messages: 消息列表（OpenAI 格式）
+            on_token: 每个 token 到达时的回调函数（用于实时 UI 更新）
+
+        Returns:
+            ModelResponse 包含完整的 thinking 和 action
+
+        Raises:
+            TimeoutError: 如果 stream_timeout 秒内没有新 token
+        """
+        request_params = {
+            "messages": messages,
+            "model": self.config.model_name,
+            "max_tokens": self.config.max_tokens,
+            "temperature": self.config.temperature,
+            "top_p": self.config.top_p,
+            "stream": True,  # 🆕 启用流式输出
+        }
+
+        if self.config.frequency_penalty != 0.0:
+            request_params["frequency_penalty"] = self.config.frequency_penalty
+
+        if self.config.extra_body:
+            request_params["extra_body"] = self.config.extra_body
+
+        # 流式请求
+        stream = self.client.chat.completions.create(**request_params)
+
+        # 收集完整响应
+        full_content = ""
+        last_token_time = time.time()
+
+        for chunk in stream:
+            # 检查智能超时（token 间隔超时）
+            current_time = time.time()
+            if current_time - last_token_time > self.config.stream_timeout:
+                raise TimeoutError(
+                    f"Stream timeout: no token received in {self.config.stream_timeout}s"
+                )
+
+            # 提取 token
+            if chunk.choices and chunk.choices[0].delta.content:
+                token = chunk.choices[0].delta.content
+                full_content += token
+                last_token_time = current_time
+
+                # 回调通知
+                if on_token:
+                    on_token(token)
+
+        # 解析完整响应
+        thinking, action = self._parse_response(full_content)
+
+        return ModelResponse(
+            thinking=thinking,
+            action=action,
+            raw_content=full_content,
+            usage=None,  # 流式模式下 usage 在最后一个 chunk，暂不处理
+        )
 
     def request_json(
         self, messages: list[dict[str, Any]], temperature: float | None = None

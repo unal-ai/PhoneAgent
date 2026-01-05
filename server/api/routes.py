@@ -25,7 +25,7 @@ from server.api.anti_detection_config import router as anti_detection_router
 from server.api.model_stats import router as model_stats_router
 from server.api.planning import router as planning_router
 from server.api.presets import router as presets_router
-from server.api.schemas.task import CreateTaskRequest, TaskResponse
+from server.api.schemas.task import CreateTaskRequest, ModelTestRequest, TaskResponse
 from server.api.scrcpy import router as scrcpy_router
 from server.api.speech_api import router as speech_router
 from server.services import get_agent_service, get_device_pool

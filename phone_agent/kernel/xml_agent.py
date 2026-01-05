@@ -39,7 +39,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from phone_agent.adb import back, double_tap, home, long_press, swipe, tap
-from phone_agent.adb.device import launch_app
+from phone_agent.adb.device import get_physical_screen_size, launch_app
 from phone_agent.adb.ui_hierarchy import get_ui_hierarchy_robust as get_ui_hierarchy
 from phone_agent.adb.xml_tree import UIElement, format_elements_for_llm
 from phone_agent.kernel.callback import NoOpCallback, StepCallback
@@ -354,6 +354,24 @@ class XMLKernelAgent:
 
         return XML_KERNEL_SYSTEM_PROMPT
 
+    def _convert_relative_to_absolute(self, coords: List[int]) -> tuple[int, int]:
+        """Convert 0-1000 relative coordinates to absolute pixels.
+
+        If values exceed 1000, they are treated as already-absolute to keep
+        backward compatibility with any callers that still send raw pixels.
+        """
+
+        if len(coords) != 2:
+            raise ValueError("Coordinates must be a list of two integers")
+
+        x, y = coords
+        if 0 <= x <= 1000 and 0 <= y <= 1000:
+            width, height = get_physical_screen_size(self.config.device_id)
+            x = int(x / 1000 * width)
+            y = int(y / 1000 * height)
+
+        return x, y
+
     def _get_llm_decision(
         self, goal: str, elements: List[UIElement], is_first: bool = False
     ) -> Dict[str, Any]:
@@ -515,7 +533,7 @@ class XMLKernelAgent:
                 if not coords or len(coords) != 2:
                     return {"success": False, "error": "无效的坐标"}
 
-                x, y = coords
+                x, y = self._convert_relative_to_absolute(coords)
                 if self.config.verbose:
                     logger.info(f"👉 点击: ({x}, {y})")
 
@@ -534,9 +552,10 @@ class XMLKernelAgent:
                 # 如果 LLM 提供了坐标，先点击；否则点击屏幕中心
                 coords = decision.get("coordinates") or decision.get("coords")
                 if coords and len(coords) == 2:
+                    x, y = self._convert_relative_to_absolute(coords)
                     if self.config.verbose:
-                        logger.info(f"👉 先点击输入框: ({coords[0]}, {coords[1]})")
-                    tap(coords[0], coords[1], self.config.device_id)
+                        logger.info(f"👉 先点击输入框: ({x}, {y})")
+                    tap(x, y, self.config.device_id)
                     time.sleep(0.5)  # 等待输入框获得焦点和键盘弹出
 
                 # 使用智能输入（优先yadb，兜底ADB Keyboard）
@@ -578,8 +597,8 @@ class XMLKernelAgent:
                 if not end_coords or len(end_coords) != 2:
                     return {"success": False, "error": "无效的结束坐标"}
 
-                x1, y1 = start_coords
-                x2, y2 = end_coords
+                x1, y1 = self._convert_relative_to_absolute(start_coords)
+                x2, y2 = self._convert_relative_to_absolute(end_coords)
                 if self.config.verbose:
                     logger.info(f"👆 滑动: ({x1}, {y1}) -> ({x2}, {y2})")
 
@@ -592,7 +611,7 @@ class XMLKernelAgent:
                 if not coords or len(coords) != 2:
                     return {"success": False, "error": "无效的坐标"}
 
-                x, y = coords
+                x, y = self._convert_relative_to_absolute(coords)
                 if self.config.verbose:
                     logger.info(f"👇 长按: ({x}, {y}), {duration}ms")
 
@@ -604,7 +623,7 @@ class XMLKernelAgent:
                 if not coords or len(coords) != 2:
                     return {"success": False, "error": "无效的坐标"}
 
-                x, y = coords
+                x, y = self._convert_relative_to_absolute(coords)
                 if self.config.verbose:
                     logger.info(f"👆👆 双击: ({x}, {y})")
 

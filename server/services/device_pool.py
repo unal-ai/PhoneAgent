@@ -521,6 +521,39 @@ class DevicePool:
             "success_rate": success_tasks / total_tasks * 100 if total_tasks > 0 else 0.0,
         }
 
+    async def get_installed_apps(self, device_id: str) -> List[dict]:
+        """
+        获取设备已安装的应用列表
+
+        Args:
+            device_id: 设备ID
+
+        Returns:
+            应用列表 [{"name": "WeChat", "package": "com.tencent.mm"}, ...]
+        """
+        device = self.get_device(device_id)
+        if not device:
+            return []
+
+        try:
+            # 临时构建 ApplicationScanner (因为它目前设计为独立使用)
+            from phone_agent.adb.app_discovery import ApplicationScanner
+            from phone_agent.adb.connection import ADBConnection
+
+            # 使用现有设备的连接信息
+            connection = ADBConnection(device.adb_address)
+            scanner = ApplicationScanner(connection)
+
+            # 获取应用列表
+            apps = scanner.get_installed_apps()
+
+            # 转换为简单字典格式
+            return [{"name": app.name, "package": app.package} for app in apps]
+        except Exception as e:
+            logger.error(f"Failed to get installed apps for {device_id}: {e}")
+            return []
+
+
 
 # 全局实例
 _device_pool: Optional[DevicePool] = None
@@ -577,34 +610,4 @@ if __name__ == "__main__":
 
     asyncio.run(test())
 
-    async def get_installed_apps(self, device_id: str) -> List[dict]:
-        """
-        获取设备已安装的应用列表
 
-        Args:
-            device_id: 设备ID
-
-        Returns:
-            应用列表 [{"name": "WeChat", "package": "com.tencent.mm"}, ...]
-        """
-        device = self.get_device(device_id)
-        if not device:
-            return []
-
-        try:
-            # 临时构建 ApplicationScanner (因为它目前设计为独立使用)
-            from phone_agent.adb.app_discovery import ApplicationScanner
-            from phone_agent.adb.connection import ADBConnection
-
-            # 使用现有设备的连接信息
-            connection = ADBConnection(device.adb_address)
-            scanner = ApplicationScanner(connection)
-
-            # 获取应用列表
-            apps = scanner.get_installed_apps()
-
-            # 转换为简单字典格式
-            return [{"name": app.name, "package": app.package} for app in apps]
-        except Exception as e:
-            logger.error(f"Failed to get installed apps for {device_id}: {e}")
-            return []

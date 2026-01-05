@@ -34,8 +34,9 @@ class AgentConfig:
     device_id: str | None = None
     system_prompt: str = SYSTEM_PROMPT
     verbose: bool = True
-    max_history_images: int = 1  # 默认保留最近1张截图 (0=仅本次, 1=本次+上次)
+    max_history_images: int = 3  # 默认保留最近3张历史截图 (不含当前) -> Logically 4 total
     enable_stabilization: bool = True  # 是否开启截图防抖
+    enable_xml_hierarchy: bool = True  # 🆕 是否获取XML UI层级信息
 
 
 @dataclass
@@ -284,13 +285,27 @@ class PhoneAgent:
             screenshot.base64_data = None
 
 
+        # Get UI Hierarchy (XML) - Optional but recommended
+        ui_elements_str = ""
+        if self.agent_config.enable_xml_hierarchy:
+            try:
+                from phone_agent.adb.xml_tree import format_elements_for_llm, get_ui_hierarchy
+
+                elements = get_ui_hierarchy(self.agent_config.device_id)
+                ui_elements_str = format_elements_for_llm(elements)
+                # logger.debug(f"Fetched {len(elements)} UI elements")
+            except Exception as e:
+                logger.warning(f"Failed to get UI hierarchy: {e}")
+
         # Build messages
         if is_first:
             self._context.append(
                 MessageBuilder.create_system_message(self.agent_config.system_prompt)
             )
 
-            screen_info = MessageBuilder.build_screen_info(current_app)
+            screen_info = MessageBuilder.build_screen_info(
+                current_app, ui_hierarchy=ui_elements_str
+            )
             text_content = f"{user_prompt}\n\n{screen_info}"
 
             # 🧠 如果有记忆，注入到Prompt中
@@ -303,7 +318,9 @@ class PhoneAgent:
                 )
             )
         else:
-            screen_info = MessageBuilder.build_screen_info(current_app)
+            screen_info = MessageBuilder.build_screen_info(
+                current_app, ui_hierarchy=ui_elements_str
+            )
             text_content = f"** Screen Info **\n\n{screen_info}"
 
             # 🧠 如果有记忆，注入到Prompt中
@@ -414,9 +431,10 @@ class PhoneAgent:
                 if has_image:
                     image_indices.append(i)
 
-        # Keep only the last N images (max_history_images)
+        # Keep the last N images (max_history_images) + 1 (current step)
         # Note: The current step's image is the last one in the list
-        images_to_keep = self.agent_config.max_history_images
+        # max_history_images=1 means keep 1 history + 1 current = 2 total
+        images_to_keep = self.agent_config.max_history_images + 1
 
         if len(image_indices) > images_to_keep:
             # We need to remove some images

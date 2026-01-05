@@ -630,6 +630,7 @@ class AgentService:
         try:
             # 获取当前事件循环并传给回调
             loop = asyncio.get_event_loop()
+            self._main_loop = loop  # Store for stream_callback to use
 
             # 创建回调（传入事件循环）
             callback = AgentCallback(task, self._websocket_broadcast_callback, loop)
@@ -1594,10 +1595,10 @@ class AgentService:
             try:
                 import asyncio
 
-                # 在事件循环中异步广播
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.create_task(
+                # 使用 run_coroutine_threadsafe 从工作线程安全调度
+                # 需要一个已存储的主事件循环引用
+                if hasattr(self, '_main_loop') and self._main_loop:
+                    asyncio.run_coroutine_threadsafe(
                         self._websocket_broadcast_callback(
                             {
                                 "type": "stream_token",
@@ -1606,7 +1607,8 @@ class AgentService:
                                     "token": token,
                                 },
                             }
-                        )
+                        ),
+                        self._main_loop
                     )
             except Exception:
                 # 静默失败，避免影响主流程

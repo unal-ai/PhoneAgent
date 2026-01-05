@@ -231,7 +231,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ChatDotRound, VideoPlay, View, Loading, Edit, QuestionFilled, Promotion, Refresh, WarningFilled } from '@element-plus/icons-vue'
-import { taskApi } from '@/api'
+import { taskApi, request } from '@/api'
 
 const props = defineProps({
   taskId: {

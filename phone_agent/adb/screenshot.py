@@ -121,6 +121,17 @@ def _get_screenshot_standard(
 
         # 使用 BytesIO 从内存中加载图片
         img = Image.open(BytesIO(image_data))
+
+        # 🆕 调整图片大小，防止 API 报错 (Code 1210)
+        # 限制最大边长为 1080px
+        MAX_DIMENSION = 1080
+        if max(img.size) > MAX_DIMENSION:
+            img.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
+            # 重新保存到 BytesIO
+            buffer = BytesIO()
+            img.save(buffer, format="PNG")
+            image_data = buffer.getvalue()
+
         width, height = img.size
 
         # 新增：检测是否是全黑或几乎全黑的图片（可能是敏感屏幕）
@@ -166,10 +177,31 @@ def _get_screenshot_yadb(
         )
 
         if result and isinstance(result, dict):
+            base64_data = result["base64_data"]
+            width = result["width"]
+            height = result["height"]
+
+            # 🆕 调整图片大小，防止 API 报错 (Code 1210)
+            MAX_DIMENSION = 1080
+            if max(width, height) > MAX_DIMENSION:
+                try:
+                    # 解码
+                    image_data = base64.b64decode(base64_data)
+                    img = Image.open(BytesIO(image_data))
+                    # 调整大小
+                    img.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
+                    # 重新编码
+                    buffer = BytesIO()
+                    img.save(buffer, format="PNG")
+                    base64_data = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                    width, height = img.size
+                except Exception as e:
+                    logger.warning(f"Failed to resize yadb screenshot: {e}")
+
             return Screenshot(
-                base64_data=result["base64_data"],
-                width=result["width"],
-                height=result["height"],
+                base64_data=base64_data,
+                width=width,
+                height=height,
                 is_sensitive=False,
                 forced=True,  # 标记为强制截图
             )

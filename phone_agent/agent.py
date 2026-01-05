@@ -186,8 +186,8 @@ class PhoneAgent:
 
     def _strip_xml_from_history(self):
         """
-        Strip XML/ui_hierarchy data from historical user messages to save tokens.
-        Only the most recent user message should contain XML data.
+        Strip UI Elements data from historical user messages to save tokens.
+        Only the most recent user message should contain UI Elements.
         """
         import re
 
@@ -197,7 +197,13 @@ class PhoneAgent:
         if len(user_msg_indices) <= 1:
             return  # No history to strip
 
-        # Strip XML from all but the last user message
+        def strip_ui_elements(text: str) -> str:
+            """Remove UI Elements section from text."""
+            # Match "UI Elements:" followed by everything until end or next section
+            cleaned = re.sub(r"\n\nUI Elements:\n.*$", "", text, flags=re.DOTALL)
+            return cleaned
+
+        # Strip UI Elements from all but the last user message
         for idx in user_msg_indices[:-1]:
             msg = self._context[idx]
             content = msg.get("content")
@@ -206,21 +212,9 @@ class PhoneAgent:
                 # Multi-part message (text + image)
                 for item in content:
                     if item.get("type") == "text":
-                        original_text = item.get("text", "")
-                        # Remove ui_hierarchy JSON from the text
-                        cleaned = re.sub(
-                            r'"ui_hierarchy"\s*:\s*".*?"',
-                            '"ui_hierarchy":""',
-                            original_text,
-                            flags=re.DOTALL,
-                        )
-                        item["text"] = cleaned
+                        item["text"] = strip_ui_elements(item.get("text", ""))
             elif isinstance(content, str):
-                # Simple text message
-                cleaned = re.sub(
-                    r'"ui_hierarchy"\s*:\s*".*?"', '"ui_hierarchy":""', content, flags=re.DOTALL
-                )
-                self._context[idx]["content"] = cleaned
+                self._context[idx]["content"] = strip_ui_elements(content)
 
     def run(self, task: str) -> str:
         """

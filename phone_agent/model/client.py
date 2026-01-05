@@ -273,7 +273,6 @@ class ModelClient:
         Returns:
             Tuple of (thinking, action).
         """
-        import json
         import re
 
         # 格式1: AutoGLM 标准格式 <think>...</think><answer>...</answer>
@@ -431,8 +430,8 @@ class MessageBuilder:
         if image_base64 and str(image_base64).strip() != "None":
             # 🛡️ 防御性检查：确保 base64_data 是有效字符串且不包含 "None"
             if len(image_base64) < 100:
-                 # 太短不可能是有效图片，可能是错误信息
-                 pass
+                # 太短不可能是有效图片，可能是错误信息
+                pass
             else:
                 content.append(
                     {
@@ -440,7 +439,6 @@ class MessageBuilder:
                         "image_url": {"url": f"data:image/png;base64,{image_base64}"},
                     }
                 )
-
 
         content.append({"type": "text", "text": text})
 
@@ -471,12 +469,28 @@ class MessageBuilder:
         """
         Build screen info string for the model.
 
+        Uses plain text format to avoid double-escaping JSON (saves tokens).
+
         Args:
             current_app: Current app name.
-            **extra_info: Additional info to include.
+            **extra_info: Additional info to include (e.g., ui_hierarchy).
 
         Returns:
-            JSON string with screen info.
+            Formatted screen info string.
         """
-        info = {"current_app": current_app, **extra_info}
-        return json.dumps(info, ensure_ascii=False)
+        lines = [f"Current App: {current_app}"]
+
+        # Add ui_hierarchy as a separate block (not inside JSON to avoid escaping)
+        ui_hierarchy = extra_info.pop("ui_hierarchy", None)
+
+        # Add any remaining extra info
+        for key, value in extra_info.items():
+            lines.append(f"{key}: {value}")
+
+        result = "\n".join(lines)
+
+        # Append ui_hierarchy as raw JSON (no double-escaping)
+        if ui_hierarchy:
+            result += f"\n\nUI Elements:\n{ui_hierarchy}"
+
+        return result

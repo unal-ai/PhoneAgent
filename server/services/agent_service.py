@@ -1181,6 +1181,9 @@ class AgentService:
                             screenshot_paths.get("small") if screenshot_paths else None
                         ),
                         "screenshot_ai": screenshot_paths.get("ai") if screenshot_paths else None,
+                        "screenshot_base64": (
+                            screenshot_paths.get("base64_thumb") if screenshot_paths else None
+                        ),
                     }
 
                     if target_step:
@@ -2042,10 +2045,14 @@ class AgentService:
 
             # 保存原始截图
             import base64
+            from io import BytesIO
+
+            from PIL import Image
 
             original_path = os.path.join(task_screenshot_dir, f"step_{step:03d}_original.png")
+            image_bytes = base64.b64decode(screenshot.base64_data)
             with open(original_path, "wb") as f:
-                f.write(base64.b64decode(screenshot.base64_data))
+                f.write(image_bytes)
 
             # 压缩截图（生成多个级别）
             compressed_paths = await asyncio.to_thread(
@@ -2058,6 +2065,20 @@ class AgentService:
                 if path:
                     # 转换为相对于项目根目录的路径
                     result[level] = path.replace("\\", "/")
+
+            # Generate small base64 thumbnail for reliable display
+            # (Fallback when file paths don't work)
+            try:
+                img = Image.open(BytesIO(image_bytes))
+                img.thumbnail((200, 400), Image.Resampling.LANCZOS)
+                if img.mode in ("RGBA", "P"):
+                    img = img.convert("RGB")
+                buffer = BytesIO()
+                img.save(buffer, format="JPEG", quality=60)
+                thumb_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                result["base64_thumb"] = f"data:image/jpeg;base64,{thumb_base64}"
+            except Exception as thumb_err:
+                logger.warning(f"Failed to generate thumbnail: {thumb_err}")
 
             logger.info(f"Screenshot saved for step {step}: {len(result)} levels")
             return result

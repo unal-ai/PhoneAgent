@@ -86,13 +86,17 @@
               </div>
 
               <!-- 截图 -->
-              <div v-if="step.screenshot" class="step-screenshot">
+              <div v-if="step.screenshot || step.screenshot_base64" class="step-screenshot">
                 <el-image
-                  :src="getScreenshotUrl(step.screenshot)"
+                  :src="step.screenshot_base64 || getScreenshotUrl(step.screenshot)"
                   fit="contain"
                   style="width: 200px; height: auto;"
-                  :preview-src-list="[getScreenshotUrl(step.screenshot)]"
-                />
+                  :preview-src-list="[step.screenshot_base64 || getScreenshotUrl(step.screenshot)]"
+                >
+                  <template #error>
+                    <el-tag type="info" size="small">[截图加载失败]</el-tag>
+                  </template>
+                </el-image>
               </div>
 
               <!-- 步骤状态 -->
@@ -210,9 +214,18 @@
                   <template v-else-if="Array.isArray(msg.content)">
                     <div v-for="(item, i) in msg.content" :key="i" class="content-item">
                       <pre v-if="item.type === 'text'" class="full-content">{{ item.text }}</pre>
-                      <el-tag v-else-if="item.type === 'image_url'" type="warning" size="small">
-                        [图片]
-                      </el-tag>
+                      <div v-else-if="item.type === 'image_url'" class="context-image">
+                        <el-image
+                          :src="item.image_url?.url || ''"
+                          fit="contain"
+                          style="max-width: 300px; max-height: 400px;"
+                          :preview-src-list="[item.image_url?.url]"
+                        >
+                          <template #error>
+                            <el-tag type="warning" size="small">[图片加载失败]</el-tag>
+                          </template>
+                        </el-image>
+                      </div>
                     </div>
                   </template>
                 </div>

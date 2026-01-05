@@ -1122,6 +1122,9 @@ class AgentService:
                     step_end = time.time()
                     duration_ms = int((step_end - step_start) * 1000)
 
+                    # 🆕 保存截图
+                    screenshot_paths = await self._save_step_screenshot(step_index)
+
                     # 🛡️ 实时持久化上下文：防止服务重启导致日志丢失
                     self._save_context_to_file(task.task_id)
 
@@ -1172,6 +1175,11 @@ class AgentService:
                         "tokens_used": step_result.usage,
                         "success": step_result.success,
                         "status": "completed" if step_result.success else "failed",
+                        "screenshot": screenshot_paths.get("medium") if screenshot_paths else None,
+                        "screenshot_small": (
+                            screenshot_paths.get("small") if screenshot_paths else None
+                        ),
+                        "screenshot_ai": screenshot_paths.get("ai") if screenshot_paths else None,
                     }
 
                     if target_step:

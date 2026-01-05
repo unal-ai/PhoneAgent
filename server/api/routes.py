@@ -473,7 +473,7 @@ async def create_task(request: CreateTaskRequest):
 async def test_model_connection(request: ModelTestRequest):
     """
     测试AI模型连接
-    
+
     验证提供的模型配置是否有效，尝试生成简单的回复
     """
     from phone_agent.model.client import ModelClient, ModelConfig
@@ -507,7 +507,9 @@ async def test_model_connection(request: ModelTestRequest):
             if not api_key:
                 api_key = "EMPTY"
             if not base_url:
-                base_url = request.base_url or env_config.get("base_url", "http://localhost:8000/v1")
+                base_url = request.base_url or env_config.get(
+                    "base_url", "http://localhost:8000/v1"
+                )
 
     # 构建完整配置
     # 如果 model_name 依然为空，使用默认值
@@ -519,10 +521,10 @@ async def test_model_connection(request: ModelTestRequest):
         model_name = "autoglm-phone"
 
     model_config = ModelConfig(
-        base_url=base_url or "https://open.bigmodel.cn/api/paas/v4/", # 兜底默认值
+        base_url=base_url or "https://open.bigmodel.cn/api/paas/v4/",  # 兜底默认值
         api_key=api_key or "EMPTY",
         model_name=model_name,
-        max_tokens=20, # 测试只需要生成少量token
+        max_tokens=20,  # 测试只需要生成少量token
         temperature=0.1,
     )
 
@@ -540,16 +542,16 @@ async def test_model_connection(request: ModelTestRequest):
             "success": True,
             "message": "Connection successful",
             "latency_ms": int(duration * 1000),
-            "response": response.raw_content[:200] + "..." if len(response.raw_content) > 200 else response.raw_content,
-            "model_used": model_config.model_name
+            "response": (
+                response.raw_content[:200] + "..."
+                if len(response.raw_content) > 200
+                else response.raw_content
+            ),
+            "model_used": model_config.model_name,
         }
     except Exception as e:
         logger.error(f"Model connection test failed: {e}")
-        return {
-            "success": False,
-            "message": str(e),
-            "error_type": type(e).__name__
-        }
+        return {"success": False, "message": str(e), "error_type": type(e).__name__}
 
 
 @router.get("/tasks", response_model=List[TaskResponse], tags=["📋 任务管理"])
@@ -738,6 +740,38 @@ async def cancel_task(task_id: str):
         raise HTTPException(400, f"Failed to cancel task: {task_id}")
 
     return {"message": "Task cancelled", "task_id": task_id}
+
+
+@router.post("/tasks/{task_id}/pause", summary="暂停任务", tags=["📋 任务管理"])
+async def pause_task(task_id: str):
+    """
+    暂停正在执行的任务
+
+    暂停后，Agent会在当前步骤完成后停止，保留状态以便稍后恢复。
+    """
+    agent_service = get_agent_service()
+    success = await agent_service.pause_task(task_id)
+
+    if not success:
+        raise HTTPException(400, f"Failed to pause task: {task_id}")
+
+    return {"message": "Task paused", "task_id": task_id, "status": "paused"}
+
+
+@router.post("/tasks/{task_id}/resume", summary="恢复任务", tags=["📋 任务管理"])
+async def resume_task(task_id: str):
+    """
+    恢复已暂停的任务
+
+    从暂停点继续执行。
+    """
+    agent_service = get_agent_service()
+    success = await agent_service.resume_task(task_id)
+
+    if not success:
+        raise HTTPException(400, f"Failed to resume task: {task_id}")
+
+    return {"message": "Task resumed", "task_id": task_id, "status": "running"}
 
 
 @router.delete("/tasks/{task_id}", tags=["📋 任务管理"])

@@ -17,6 +17,24 @@
           </div>
           <el-button
             v-if="currentTask.status === 'running'"
+            type="success"
+            size="small"
+            @click="pauseTask"
+            :loading="isPausing"
+          >
+            暂停
+          </el-button>
+          <el-button
+            v-if="currentTask.status === 'paused'"
+            type="primary"
+            size="small"
+            @click="resumeTask"
+            :loading="isResuming"
+          >
+            继续
+          </el-button>
+          <el-button
+            v-if="currentTask.status === 'running' || currentTask.status === 'paused'"
             type="warning"
             size="small"
             @click="cancelTask"
@@ -336,6 +354,7 @@ function getStatusType(status) {
   const types = {
     pending: 'info',
     running: 'warning',
+    paused: 'info',
     completed: 'success',
     failed: 'danger',
     cancelled: 'info'
@@ -347,6 +366,7 @@ function getStatusText(status) {
   const texts = {
     pending: '等待中',
     running: '执行中',
+    paused: '已暂停',
     completed: '已完成',
     failed: '失败',
     cancelled: '已取消'
@@ -397,6 +417,40 @@ async function cancelTask() {
     ElMessage.error('取消任务失败: ' + error.message)
   } finally {
     isCancelling.value = false
+  }
+}
+
+// 🆕 暂停/恢复功能
+const isPausing = ref(false)
+const isResuming = ref(false)
+
+async function pauseTask() {
+  if (!currentTask.value) return
+  
+  isPausing.value = true
+  try {
+    await request.post(`/tasks/${currentTask.value.task_id}/pause`)
+    ElMessage.success('任务已暂停')
+    currentTask.value.status = 'paused'
+  } catch (error) {
+    ElMessage.error('暂停失败: ' + error.message)
+  } finally {
+    isPausing.value = false
+  }
+}
+
+async function resumeTask() {
+  if (!currentTask.value) return
+  
+  isResuming.value = true
+  try {
+    await request.post(`/tasks/${currentTask.value.task_id}/resume`)
+    ElMessage.success('任务继续执行')
+    currentTask.value.status = 'running'
+  } catch (error) {
+    ElMessage.error('恢复失败: ' + error.message)
+  } finally {
+    isResuming.value = false
   }
 }
 

@@ -40,6 +40,7 @@ class TaskStatus(Enum):
 
     PENDING = "pending"  # 等待执行
     RUNNING = "running"  # 执行中
+    PAUSED = "paused"  # 已暂停 (用户手动暂停)
     COMPLETED = "completed"  # 已完成
     FAILED = "failed"  # 失败
     CANCELLED = "cancelled"  # 已取消
@@ -1034,6 +1035,7 @@ class AgentService:
 
                 # 获取已安装的应用列表
                 from server.services import get_device_pool
+
                 device_pool = get_device_pool()
                 installed_apps = []
                 try:
@@ -1070,6 +1072,20 @@ class AgentService:
                     # 检查任务是否被取消
                     if task.status == TaskStatus.CANCELLED:
                         logger.warning(f" Task {task.task_id} cancelled, stopping execution")
+                        result_message = "Task cancelled by user"
+                        break
+
+                    # 🆕 检查任务是否被暂停
+                    while task.status == TaskStatus.PAUSED:
+                        logger.info(f"⏸️ Task {task.task_id} is paused, waiting for resume...")
+                        await asyncio.sleep(1)  # 每秒检查一次
+                        # 如果在暂停期间被取消，退出
+                        if task.status == TaskStatus.CANCELLED:
+                            result_message = "Task cancelled while paused"
+                            break
+
+                    # 再次检查取消状态（可能在暂停期间被取消）
+                    if task.status == TaskStatus.CANCELLED:
                         result_message = "Task cancelled by user"
                         break
 
@@ -1444,6 +1460,106 @@ class AgentService:
                 )
             except Exception as e:
                 logger.error(f"Failed to broadcast task cancellation: {e}")
+
+        return True
+
+    async def pause_task(self, task_id: str) -> bool:
+        """
+        暂停任务
+
+        暂停后，Agent会在下一步开始前停止执行，保留当前状态以便稍后恢复。
+
+        Args:
+            task_id: 任务 ID
+
+        Returns:
+            是否暂停成功
+        """
+        task = self.running_tasks.get(task_id)
+        if not task:
+            logger.error(f"Task not found: {task_id}")
+            return False
+
+        # 只能暂停RUNNING状态的任务
+        if task.status != TaskStatus.RUNNING:
+            logger.error(f"Task {task_id} cannot be paused (status: {task.status})")
+            return False
+
+        async with self._lock:
+            task.status = TaskStatus.PAUSED
+            logger.info(f"⏸️ Task {task_id} paused")
+
+            # 持久化到数据库
+            try:
+                await self._persist_task_to_db(task)
+                logger.info(f"Task {task_id} persisted to database after pause")
+            except Exception as e:
+                logger.error(f"Failed to persist paused task to database: {e}")
+
+        # 广播任务暂停事件
+        if self._websocket_broadcast_callback:
+            try:
+                await self._websocket_broadcast_callback(
+                    {
+                        "type": "task_paused",
+                        "data": {
+                            "task_id": task_id,
+                            "status": "paused",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        },
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to broadcast task pause: {e}")
+
+        return True
+
+    async def resume_task(self, task_id: str) -> bool:
+        """
+        恢复已暂停的任务
+
+        Args:
+            task_id: 任务 ID
+
+        Returns:
+            是否恢复成功
+        """
+        task = self.running_tasks.get(task_id)
+        if not task:
+            logger.error(f"Task not found: {task_id}")
+            return False
+
+        # 只能恢复PAUSED状态的任务
+        if task.status != TaskStatus.PAUSED:
+            logger.error(f"Task {task_id} cannot be resumed (status: {task.status})")
+            return False
+
+        async with self._lock:
+            task.status = TaskStatus.RUNNING
+            logger.info(f"▶️ Task {task_id} resumed")
+
+            # 持久化到数据库
+            try:
+                await self._persist_task_to_db(task)
+                logger.info(f"Task {task_id} persisted to database after resume")
+            except Exception as e:
+                logger.error(f"Failed to persist resumed task to database: {e}")
+
+        # 广播任务恢复事件
+        if self._websocket_broadcast_callback:
+            try:
+                await self._websocket_broadcast_callback(
+                    {
+                        "type": "task_resumed",
+                        "data": {
+                            "task_id": task_id,
+                            "status": "running",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        },
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to broadcast task resume: {e}")
 
         return True
 

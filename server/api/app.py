@@ -208,11 +208,11 @@ def create_app() -> FastAPI:
     # 前端访问路径: /screenshots/{task_id}/{filename}
     # 实际映射到: data/screenshots/{task_id}/{filename}
     import os
+
     os.makedirs("data/screenshots", exist_ok=True)
     from fastapi.staticfiles import StaticFiles
 
     app.mount("/screenshots", StaticFiles(directory="data/screenshots"), name="screenshots")
-
 
     return app
 

@@ -469,8 +469,6 @@ class PhoneAgent:
             if self.agent_config.verbose:
                 logger.debug(f"🧠 Memory Updated: {old_memory[:20]}... -> {new_memory[:20]}...")
 
-
-
         if self.agent_config.verbose:
             # 打印思考过程（使用logger替代print）
             logger.debug("=" * 50)

@@ -46,6 +46,7 @@ class StepCallback(Protocol):
         thinking: str = "",
         observation: str = "",
         screenshot_path: Optional[str] = None,
+        action: Optional[str] = None,
     ) -> None:
         """
         步骤完成时的回调
@@ -84,6 +85,7 @@ class NoOpCallback:
         thinking: str = "",
         observation: str = "",
         screenshot_path: Optional[str] = None,
+        action: Optional[str] = None,
     ) -> None:
         pass
 
@@ -126,10 +128,23 @@ class AsyncStepCallback:
         thinking: str = "",
         observation: str = "",
         screenshot_path: Optional[str] = None,
+        action: Optional[str] = None,
     ) -> None:
         """同步接口，直接调用同步回调"""
         # AgentCallback.on_step_complete 是同步方法，直接调用即可
         # Warning: 注意：AgentCallback 不接受 screenshot_path 参数，因为截图由 AgentService 统一管理
+        # 兼容 AgentCallback 支持 optional action 参
+        if hasattr(self._sync_callback.on_step_complete, "__code__"):
+            # 检查是否有 'action' 参数
+            import inspect
+
+            sig = inspect.signature(self._sync_callback.on_step_complete)
+            if "action" in sig.parameters:
+                self._sync_callback.on_step_complete(
+                    step, success, thinking, observation, action=action
+                )
+                return
+
         self._sync_callback.on_step_complete(step, success, thinking, observation)
 
     def on_error(self, error: str) -> None:

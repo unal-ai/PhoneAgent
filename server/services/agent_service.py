@@ -252,7 +252,12 @@ class AgentCallback:
             logger.error(f"Failed to schedule screenshot save for step {step}: {e}")
 
     async def _save_and_broadcast_step(
-        self, step: int, success: bool, thinking: str, observation: str, action: Optional[str] = None
+        self,
+        step: int,
+        success: bool,
+        thinking: str,
+        observation: str,
+        action: Optional[str] = None,
     ):
         """保存截图并广播（异步，非阻塞）"""
         # 保存截图
@@ -295,13 +300,13 @@ class AgentCallback:
                             screenshot_paths.get("small") if screenshot_paths else None
                         ),
                         "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "base64_thumb": screenshot_paths.get("base64_thumb")
-                        if screenshot_paths
-                        else None,
+                        "base64_thumb": (
+                            screenshot_paths.get("base64_thumb") if screenshot_paths else None
+                        ),
                     }
                     if action:
                         update_data["action"] = action
-                    
+
                     await self.websocket_broadcast_callback(
                         {
                             "type": "task_step_update",
@@ -347,7 +352,7 @@ class AgentCallback:
                 }
                 if action:
                     update_data["action"] = action
-                
+
                 self.task.steps[-1].update(update_data)
             else:
                 logger.warning(

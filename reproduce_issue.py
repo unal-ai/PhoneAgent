@@ -1,4 +1,3 @@
-
 import base64
 
 
@@ -8,6 +7,7 @@ def try_decode(s):
         print(f"'{s}': Decoded successfully")
     except Exception as e:
         print(f"'{s}': {e}")
+
 
 try_decode(None)
 try_decode("None")

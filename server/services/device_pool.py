@@ -554,7 +554,6 @@ class DevicePool:
             return []
 
 
-
 # 全局实例
 _device_pool: Optional[DevicePool] = None
 
@@ -609,5 +608,3 @@ if __name__ == "__main__":
         print(f"Stats: {stats}")
 
     asyncio.run(test())
-
-

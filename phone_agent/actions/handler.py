@@ -27,6 +27,7 @@ class ActionResult:
     success: bool
     should_finish: bool
     message: str | None = None
+    notice_info: str | None = None
     requires_confirmation: bool = False
 
 
@@ -68,7 +69,12 @@ class ActionHandler:
         action_type = action.get("_metadata")
 
         if action_type == "finish":
-            return ActionResult(success=True, should_finish=True, message=action.get("message"))
+            return ActionResult(
+                success=True,
+                should_finish=True,
+                message=action.get("message"),
+                notice_info=action.get("notice_info"),
+            )
 
         if action_type != "do":
             return ActionResult(

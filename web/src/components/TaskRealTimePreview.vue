@@ -45,6 +45,16 @@
         </div>
       </template>
 
+      <el-alert
+        v-if="currentTask.notice_info"
+        class="notice-alert"
+        type="success"
+        show-icon
+        :closable="false"
+        title="结果提醒"
+        :description="currentTask.notice_info"
+      />
+
       <!-- 任务步骤实时流 -->
       <div ref="stepsStreamRef" class="steps-stream">
         <el-timeline>
@@ -251,7 +261,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElNotification } from 'element-plus'
 import { ChatDotRound, VideoPlay, View, Loading, Edit, QuestionFilled, Promotion, Refresh, WarningFilled, Picture } from '@element-plus/icons-vue'
 import { taskApi, request } from '@/api'
 
@@ -821,18 +831,36 @@ function handleTaskStepUpdate(event) {
 function handleTaskStatusChange(event) {
   const data = event.detail
   if (data.task_id !== props.taskId) return
-  
+
   if (currentTask.value) {
     currentTask.value.status = data.status
     if (data.message) currentTask.value.result = data.message
+    if (data.notice_info) currentTask.value.notice_info = data.notice_info
     if (data.error) currentTask.value.error = data.error
-    
+
     // Stop polling if done
     if (['completed', 'failed', 'cancelled'].includes(data.status)) {
       stopPolling()
       stopElapsedTimer()
     }
   }
+}
+
+function handleTaskNotice(event) {
+  const data = event.detail
+  if (props.taskId && data.task_id !== props.taskId) return
+
+  if (currentTask.value && data.notice_info) {
+    currentTask.value.notice_info = data.notice_info
+  }
+
+  const notificationMessage = data.notice_info || data.message || '任务已完成'
+  ElNotification({
+    title: '结果提醒',
+    message: notificationMessage,
+    type: 'success',
+    duration: 8000
+  })
 }
 
 onMounted(async () => {
@@ -849,6 +877,7 @@ onMounted(async () => {
   window.addEventListener('stream-token', handleStreamToken)
   window.addEventListener('task-step-update', handleTaskStepUpdate)
   window.addEventListener('task-status-change', handleTaskStatusChange)
+  window.addEventListener('task-notice', handleTaskNotice)
 })
 
 onUnmounted(() => {
@@ -864,6 +893,7 @@ onUnmounted(() => {
   window.removeEventListener('stream-token', handleStreamToken)
   window.removeEventListener('task-step-update', handleTaskStepUpdate)
   window.removeEventListener('task-status-change', handleTaskStatusChange)
+  window.removeEventListener('task-notice', handleTaskNotice)
 })
 </script>
 
@@ -879,6 +909,10 @@ onUnmounted(() => {
   border-radius: var(--radius-large);
   box-shadow: var(--shadow-light);
   transition: all 0.3s ease;
+}
+
+.notice-alert {
+  margin: var(--space-lg);
 }
 
 .task-progress-card:hover {

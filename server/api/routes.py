@@ -464,6 +464,7 @@ async def create_task(request: CreateTaskRequest):
         completed_at=task.completed_at.isoformat() if task.completed_at else None,
         duration=task.duration,
         result=task.result,
+        notice_info=task.notice_info,
         error=task.error,
         steps=task.steps,
     )
@@ -588,6 +589,7 @@ async def list_tasks(status: Optional[str] = None, limit: int = 100, offset: int
             completed_at=t.completed_at.isoformat() if t.completed_at else None,
             duration=t.duration,
             result=t.result,
+            notice_info=t.notice_info,
             error=t.error,
             steps=t.steps,  # 修复：返回完整步骤列表
             total_tokens=t.total_tokens,
@@ -618,6 +620,7 @@ async def get_task(task_id: str):
         completed_at=task.completed_at.isoformat() if task.completed_at else None,
         duration=task.duration,
         result=task.result,
+        notice_info=task.notice_info,
         error=task.error,
         steps=task.steps,  # 修复：返回完整步骤列表而不是步骤数量
         total_tokens=task.total_tokens,
@@ -696,6 +699,13 @@ class InjectCommentRequest(BaseModel):
     comment: str
 
 
+class TaskNoticeRequest(BaseModel):
+    """任务成功提醒请求"""
+
+    message: str = Field(..., description="任务结果文案")
+    notice_info: str = Field(..., description="需要在前端高亮的简要提示")
+
+
 @router.post("/tasks/{task_id}/inject", tags=["📋 任务管理"])
 async def inject_comment(task_id: str, request: InjectCommentRequest):
     """
@@ -727,6 +737,29 @@ async def inject_comment(task_id: str, request: InjectCommentRequest):
         "success": True,
         "task_id": task_id,
         "message": "Comment injected successfully. It will be visible to the model in the next step.",
+    }
+
+
+@router.post(
+    "/tasks/{task_id}/success-notice",
+    summary="标记任务成功并携带提醒信息",
+    tags=["📋 任务管理"],
+)
+async def mark_success_with_notice(task_id: str, request: TaskNoticeRequest):
+    """标记任务为成功状态并附带前端提醒内容"""
+
+    agent_service = get_agent_service()
+    success, result = await agent_service.mark_success_with_notice(
+        task_id, request.message, request.notice_info
+    )
+
+    if not success:
+        raise HTTPException(404, result)
+
+    return {
+        "success": True,
+        "task": result,
+        "message": "Task marked as completed with notice information",
     }
 
 

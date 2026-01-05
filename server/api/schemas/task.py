@@ -46,6 +46,7 @@ class TaskResponse(BaseModel):
     completed_at: Optional[str]
     duration: Optional[float]
     result: Optional[str]
+    notice_info: Optional[str] = None
     error: Optional[str]
     steps: list = []  # 修复：改为list类型，返回完整步骤详情
     # Token统计

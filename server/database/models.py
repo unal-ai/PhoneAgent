@@ -25,6 +25,8 @@ class DBTask(Base):
     completed_at = Column(DateTime)
 
     result = Column(Text)
+    # 简要结果报告，用于前端高亮展示
+    notice_info = Column(Text)
     error = Column(Text)
     steps_count = Column(Integer, default=0)  # 步骤总数
     steps_detail = Column(Text)  # JSON string: 存储每一步的详细信息

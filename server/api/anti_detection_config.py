@@ -21,25 +21,26 @@ CONFIG_FILE = "data/anti_detection_config.json"
 class AntiDetectionConfig(BaseModel):
     """防风控配置模型"""
 
-    enabled: bool = True
-    level: str = "medium"  # low/medium/high
+    # 默认关闭防风控，避免引入随机偏移导致点击不准
+    enabled: bool = False
+    level: str = "low"  # low/medium/high
 
-    # 功能开关
+    # 功能开关（默认关闭坐标随机化，保持点击稳定）
     enable_time_random: bool = True
-    enable_position_random: bool = True
+    enable_position_random: bool = False
     enable_bezier_swipe: bool = True
     enable_typing_simulation: bool = True
-    enable_exploration: bool = True
+    enable_exploration: bool = False
 
-    # 时间配置
+    # 时间配置（与 AntiDetection 默认保持一致）
     delay_levels: Dict[str, Dict[str, float]] = {
-        "low": {"min": 0.3, "max": 1.0},
-        "medium": {"min": 0.5, "max": 3.0},
-        "high": {"min": 1.0, "max": 5.0},
+        "low": {"min": 0.2, "max": 0.5},
+        "medium": {"min": 0.3, "max": 1.0},
+        "high": {"min": 0.5, "max": 2.0},
     }
 
-    # 坐标随机化配置
-    position_offset_percentage: float = 0.2
+    # 坐标随机化配置（默认仅±2%）
+    position_offset_percentage: float = 0.02
 
     # 贝塞尔曲线配置
     bezier_steps: int = 20

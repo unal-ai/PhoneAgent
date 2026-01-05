@@ -391,7 +391,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import {
   Cellphone,
@@ -520,6 +520,51 @@ const testModelConnection = async () => {
     isTestingConnection.value = false
   }
 }
+
+// 🆕 模型配置持久化 (localStorage)
+const MODEL_CONFIG_KEY = 'phoneagent_model_config'
+
+const saveModelConfig = () => {
+  const config = {
+    aiProviderPreset: aiProviderPreset.value,
+    ai_provider: taskForm.value.ai_provider,
+    ai_base_url: taskForm.value.ai_base_url,
+    ai_api_key: taskForm.value.ai_api_key,
+    ai_model: taskForm.value.ai_model,
+  }
+  localStorage.setItem(MODEL_CONFIG_KEY, JSON.stringify(config))
+}
+
+const loadModelConfig = () => {
+  const saved = localStorage.getItem(MODEL_CONFIG_KEY)
+  if (saved) {
+    try {
+      const config = JSON.parse(saved)
+      aiProviderPreset.value = config.aiProviderPreset || 'default'
+      taskForm.value.ai_provider = config.ai_provider || 'zhipu'
+      taskForm.value.ai_base_url = config.ai_base_url || ''
+      taskForm.value.ai_api_key = config.ai_api_key || ''
+      taskForm.value.ai_model = config.ai_model || ''
+    } catch (e) {
+      console.warn('Failed to load saved model config:', e)
+    }
+  }
+}
+
+// Watch model config changes and save to localStorage
+watch(
+  () => ({
+    preset: aiProviderPreset.value,
+    provider: taskForm.value.ai_provider,
+    baseUrl: taskForm.value.ai_base_url,
+    apiKey: taskForm.value.ai_api_key,
+    model: taskForm.value.ai_model,
+  }),
+  () => {
+    saveModelConfig()
+  },
+  { deep: true }
+)
 
 // 当前任务ID(用于实时预览)
 const currentTaskId = ref(null)
@@ -1205,6 +1250,9 @@ const getActionTypeTag = (actionType) => {
 
 // 生命周期
 onMounted(async () => {
+  // 🆕 Load saved model config
+  loadModelConfig()
+  
   await deviceStore.fetchDevices()
   await taskStore.fetchTasks()
   await loadShortcuts()

@@ -418,8 +418,7 @@ import {
   VideoPause,
   VideoPlay,
   MagicStick,
-  VideoPlay,
-  MagicStick,
+
   View,
   Connection
 } from '@element-plus/icons-vue'

@@ -1040,7 +1040,9 @@ class AgentService:
                     # 只有当设备ID存在时才尝试获取
                     if task.device_id:
                         installed_apps = await device_pool.get_installed_apps(task.device_id)
-                        logger.info(f"Loaded {len(installed_apps)} installed apps for device {task.device_id}")
+                        logger.info(
+                            f"Loaded {len(installed_apps)} installed apps for device {task.device_id}"
+                        )
                 except Exception as e:
                     logger.warning(f"Failed to load installed apps: {e}")
 

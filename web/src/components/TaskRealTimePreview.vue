@@ -279,7 +279,16 @@ function getScreenshotUrl(path) {
   // Absolute URL
   if (path.startsWith('http')) return path
   
-  // Relative path (already contains screenshots/...)
+  // Case 2: data/screenshots/... prefix (from backend)
+  // Backend returns: data/screenshots/{task_id}/{filename}
+  // Frontend mount: /screenshots -> data/screenshots
+  // So we need to strip "data/" prefix
+  if (path.startsWith('data/screenshots/')) {
+      const relativePath = path.substring(5) // remove "data/"
+      return `${apiBaseUrl}/${relativePath}`
+  }
+
+  // Case 3: Relative path (already contains screenshots/...)
   if (path.startsWith('screenshots/')) {
       return `${apiBaseUrl}/${path}`
   }

@@ -204,6 +204,16 @@ def create_app() -> FastAPI:
     # 静态文件服务（前端）
     # app.mount("/", StaticFiles(directory="web/dist", html=True), name="static")
 
+    # 🆕 挂载截图目录 (解决前端 404 问题)
+    # 前端访问路径: /screenshots/{task_id}/{filename}
+    # 实际映射到: data/screenshots/{task_id}/{filename}
+    import os
+    os.makedirs("data/screenshots", exist_ok=True)
+    from fastapi.staticfiles import StaticFiles
+
+    app.mount("/screenshots", StaticFiles(directory="data/screenshots"), name="screenshots")
+
+
     return app
 
 

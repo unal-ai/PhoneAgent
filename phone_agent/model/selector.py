@@ -103,13 +103,14 @@ AVAILABLE_MODELS = {
 
 DEFAULT_MODEL_STRATEGY = {
     # Warning: XML内核已废弃，默认fallback到vision
-    KernelType.XML: "autoglm-phone",
-    # Vision内核使用AutoGLM官方Phone模型（推荐）
-    KernelType.VISION: "autoglm-phone",
-    # 规划模式使用autoglm-phone（针对手机优化）
-    KernelType.PLANNING: "autoglm-phone",
-    # 自动模式使用autoglm-phone
-    KernelType.AUTO: "autoglm-phone",
+    KernelType.XML: "glm-4.6v-flash",
+    # Vision内核使用GLM-4.6v-flash（免费，推荐）
+    # 注意: autoglm-phone 不是实际的智谱AI API模型名，需要使用真实模型
+    KernelType.VISION: "glm-4.6v-flash",
+    # 规划模式使用glm-4.6v-flash
+    KernelType.PLANNING: "glm-4.6v-flash",
+    # 自动模式使用glm-4.6v-flash
+    KernelType.AUTO: "glm-4.6v-flash",
 }
 
 

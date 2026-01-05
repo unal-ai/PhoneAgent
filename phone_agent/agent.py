@@ -5,6 +5,7 @@
 
 """Main PhoneAgent class for orchestrating phone automation."""
 
+import asyncio
 import base64
 import io
 import json
@@ -116,14 +117,27 @@ class PhoneAgent:
         self.step_callback = step_callback or NoOpCallback()
         self.stream_callback = stream_callback  # 流式 token 回调
 
-    async def _compress_history_images(self, image_indices: list[int]):
+    def _compress_history_images(self, image_indices: list[int], loop: asyncio.AbstractEventLoop | None = None):
         """
         智能压缩历史图片：保持最新一张高清(1080p PNG)，压缩历史图片为标清(512p JPEG)。
-        该方法直接修改 self._context 中的消息内容。
+
+        If a running event loop is provided, the compression work is scheduled
+        onto that loop using :func:`asyncio.to_thread` to avoid blocking.
+        Otherwise, the work is executed synchronously in the current thread.
+        Returns an asyncio.Task when scheduled on a loop, or ``None`` when
+        executed synchronously.
         """
         if not image_indices:
-            return
+            return None
 
+        if loop and loop.is_running():
+            return loop.create_task(asyncio.to_thread(self._compress_history_images_sync, image_indices))
+
+        self._compress_history_images_sync(image_indices)
+        return None
+
+    def _compress_history_images_sync(self, image_indices: list[int]) -> None:
+        """Synchronous worker for history image compression."""
         # 最新的一张图片不需要压缩（它是当前的屏幕状态）
         # 历史图片仅用于提供上下文（"之前在什么界面"），不需要高清细节
         history_indices = image_indices[:-1]
@@ -532,19 +546,25 @@ class PhoneAgent:
                 if any(item.get("type") == "image_url" for item in msg["content"]):
                     remaining_image_indices.append(i)
 
-        # 执行异步压缩
-        import asyncio
-
-        # 注意: _execute_step 是同步方法，这里使用 run_until_complete 或直接调用同步版本的 helper
-        # 由于我们是在 executor 中运行 agent.step，这里可以直接运行
+        # 执行压缩：如果当前有 event loop，则在 loop 中异步调度，避免 RuntimeError
+        compression_loop: asyncio.AbstractEventLoop | None = None
         try:
-            asyncio.run(self._compress_history_images(remaining_image_indices))
+            compression_loop = asyncio.get_running_loop()
         except RuntimeError:
-            # 如果已有 loop 运行（例如在同一线程），则直接 await（但这通常不在 executor 中发生）
-            # 简单起见，我们将 _compress_history_images 改为同步方法，或使用 new loop
-            loop = asyncio.new_event_loop()
-            loop.run_until_complete(self._compress_history_images(remaining_image_indices))
-            loop.close()
+            compression_loop = None
+
+        compression_task = self._compress_history_images(
+            remaining_image_indices, loop=compression_loop
+        )
+
+        if compression_task:
+            def _log_compression_error(task: asyncio.Task):
+                try:
+                    task.result()
+                except Exception as exc:  # pragma: no cover - defensive logging
+                    logger.warning(f"History image compression failed: {exc}")
+
+            compression_task.add_done_callback(_log_compression_error)
 
         # Strip XML from older messages to save context tokens
         # Only keep XML in the current (last) user message

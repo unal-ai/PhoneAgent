@@ -530,16 +530,22 @@ function handleTaskStepUpdate(event) {
 // Extract click position from action (coordinates are 0-1000 relative)
 function getClickPosition(action) {
   if (!action) return null
-  
-  // Actions with element coordinates
+
   const actionType = action.action
+
+  // Actions with direct coordinates
   if (['Tap', 'Double Tap', 'Long Press'].includes(actionType)) {
+    const coordinates = action.coordinates || action.coords
+    if (coordinates && Array.isArray(coordinates) && coordinates.length >= 2) {
+      return { x: coordinates[0], y: coordinates[1] }
+    }
+
     const element = action.element
     if (element && Array.isArray(element) && element.length >= 2) {
       return { x: element[0], y: element[1] }
     }
   }
-  
+
   // Swipe has start/end
   if (actionType === 'Swipe') {
     const start = action.start
@@ -547,7 +553,7 @@ function getClickPosition(action) {
       return { x: start[0], y: start[1], isSwipeStart: true }
     }
   }
-  
+
   return null
 }
 

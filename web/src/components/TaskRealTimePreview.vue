@@ -689,7 +689,7 @@ function startPolling() {
              // 3. AND it's generally the same step content (optional check, but good for safety)
              const shouldPreserveThinking = 
                (newStep.status !== 'completed' && newStep.status !== 'failed') && 
-               (currentStep.thinking && newStep.thinking && currentStep.thinking.length > newStep.thinking.length)
+               (currentStep.thinking && currentStep.thinking.length > (newStep.thinking || "").length)
              
              const mergedStep = { ...newStep }
              

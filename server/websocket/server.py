@@ -59,25 +59,32 @@ class DeviceManager:
 
         self._lock = asyncio.Lock()
 
+    async def _is_frp_port_listening(self, frp_port: int) -> bool:
+        """异步检查 FRP 端口是否在监听，避免阻塞事件循环"""
+
+        def _check_port():
+            try:
+                result = subprocess.run(
+                    ["netstat", "-tln"], capture_output=True, text=True, timeout=1
+                )
+                if f":{frp_port}" in result.stdout:
+                    logger.info(f"FRP port {frp_port} is listening")
+                    return True
+            except Exception as e:
+                logger.warning(f"Failed to check FRP status: {e}")
+            return False
+
+        return await asyncio.to_thread(_check_port)
+
     async def register_device(self, device_id: str, websocket: WebSocket, info: dict):
         """注册设备并初始化"""
+        frp_connected = False
+        frp_port = info.get("frp_port", 0)
+        if frp_port:
+            frp_connected = await self._is_frp_port_listening(frp_port)
+
         async with self._lock:
             self.connections[device_id] = websocket
-
-            # 检查 FRP 状态
-            frp_connected = False
-            frp_port = info.get("frp_port", 0)
-            if frp_port:
-                try:
-                    # 检查 FRP 端口是否监听
-                    result = subprocess.run(
-                        ["netstat", "-tln"], capture_output=True, text=True, timeout=1
-                    )
-                    if f":{frp_port}" in result.stdout:
-                        frp_connected = True
-                        logger.info(f"FRP port {frp_port} is listening")
-                except Exception as e:
-                    logger.warning(f"Failed to check FRP status: {e}")
 
             # 如果设备已存在（重新连接），更新状态而不是创建新对象
             if device_id in self.devices:

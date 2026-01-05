@@ -105,6 +105,17 @@
             class="h264-video"
           />
           
+          <!-- Click Indicator Overlay -->
+          <div 
+            v-if="showClickIndicator && getClickPosition(latestAction)" 
+            class="click-indicator"
+            :style="getClickIndicatorStyle(latestAction)"
+            :title="`Agent Action: ${latestAction?.action}`"
+          >
+            <div class="click-dot"></div>
+            <div class="click-ring"></div>
+          </div>
+          
           <!-- 加载提示 -->
           <div v-if="isLoading" class="loading-overlay">
             <el-icon class="is-loading" :size="40"><Loading /></el-icon>
@@ -481,8 +492,80 @@ onMounted(() => {
     if (isPreviewActive.value) {
       stopPreview()
     }
+    
+    // Clean up event listener
+    window.removeEventListener('task-step-update', handleTaskStepUpdate)
   })
+  
+  // Listen for task updates
+  window.addEventListener('task-step-update', handleTaskStepUpdate)
 })
+
+// ----------------------------------------------------------------------
+// Click Visualization Logic (POS Preview)
+// ----------------------------------------------------------------------
+
+const latestAction = ref(null)
+const showClickIndicator = ref(false)
+let indicatorTimer = null
+
+function handleTaskStepUpdate(event) {
+  const data = event.detail
+  // Check if we have an action on the currently previewed device
+  if (!selectedDeviceId.value) return 
+  
+  // If the step has an action, visualize it
+  if (data.action) {
+      latestAction.value = data.action
+      showClickIndicator.value = true
+      
+      // Auto hide after 2 seconds
+      if (indicatorTimer) clearTimeout(indicatorTimer)
+      indicatorTimer = setTimeout(() => {
+          showClickIndicator.value = false
+      }, 2000)
+  }
+}
+
+// Extract click position from action (coordinates are 0-1000 relative)
+function getClickPosition(action) {
+  if (!action) return null
+  
+  // Actions with element coordinates
+  const actionType = action.action
+  if (['Tap', 'Double Tap', 'Long Press'].includes(actionType)) {
+    const element = action.element
+    if (element && Array.isArray(element) && element.length >= 2) {
+      return { x: element[0], y: element[1] }
+    }
+  }
+  
+  // Swipe has start/end
+  if (actionType === 'Swipe') {
+    const start = action.start
+    if (start && Array.isArray(start) && start.length >= 2) {
+      return { x: start[0], y: start[1], isSwipeStart: true }
+    }
+  }
+  
+  return null
+}
+
+// Calculate CSS style for click indicator position
+// Image is mapped to 0-1000 relative coordinates
+function getClickIndicatorStyle(action) {
+  const pos = getClickPosition(action)
+  if (!pos) return {}
+  
+  // Convert 0-1000 coordinates to percentage
+  const leftPercent = pos.x / 10
+  const topPercent = pos.y / 10
+  
+  return {
+    left: `${leftPercent}%`,
+    top: `${topPercent}%`
+  }
+}
 </script>
 
 <style scoped>
@@ -784,6 +867,48 @@ onMounted(() => {
   100% {
     transform: scale(1.5);
     opacity: 0;
+  }
+}
+
+/* Agent Click Indicator (pos preview) */
+.click-indicator {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 100; /* High z-index to show above video */
+}
+
+.click-dot {
+  width: 12px;
+  height: 12px;
+  background: #ff4444; /* Bright Red */
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 6px rgba(0,0,0,0.6);
+}
+
+.click-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 68, 68, 0.8);
+  border-radius: 50%;
+  animation: click-pulse 1.5s ease-out infinite;
+}
+
+@keyframes click-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0.8;
+    border-width: 3px;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.5);
+    opacity: 0;
+    border-width: 0px;
   }
 }
 

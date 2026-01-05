@@ -37,6 +37,7 @@ class AgentConfig:
     max_history_images: int = 3  # 默认保留最近3张历史截图 (不含当前) -> Logically 4 total
     enable_stabilization: bool = True  # 是否开启截图防抖
     enable_xml_hierarchy: bool = True  # 是否获取XML UI层级信息
+    enable_history_xml: bool = False  # 是否保留历史消息中的 XML UI 树 (默认 False 以节省 Token)
 
 
 @dataclass
@@ -105,6 +106,7 @@ class PhoneAgent:
         self._step_count = 0
         self._scratchpad: str = ""  # 🧠 Persistent Memory
         self._last_action_result: str | None = None  # 上一步操作结果
+        self._pending_intervention: str | None = None  # 待处理的用户干预
 
         # 新增：步骤回调支持
         from phone_agent.kernel.callback import NoOpCallback
@@ -197,6 +199,10 @@ class PhoneAgent:
         if len(user_msg_indices) <= 1:
             return  # No history to strip
 
+        # If history XML is enabled, do NOT strip
+        if self.agent_config.enable_history_xml:
+            return
+
         def strip_ui_elements(text: str) -> str:
             """Remove UI Elements section from text."""
             # Match "UI Elements:" followed by everything until end or next section
@@ -285,11 +291,9 @@ class PhoneAgent:
             logger.warning("Cannot inject comment: context is empty")
             return False
 
-        # Add as a user message (will be seen by the model in next step)
-        self._context.append(
-            MessageBuilder.create_user_message(text=f"[User Intervention] {comment}")
-        )
-        logger.info(f"Injected user comment: {comment[:50]}...")
+        # Store comment to be injected in the next step's prompt
+        self._pending_intervention = comment
+        logger.info(f"Injected user comment (pending next step): {comment[:50]}...")
         return True
 
     def _execute_step(self, user_prompt: str | None = None, is_first: bool = False) -> StepResult:
@@ -378,7 +382,18 @@ class PhoneAgent:
             if self._last_action_result:
                 action_feedback = f"** Last Action Result **\n{self._last_action_result}\n\n"
 
-            text_content = f"{action_feedback}** Screen Info **\n\n{screen_info}"
+            # 🛑 注入用户干预（高优先级）
+            intervention_feedback = ""
+            if self._pending_intervention:
+                intervention_feedback = (
+                    f"** [USER INTERVENTION] **\n"
+                    f"⚠️ The user has interrupted with a new instruction:\n"
+                    f"{self._pending_intervention}\n"
+                    f"You MUST STOP your current plan and prioritize this instruction immediately.\n\n"
+                )
+                self._pending_intervention = None
+
+            text_content = f"{action_feedback}{intervention_feedback}** Screen Info **\n\n{screen_info}"
 
             # 🧠 如果有记忆，注入到Prompt中
             if self._scratchpad:

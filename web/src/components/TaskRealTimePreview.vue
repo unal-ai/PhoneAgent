@@ -672,13 +672,38 @@ function startPolling() {
       
       // Update steps from task object directly
       if (task.steps && Array.isArray(task.steps)) {
-        // Check for new steps
-        if (task.steps.length > steps.value.length) {
-          steps.value = task.steps
-          // Auto-scroll to show new steps
-          scrollToBottom()
-        } else {
-            // Update existing steps (in case of status change)
+        task.steps.forEach((newStep, index) => {
+          // If this step index is beyond our current length, it's a new step
+          if (index >= steps.value.length) {
+            steps.value.push(newStep)
+            // Auto-scroll to show new steps
+            scrollToBottom()
+          } else {
+             // Existing step - merge carefully
+             const currentStep = steps.value[index]
+             
+             // Check if we should preserve local thinking (streaming buffer)
+             // We keep local thinking if:
+             // 1. New step is NOT completed/failed yet (still running)
+             // 2. AND local thinking is longer than new thinking
+             // 3. AND it's generally the same step content (optional check, but good for safety)
+             const shouldPreserveThinking = 
+               (newStep.status !== 'completed' && newStep.status !== 'failed') && 
+               (currentStep.thinking && newStep.thinking && currentStep.thinking.length > newStep.thinking.length)
+             
+             const mergedStep = { ...newStep }
+             
+             if (shouldPreserveThinking) {
+                mergedStep.thinking = currentStep.thinking
+             }
+             
+             // Update the step in place
+             steps.value.splice(index, 1, mergedStep)
+          }
+        })
+        
+        // If server has fewer steps (rare, maybe cancelled/reset?), truncate local
+        if (task.steps.length < steps.value.length) {
             steps.value = task.steps
         }
       }

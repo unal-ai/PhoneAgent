@@ -22,7 +22,6 @@ from phone_agent.adb import get_current_app, get_screenshot
 from phone_agent.adb.device import get_physical_screen_size
 from phone_agent.config import SYSTEM_PROMPT
 from phone_agent.model import ModelClient, ModelConfig
-from phone_agent.model import ModelClient, ModelConfig
 from phone_agent.model.client import MessageBuilder
 from phone_agent.utils.stabilizer import wait_for_ui_stabilization
 
@@ -118,7 +117,9 @@ class PhoneAgent:
         self.step_callback = step_callback or NoOpCallback()
         self.stream_callback = stream_callback  # 流式 token 回调
 
-    def _compress_history_images(self, image_indices: list[int], loop: asyncio.AbstractEventLoop | None = None):
+    def _compress_history_images(
+        self, image_indices: list[int], loop: asyncio.AbstractEventLoop | None = None
+    ):
         """
         智能压缩历史图片：保持最新一张高清(1080p PNG)，压缩历史图片为标清(512p JPEG)。
 
@@ -132,7 +133,9 @@ class PhoneAgent:
             return None
 
         if loop and loop.is_running():
-            return loop.create_task(asyncio.to_thread(self._compress_history_images_sync, image_indices))
+            return loop.create_task(
+                asyncio.to_thread(self._compress_history_images_sync, image_indices)
+            )
 
         self._compress_history_images_sync(image_indices)
         return None
@@ -410,7 +413,9 @@ class PhoneAgent:
                 )
                 self._pending_intervention = None
 
-            text_content = f"{action_feedback}{intervention_feedback}** Screen Info **\n\n{screen_info}"
+            text_content = (
+                f"{action_feedback}{intervention_feedback}** Screen Info **\n\n{screen_info}"
+            )
 
             # 🧠 如果有记忆，注入到Prompt中
             if self._scratchpad:
@@ -559,6 +564,7 @@ class PhoneAgent:
         )
 
         if compression_task:
+
             def _log_compression_error(task: asyncio.Task):
                 try:
                     task.result()
@@ -580,7 +586,7 @@ class PhoneAgent:
         except Exception as e:
             if self.agent_config.verbose:
                 traceback.print_exc()
-            
+
             # Fallback to screenshot size if physical fetch utterly fails (though helper defaults to 1080p)
             result = self.action_handler.execute(
                 finish(message=str(e)), screenshot.width, screenshot.height

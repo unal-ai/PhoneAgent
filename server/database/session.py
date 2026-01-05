@@ -62,8 +62,37 @@ def init_database():
 
     logger.info(f"Database initialized (WAL mode): {DATABASE_PATH.absolute()}")
 
+    # 检查并迁移数据库架构（新增）
+    _check_and_migrate_schema(engine)
+
     # 创建性能优化索引
     _create_indexes(engine)
+
+
+def _check_and_migrate_schema(engine):
+    """检查并迁移数据库架构（用于向前兼容）"""
+    try:
+        with engine.connect() as conn:
+            # 1. 检查 tasks 表是否缺少 notice_info 列
+            # 使用 PRAGMA table_info 获取列信息
+            columns = conn.execute(text("PRAGMA table_info(tasks)")).fetchall()
+            column_names = [col[1] for col in columns]
+
+            if "notice_info" not in column_names:
+                logger.warning(
+                    "Detected missing column 'notice_info' in 'tasks' table. Migrating..."
+                )
+                try:
+                    conn.execute(text("ALTER TABLE tasks ADD COLUMN notice_info TEXT"))
+                    conn.commit()
+                    logger.info("Successfully added 'notice_info' column to 'tasks' table")
+                except Exception as e:
+                    logger.error(f"Failed to add 'notice_info' column: {e}")
+
+            # 2. 可以在这里添加其他表的迁移逻辑...
+
+    except Exception as e:
+        logger.error(f"Schema migration failed: {e}")
 
 
 def _create_indexes(engine):

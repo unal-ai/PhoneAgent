@@ -256,11 +256,24 @@ class PhoneAgent:
         # on_step_start 会在 LLM 响应后、执行动作前调用
 
         # Capture current screen state (with stabilization)
-        if self.agent_config.enable_stabilization:
-            screenshot = wait_for_ui_stabilization(self.agent_config.device_id)
-        else:
-            screenshot = get_screenshot(self.agent_config.device_id)
-        current_app = get_current_app(self.agent_config.device_id)
+        # Capture current screen state (with stabilization)
+        try:
+            if self.agent_config.enable_stabilization:
+                screenshot = wait_for_ui_stabilization(self.agent_config.device_id)
+            else:
+                screenshot = get_screenshot(self.agent_config.device_id)
+            current_app = get_current_app(self.agent_config.device_id)
+        except Exception as e:
+            logger.error(f"Failed to capture screenshot or get app info: {e}")
+            if self.agent_config.verbose:
+                traceback.print_exc()
+            return StepResult(
+                success=False,
+                finished=True,
+                action=None,
+                thinking="",
+                message=f"System error: Failed to capture screen. {e}",
+            )
 
         # 🛡️ 数据完整性检查
         if not screenshot.base64_data or screenshot.base64_data == "None" or screenshot.base64_data.strip() == "None":
@@ -317,15 +330,16 @@ class PhoneAgent:
             # 错误特征: 'Non-base64 digit found' 或 'BadRequestError'
             error_str = str(e)
             if "BadRequestError" in error_str or "Non-base64" in error_str or "400" in error_str:
-                logger.warning(f"Model request failed with 400 Error: {e}. Retrying without image...")
-
-                # 移除最后一条消息中的图片
+                logger.warning(f"Model request failed with 400 Error: {e}. Retrying without ANY images...")
+                
+                # 移除整个上下文中的所有图片（不仅是最后一条）
+                # 这是为了防止历史消息中残留无效的图片数据导致持续报错
                 if self._context:
-                    last_msg = self._context[-1]
-                    self._context[-1] = MessageBuilder.remove_images_from_message(last_msg)
-
+                    for i in range(len(self._context)):
+                        self._context[i] = MessageBuilder.remove_images_from_message(self._context[i])
+                    
                     try:
-                        logger.info("Retrying request without image...")
+                        logger.info("Retrying request with text only (all images removed)...")
                         if self.model_config.enable_streaming:
                             response = self.model_client.request_stream(
                                 self._context,

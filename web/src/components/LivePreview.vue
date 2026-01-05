@@ -519,11 +519,11 @@ function handleTaskStepUpdate(event) {
       latestAction.value = data.action
       showClickIndicator.value = true
       
-      // Auto hide after 2 seconds
+      // Auto hide after 5 seconds
       if (indicatorTimer) clearTimeout(indicatorTimer)
       indicatorTimer = setTimeout(() => {
           showClickIndicator.value = false
-      }, 2000)
+      }, 5000)
   }
 }
 

@@ -513,7 +513,34 @@ def run_adb_command(
 
     except subprocess.TimeoutExpired:
         raise RuntimeError(f"ADB command timeout after {timeout}s: {' '.join(command)}")
-    except Exception as e:
         if check_error:
             raise RuntimeError(f"ADB command failed: {e}")
         return ""
+
+
+def get_physical_screen_size(device_id: Optional[str] = None) -> tuple[int, int]:
+    """
+    Get the physical screen resolution of the device.
+
+    Args:
+        device_id: Optional ADB device ID.
+
+    Returns:
+        (width, height) tuple in pixels. Default (1080, 2400) on failure.
+    """
+    try:
+        # Run `wm size`
+        output = run_adb_command(["shell", "wm", "size"], device_id=device_id)
+        # Expected output: "Physical size: 1440x3200" or similar
+        
+        if "Physical size:" in output:
+            parts = output.split("Physical size:")[1].strip().split("x")
+            if len(parts) >= 2:
+                width = int(parts[0].strip())
+                height = int(parts[1].split()[0].strip())  # Handle trailing text if any
+                return width, height
+    except Exception as e:
+        # Avoid circular import logging
+        print(f"Failed to get physical screen size: {e}")
+
+    return 1080, 2400

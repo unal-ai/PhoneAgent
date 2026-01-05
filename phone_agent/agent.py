@@ -18,7 +18,9 @@ from PIL import Image
 from phone_agent.actions import ActionHandler
 from phone_agent.actions.handler import finish, parse_action
 from phone_agent.adb import get_current_app, get_screenshot
+from phone_agent.adb.device import get_physical_screen_size
 from phone_agent.config import SYSTEM_PROMPT
+from phone_agent.model import ModelClient, ModelConfig
 from phone_agent.model import ModelClient, ModelConfig
 from phone_agent.model.client import MessageBuilder
 from phone_agent.utils.stabilizer import wait_for_ui_stabilization
@@ -550,10 +552,15 @@ class PhoneAgent:
 
         # Execute action
         try:
-            result = self.action_handler.execute(action, screenshot.width, screenshot.height)
+            # 🆕 Use physical screen size for action execution to ensure accuracy
+            # even if screenshot was downscaled
+            phys_w, phys_h = get_physical_screen_size(self.agent_config.device_id)
+            result = self.action_handler.execute(action, phys_w, phys_h)
         except Exception as e:
             if self.agent_config.verbose:
                 traceback.print_exc()
+            
+            # Fallback to screenshot size if physical fetch utterly fails (though helper defaults to 1080p)
             result = self.action_handler.execute(
                 finish(message=str(e)), screenshot.width, screenshot.height
             )

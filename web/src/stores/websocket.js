@@ -176,6 +176,11 @@ export const useWebSocketStore = defineStore('websocket', () => {
         window.dispatchEvent(new CustomEvent('task-resumed', { detail: data.data }))
         break
 
+      case 'task_notice':
+        // 任务完成提醒
+        window.dispatchEvent(new CustomEvent('task-notice', { detail: data.data }))
+        break
+
       default:
         console.log('Unknown message type:', data.type)
     }

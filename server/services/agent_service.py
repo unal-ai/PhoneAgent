@@ -91,6 +91,7 @@ class Task:
 
     # 结果
     result: Optional[str] = None  # 最终结果
+    notice_info: Optional[str] = None  # 简要结果报告/提示
     error: Optional[str] = None  # 错误信息
 
     # 步骤详情（新增）
@@ -138,6 +139,7 @@ class Task:
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "duration": self.duration,
             "result": self.result,
+            "notice_info": self.notice_info,
             "error": self.error,
             "steps": len(self.steps),
             "model_config": safe_model_config,  # 使用脱敏后的配置
@@ -1010,6 +1012,7 @@ class AgentService:
 
                 # 处理结果
                 task.result = result.get("message", "任务完成")
+                task.notice_info = result.get("notice_info")
                 task.status = TaskStatus.COMPLETED if result.get("success") else TaskStatus.FAILED
                 task.completed_at = datetime.now(timezone.utc)
                 # duration 是自动计算的 @property，不需要赋值
@@ -1024,12 +1027,25 @@ class AgentService:
                                     "task_id": task.task_id,
                                     "status": task.status.value,
                                     "message": task.result,
+                                    "notice_info": task.notice_info,
                                     "timestamp": task.completed_at.isoformat(),
                                     "duration": task.duration,
                                 },
                             }
                         )
                         logger.info(f"Broadcasted task completion: {task.task_id}")
+                        if task.notice_info:
+                            await self._websocket_broadcast_callback(
+                                {
+                                    "type": "task_notice",
+                                    "data": {
+                                        "task_id": task.task_id,
+                                        "notice_info": task.notice_info,
+                                        "message": task.result,
+                                        "timestamp": task.completed_at.isoformat(),
+                                    },
+                                }
+                            )
                     except Exception as e:
                         logger.error(f"Failed to broadcast task completion: {e}")
 
@@ -1321,6 +1337,8 @@ class AgentService:
 
                 task.status = TaskStatus.COMPLETED if is_success else TaskStatus.FAILED
                 task.result = result_message
+                if "step_result" in locals() and step_result and step_result.notice_info:
+                    task.notice_info = step_result.notice_info
                 task.completed_at = datetime.now(timezone.utc)
                 # duration 是自动计算的 @property，不需要赋值
 
@@ -1334,6 +1352,7 @@ class AgentService:
                                     "task_id": task.task_id,
                                     "status": task.status.value,
                                     "message": result_message,
+                                    "notice_info": task.notice_info,
                                     "timestamp": task.completed_at.isoformat(),
                                     "duration": task.duration,
                                 },
@@ -1342,6 +1361,18 @@ class AgentService:
                         logger.info(
                             f"[WebSocket] Broadcasted task status change: task_id={task.task_id}, status=COMPLETED"
                         )
+                        if task.notice_info:
+                            await self._websocket_broadcast_callback(
+                                {
+                                    "type": "task_notice",
+                                    "data": {
+                                        "task_id": task.task_id,
+                                        "notice_info": task.notice_info,
+                                        "message": result_message,
+                                        "timestamp": task.completed_at.isoformat(),
+                                    },
+                                }
+                            )
                     except Exception as e:
                         logger.error(
                             f"[WebSocket] Failed to broadcast task completion: {e}", exc_info=True
@@ -1415,6 +1446,7 @@ class AgentService:
                         started_at=task.started_at,
                         completed_at=task.completed_at,
                         result=task.result,
+                        notice_info=task.notice_info,
                         error=task.error,
                         steps_count=len(task.steps),
                         steps_detail=json.dumps(task.steps, ensure_ascii=False),
@@ -1513,6 +1545,61 @@ class AgentService:
                 logger.error(f"Failed to broadcast task cancellation: {e}")
 
         return True
+
+    async def mark_success_with_notice(self, task_id: str, message: str, notice_info: str):
+        """标记任务成功并附带简要提示信息"""
+
+        async with self._lock:
+            task = self.running_tasks.get(task_id)
+            task_was_running = task is not None
+            if not task:
+                task = await self._get_task_from_db(task_id)
+
+            if not task:
+                return False, "Task not found"
+
+            task.result = message
+            task.notice_info = notice_info
+            task.status = TaskStatus.COMPLETED
+            task.completed_at = datetime.now(timezone.utc)
+
+            await self._persist_task_to_db(task)
+
+        # 清理运行中的任务（释放资源）
+        if task_was_running:
+            await self._cleanup_completed_task(task_id)
+
+        # 广播状态和提醒
+        if self._websocket_broadcast_callback:
+            try:
+                await self._websocket_broadcast_callback(
+                    {
+                        "type": "task_status_change",
+                        "data": {
+                            "task_id": task_id,
+                            "status": task.status.value,
+                            "message": message,
+                            "notice_info": notice_info,
+                            "timestamp": task.completed_at.isoformat(),
+                            "duration": task.duration,
+                        },
+                    }
+                )
+                await self._websocket_broadcast_callback(
+                    {
+                        "type": "task_notice",
+                        "data": {
+                            "task_id": task_id,
+                            "notice_info": notice_info,
+                            "message": message,
+                            "timestamp": task.completed_at.isoformat(),
+                        },
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to broadcast success notice: {e}")
+
+        return True, task.to_dict()
 
     async def pause_task(self, task_id: str) -> bool:
         """
@@ -1798,6 +1885,7 @@ class AgentService:
                         task_id=task.task_id,
                         instruction=task.instruction,
                         device_id=task.device_id,
+                        notice_info=task.notice_info,
                         model_config=task.model_config,
                     )
                     logger.info(f"Task created successfully in database: {task.task_id}")
@@ -1842,6 +1930,7 @@ class AgentService:
                     else None
                 )
                 task.result = db_task.result
+                task.notice_info = db_task.notice_info
                 task.error = db_task.error
                 task.steps = json.loads(db_task.steps_detail) if db_task.steps_detail else []
                 task.total_tokens = db_task.total_tokens or 0
@@ -1892,6 +1981,7 @@ class AgentService:
                         else None
                     )
                     task.result = db_task.result
+                    task.notice_info = db_task.notice_info
                     task.error = db_task.error
                     task.steps = json.loads(db_task.steps_detail) if db_task.steps_detail else []
                     task.total_tokens = db_task.total_tokens or 0

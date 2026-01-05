@@ -19,6 +19,7 @@ def create_task(db: Session, task_id: str, instruction: str, **kwargs) -> DBTask
         task_id=task_id,
         instruction=instruction,
         device_id=kwargs.get("device_id"),
+        notice_info=kwargs.get("notice_info"),
         model_config=(
             json.dumps(kwargs.get("model_config", {})) if kwargs.get("model_config") else None
         ),

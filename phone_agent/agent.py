@@ -52,6 +52,7 @@ class StepResult:
     action: dict[str, Any] | None
     thinking: str
     message: str | None = None
+    notice_info: str | None = None
     usage: dict[str, Any] | None = None  # Token usage from AI model
 
 
@@ -626,6 +627,7 @@ class PhoneAgent:
             action=action,
             thinking=response.thinking,
             message=result.message or action.get("message"),
+            notice_info=result.notice_info or action.get("notice_info"),
             usage=response.usage,  # Pass token usage info
         )
 

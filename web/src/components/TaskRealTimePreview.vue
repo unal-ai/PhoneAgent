@@ -292,8 +292,20 @@ const validSteps = computed(() => {
 
 let elapsedTimer = null
 
-// API基础URL
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
+// API基础URL（剔除 /api 或 /api/v1 以便访问静态截图）
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
+
+function normalizeApiBaseUrl(baseUrl) {
+  if (!baseUrl) return ''
+
+  // 兼容结尾带 /api 或 /api/v1 的配置，静态文件挂载在根路径
+  return baseUrl
+    .replace(/\/?api\/?v1\/?$/, '')
+    .replace(/\/?api\/?$/, '')
+    .replace(/\/+$/, '') // 去除多余的斜杠
+}
+
+const apiBaseUrl = normalizeApiBaseUrl(rawApiBaseUrl)
 
 function getScreenshotUrl(path) {
   if (!path) return ''

@@ -389,9 +389,9 @@ class PhoneAgent:
             if self._pending_intervention:
                 intervention_feedback = (
                     f"** [USER INTERVENTION] **\n"
-                    f"⚠️ The user has interrupted with a new instruction:\n"
+                    f"ℹ️ The user has provided additional information/instruction:\n"
                     f"{self._pending_intervention}\n"
-                    f"You MUST STOP your current plan and prioritize this instruction immediately.\n\n"
+                    f"Please incorporate this into your planning immediately.\n\n"
                 )
                 self._pending_intervention = None
 

@@ -523,6 +523,7 @@ const testModelConnection = async () => {
 
 // 🆕 模型配置持久化 (localStorage)
 const MODEL_CONFIG_KEY = 'phoneagent_model_config'
+const FORM_STATE_KEY = 'phoneagent_form_state'
 
 const saveModelConfig = () => {
   const config = {
@@ -551,6 +552,37 @@ const loadModelConfig = () => {
   }
 }
 
+// 🆕 表单状态持久化 (指令、高级设置、设备等)
+const saveFormState = () => {
+  const state = {
+    instruction: taskForm.value.instruction,
+    device_id: taskForm.value.device_id,
+    execution_mode: taskForm.value.execution_mode,
+    preview_plan: taskForm.value.preview_plan,
+    max_steps: taskForm.value.max_steps,
+    max_history_images: taskForm.value.max_history_images,
+  }
+  localStorage.setItem(FORM_STATE_KEY, JSON.stringify(state))
+}
+
+const loadFormState = () => {
+  const saved = localStorage.getItem(FORM_STATE_KEY)
+  if (saved) {
+    try {
+      const state = JSON.parse(saved)
+      // 不恢复instruction（避免误操作，可选），但恢复其他设置
+      // taskForm.value.instruction = state.instruction || ''
+      taskForm.value.device_id = state.device_id || null
+      taskForm.value.execution_mode = state.execution_mode || 'step_by_step'
+      taskForm.value.preview_plan = state.preview_plan !== undefined ? state.preview_plan : true
+      taskForm.value.max_steps = state.max_steps || 100
+      taskForm.value.max_history_images = state.max_history_images || 1
+    } catch (e) {
+      console.warn('Failed to load saved form state:', e)
+    }
+  }
+}
+
 // Watch model config changes and save to localStorage
 watch(
   () => ({
@@ -562,6 +594,21 @@ watch(
   }),
   () => {
     saveModelConfig()
+  },
+  { deep: true }
+)
+
+// 🆕 Watch form state changes and save to localStorage
+watch(
+  () => ({
+    device_id: taskForm.value.device_id,
+    execution_mode: taskForm.value.execution_mode,
+    preview_plan: taskForm.value.preview_plan,
+    max_steps: taskForm.value.max_steps,
+    max_history_images: taskForm.value.max_history_images,
+  }),
+  () => {
+    saveFormState()
   },
   { deep: true }
 )
@@ -1250,8 +1297,9 @@ const getActionTypeTag = (actionType) => {
 
 // 生命周期
 onMounted(async () => {
-  // 🆕 Load saved model config
+  // 🆕 Load saved configs
   loadModelConfig()
+  loadFormState()
   
   await deviceStore.fetchDevices()
   await taskStore.fetchTasks()

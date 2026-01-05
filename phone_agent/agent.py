@@ -5,11 +5,15 @@
 
 """Main PhoneAgent class for orchestrating phone automation."""
 
+import base64
+import io
 import json
 import logging
 import traceback
 from dataclasses import dataclass
 from typing import Any, Callable
+
+from PIL import Image
 
 from phone_agent.actions import ActionHandler
 from phone_agent.actions.handler import finish, parse_action
@@ -105,6 +109,59 @@ class PhoneAgent:
 
         self.step_callback = step_callback or NoOpCallback()
         self.stream_callback = stream_callback  # 🆕 流式 token 回调
+
+    async def _compress_history_images(self, image_indices: list[int]):
+        """
+        智能压缩历史图片：保持最新一张高清(1080p PNG)，压缩历史图片为标清(512p JPEG)。
+        该方法直接修改 self._context 中的消息内容。
+        """
+        if not image_indices:
+            return
+
+        # 最新的一张图片不需要压缩（它是当前的屏幕状态）
+        # 历史图片仅用于提供上下文（"之前在什么界面"），不需要高清细节
+        history_indices = image_indices[:-1]
+
+        for idx in history_indices:
+            try:
+                msg = self._context[idx]
+                if not isinstance(msg.get("content"), list):
+                    continue
+
+                for item in msg["content"]:
+                    if item.get("type") == "image_url":
+                        image_url = item["image_url"]["url"]
+                        # 只处理 PNG 格式或者尚未标记为压缩的图片
+                        # 这里简单通过检测是否包含 "image/png" 来判断是否是原始高清图
+                        if "data:image/png" in image_url:
+                            # 提取 base64
+                            base64_data = image_url.split("base64,")[1]
+                            image_bytes = base64.b64decode(base64_data)
+
+                            # 加载并处理
+                            img = Image.open(io.BytesIO(image_bytes))
+
+                            # 调整大小：最大边长 512px
+                            max_dimension = 512
+                            if max(img.size) > max_dimension:
+                                img.thumbnail(
+                                    (max_dimension, max_dimension), Image.Resampling.LANCZOS
+                                )
+
+                            # 转为 JPEG 格式以进一步压缩体积 (Quality=70)
+                            buffer = io.BytesIO()
+                            # 转换为 RGB (JPEG 不支持 RGBA)
+                            if img.mode in ("RGBA", "P"):
+                                img = img.convert("RGB")
+                            img.save(buffer, format="JPEG", quality=70)
+
+                            new_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+                            # 更新消息内容
+                            item["image_url"]["url"] = f"data:image/jpeg;base64,{new_base64}"
+                            logger.info(f"Using Smart Compression for history image at index {idx}")
+            except Exception as e:
+                logger.warning(f"Failed to compress history image at index {idx}: {e}")
 
     def run(self, task: str) -> str:
         """
@@ -298,17 +355,38 @@ class PhoneAgent:
         images_to_keep = self.agent_config.max_history_images
 
         if len(image_indices) > images_to_keep:
-            # Indices to prune are the ones at the beginning of the list
-            # e.g. indices=[0, 2, 4], keep=1 -> prune [0, 2]
-            indices_to_prune = (
-                image_indices[:-images_to_keep] if images_to_keep > 0 else image_indices
-            )
+            # We need to remove some images
+            # Calculate how many to remove
+            num_to_remove = len(image_indices) - images_to_keep
 
-            for idx in indices_to_prune:
-                self._context[idx] = MessageBuilder.remove_images_from_message(self._context[idx])
-                if self.agent_config.verbose:
-                    logger.debug(f"🧹 Removed history image from step index {idx}")
+            # Remove images from messages
+            for i in range(num_to_remove):
+                idx = image_indices[i]
+                msg = self._context[idx]
+                self._context[idx] = MessageBuilder.remove_images_from_message(msg)
+                logger.debug(f"Removed history image from message index {idx}")
 
+        # 🆕 智能压缩历史图片：保持最新的图片为高清，其余压缩为标清
+        # 重新获取包含图片的索引（因为上面可能移除了部分）
+        remaining_image_indices = []
+        for i, msg in enumerate(self._context):
+            if msg.get("role") == "user" and isinstance(msg.get("content"), list):
+                if any(item.get("type") == "image_url" for item in msg["content"]):
+                    remaining_image_indices.append(i)
+
+        # 执行异步压缩
+        import asyncio
+
+        # 注意: _execute_step 是同步方法，这里使用 run_until_complete 或直接调用同步版本的 helper
+        # 由于我们是在 executor 中运行 agent.step，这里可以直接运行
+        try:
+            asyncio.run(self._compress_history_images(remaining_image_indices))
+        except RuntimeError:
+            # 如果已有 loop 运行（例如在同一线程），则直接 await（但这通常不在 executor 中发生）
+            # 简单起见，我们将 _compress_history_images 改为同步方法，或使用 new loop
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(self._compress_history_images(remaining_image_indices))
+            loop.close()
         # self._context[-1] = MessageBuilder.remove_images_from_message(self._context[-1])
 
         # Execute action

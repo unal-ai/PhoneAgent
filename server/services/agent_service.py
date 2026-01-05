@@ -1122,8 +1122,10 @@ class AgentService:
                     step_end = time.time()
                     duration_ms = int((step_end - step_start) * 1000)
 
+
                     # 🆕 保存截图
-                    screenshot_paths = await self._save_step_screenshot(step_index)
+                    screenshot_paths = await self._save_step_screenshot(task, step_index)
+
 
                     # 🛡️ 实时持久化上下文：防止服务重启导致日志丢失
                     self._save_context_to_file(task.task_id)
@@ -2004,6 +2006,60 @@ class AgentService:
             logger.error(f"Failed to inject comment for task {task_id}: {e}")
             return False
 
+
+    async def _save_step_screenshot(self, task: Task, step: int) -> Optional[Dict[str, str]]:
+        """
+        保存步骤截图并压缩
+        
+        Args:
+            task: 任务对象
+            step: 步骤索引
+            
+        Returns:
+            截图路径字典 {ai: path, medium: path, small: path}
+        """
+        try:
+            # 确保截图目录存在
+            task_screenshot_dir = os.path.join(SCREENSHOT_DIR, task.task_id)
+            os.makedirs(task_screenshot_dir, exist_ok=True)
+
+            # 确定ADB地址
+            adb_address = None
+            if task.device_id and ":" in task.device_id:
+                adb_address = task.device_id
+
+            # 截图
+            screenshot = await asyncio.to_thread(get_screenshot, adb_address)
+
+            if not screenshot or not screenshot.base64_data:
+                logger.warning(f"Failed to capture screenshot for step {step}")
+                return None
+
+            # 保存原始截图
+            import base64
+
+            original_path = os.path.join(task_screenshot_dir, f"step_{step:03d}_original.png")
+            with open(original_path, "wb") as f:
+                f.write(base64.b64decode(screenshot.base64_data))
+
+            # 压缩截图（生成多个级别）
+            compressed_paths = await asyncio.to_thread(
+                compress_screenshot, original_path, task_screenshot_dir, for_ai=True
+            )
+
+            # 返回相对路径（便于前端访问）
+            result = {}
+            for level, path in compressed_paths.items():
+                if path:
+                    # 转换为相对于项目根目录的路径
+                    result[level] = path.replace("\\", "/")
+
+            logger.info(f"Screenshot saved for step {step}: {len(result)} levels")
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to save screenshot for step {step}: {e}")
+            return None
 
 # 全局实例
 _agent_service: Optional[AgentService] = None

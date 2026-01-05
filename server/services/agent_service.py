@@ -1032,10 +1032,23 @@ class AgentService:
 
                 sync_callback = AsyncStepCallback(async_callback, loop=loop)
 
+                # 获取已安装的应用列表
+                from server.services import get_device_pool
+                device_pool = get_device_pool()
+                installed_apps = []
+                try:
+                    # 只有当设备ID存在时才尝试获取
+                    if task.device_id:
+                        installed_apps = await device_pool.get_installed_apps(task.device_id)
+                        logger.info(f"Loaded {len(installed_apps)} installed apps for device {task.device_id}")
+                except Exception as e:
+                    logger.warning(f"Failed to load installed apps: {e}")
+
                 agent = PhoneAgent(
                     model_config=model_config,
                     agent_config=agent_config,
                     step_callback=sync_callback,  # 🆕 传递回调
+                    installed_apps=installed_apps,  # 🆕 传递已安装应用列表
                 )
 
                 # Store active agent instance for context retrieval

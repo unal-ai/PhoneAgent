@@ -52,3 +52,12 @@ class TaskResponse(BaseModel):
     total_tokens: int = 0
     total_prompt_tokens: int = 0
     total_completion_tokens: int = 0
+
+
+class ModelTestRequest(BaseModel):
+    """AI模型连接测试请求"""
+
+    provider: str = Field(..., description="AI提供商")
+    base_url: Optional[str] = Field(None, description="Base URL")
+    api_key: Optional[str] = Field(None, description="API Key")
+    model_name: Optional[str] = Field(None, description="模型名称")

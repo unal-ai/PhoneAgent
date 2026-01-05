@@ -293,6 +293,20 @@
                     <div class="form-hint-text">推荐: autoglm-phone (官方优化), glm-4-flash (便宜速度快)</div>
                   </el-form-item>
 
+                  <el-form-item>
+                    <el-button 
+                      type="success" 
+                      plain 
+                      size="small" 
+                      @click="testModelConnection" 
+                      :loading="isTestingConnection"
+                      :icon="Connection"
+                      class="test-connection-btn"
+                    >
+                      {{ isTestingConnection ? '测试中...' : '测试连接' }}
+                    </el-button>
+                  </el-form-item>
+
                 </el-collapse-item>
               </el-collapse>
             </el-form>
@@ -404,7 +418,10 @@ import {
   VideoPause,
   VideoPlay,
   MagicStick,
-  View
+  VideoPlay,
+  MagicStick,
+  View,
+  Connection
 } from '@element-plus/icons-vue'
 
 import { useRouter } from 'vue-router'
@@ -470,6 +487,38 @@ const handlePresetChange = (val) => {
     case 'custom':
       // 保持当前值，让用户修改
       break
+  }
+}
+
+// 🆕 AI模型连接测试
+const isTestingConnection = ref(false)
+
+const testModelConnection = async () => {
+  isTestingConnection.value = true
+  try {
+    const response = await request.post('/model/test', {
+      provider: taskForm.value.ai_provider,
+      base_url: taskForm.value.ai_base_url || null,
+      api_key: taskForm.value.ai_api_key || null,
+      model_name: taskForm.value.ai_model || null
+    })
+    
+    if (response.success) {
+      ElMessage.success(`连接成功! 延迟: ${response.latency_ms}ms, 模型: ${response.model_used}`)
+      ElNotification({
+        title: '测试成功',
+        message: `模型响应: ${response.response}`,
+        type: 'success',
+        duration: 5000
+      })
+    } else {
+      ElMessage.error(`连接失败: ${response.message}`)
+    }
+  } catch (error) {
+    console.error('Connection test failed:', error)
+    ElMessage.error('测试请求失败，请检查网络或配置')
+  } finally {
+    isTestingConnection.value = false
   }
 }
 

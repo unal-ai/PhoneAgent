@@ -74,10 +74,19 @@ class PhoneAgent:
         agent_config: AgentConfig | None = None,
         confirmation_callback: Callable[[str], bool] | None = None,
         takeover_callback: Callable[[str], None] | None = None,
-        step_callback: Any | None = None,  # 新增：步骤回调
+        step_callback: Any | None = None,
+        installed_apps: list[dict[str, str]] | None = None,  # 新增：已安装应用列表
     ):
         self.model_config = model_config or ModelConfig()
         self.agent_config = agent_config or AgentConfig()
+
+        # 如果提供了已安装应用列表，注入到系统提示词中
+        if installed_apps:
+            apps_info = "\n".join([f"- {app['name']} ({app['package']})" for app in installed_apps])
+            apps_prompt = f"\n\n## Installed Apps\nThe following apps are installed on the device. You can launch them using `open_app(app_name)`:\n{apps_info}\n"
+            # 只有当系统提示词中尚未包含时才添加
+            if "## Installed Apps" not in self.agent_config.system_prompt:
+                self.agent_config.system_prompt += apps_prompt
 
         self.model_client = ModelClient(self.model_config)
         self.action_handler = ActionHandler(

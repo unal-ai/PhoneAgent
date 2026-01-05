@@ -176,7 +176,12 @@ def parse_ui_xml(xml_content: str) -> List[UIElement]:
     return elements
 
 
-def format_elements_for_llm(elements: List[UIElement], max_elements: int = 15) -> str:
+def format_elements_for_llm(
+    elements: List[UIElement],
+    max_elements: int = 15,
+    screen_width: int = 1080,
+    screen_height: int = 2400,
+) -> str:
     """
     格式化UI元素为LLM可读的紧凑JSON
 
@@ -184,6 +189,7 @@ def format_elements_for_llm(elements: List[UIElement], max_elements: int = 15) -
     1. 过滤状态栏元素（battery, wifi, clock, date等）
     2. 只保留可交互元素或有实际内容的元素
     3. 减少JSON冗余字段
+    4. 坐标归一化为0-1000相对坐标（与系统prompt一致）
     """
     import json
 
@@ -211,17 +217,17 @@ def format_elements_for_llm(elements: List[UIElement], max_elements: int = 15) -
             if blacklist_id in elem_id_lower:
                 return False
 
-        # 排除顶部状态栏区域 (y < 100 通常是状态栏)
+        # Exclude top status bar area (y < 100 pixels is usually status bar)
         if elem.center[1] < 100:
             return False
 
-        # 必须是可交互的，或者有实际有用的文本
+        # Must be interactive or have useful text
         is_interactive = elem.clickable or elem.focusable
         has_useful_text = bool(elem.text and len(elem.text.strip()) > 0)
 
         return is_interactive or has_useful_text
 
-    # 优先级排序：可交互 + 有文本 > 仅可交互 > 仅有文本
+    # Priority: interactive + text > interactive only > text only
     def priority(elem: UIElement) -> int:
         score = 0
         if elem.clickable:
@@ -232,23 +238,30 @@ def format_elements_for_llm(elements: List[UIElement], max_elements: int = 15) -
             score += 1
         return score
 
-    # 过滤和排序
+    # Filter and sort
     filtered = [e for e in elements if should_include(e)]
     sorted_elements = sorted(filtered, key=priority, reverse=True)
     selected = sorted_elements[:max_elements]
 
-    # 紧凑格式输出
+    # Compact format output
     elements_data = []
     for elem in selected:
-        # 最小化输出：只保留必要字段
-        item = {"xy": list(elem.center)}
+        # Normalize absolute pixel coords to 0-1000 relative
+        # This matches the coordinate system described in the prompt
+        rel_x = int(elem.center[0] * 1000 / screen_width)
+        rel_y = int(elem.center[1] * 1000 / screen_height)
+        # Clamp to 0-999 range
+        rel_x = max(0, min(999, rel_x))
+        rel_y = max(0, min(999, rel_y))
+
+        item = {"xy": [rel_x, rel_y]}
 
         if elem.text:
             item["text"] = elem.text
         if elem.resource_id:
             item["id"] = elem.resource_id
 
-        # 简化类型标记
+        # Simplified type markers
         if elem.clickable:
             item["tap"] = True
         elif elem.focusable:

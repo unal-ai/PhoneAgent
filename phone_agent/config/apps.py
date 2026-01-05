@@ -131,6 +131,8 @@ APP_PACKAGES: dict[str, str] = {
     "Termux": "com.termux",
     "ToDesk": "youqu.android.todesk",
     "向日葵": "com.oray.sunlogin",
+    "F-Droid": "org.fdroid.fdroid",
+    "APKPure": "com.apkpure.aegon",
     # ========================================
     # AI助手 (AI Assistants)
     # ========================================
@@ -219,6 +221,9 @@ APP_PACKAGES: dict[str, str] = {
     "Google Keep": "com.google.android.keep",
     "Google Drive": "com.google.android.apps.docs",
     "Google Play": "com.android.vending",
+    "Play Store": "com.android.vending",
+    "Google Play Store": "com.android.vending",
+    "应用商店": "com.android.vending",
     # ========================================
     # Microsoft服务 (Microsoft Services)
     # ========================================

@@ -338,7 +338,12 @@ class PhoneAgent:
                 from phone_agent.adb.xml_tree import format_elements_for_llm, get_ui_hierarchy
 
                 elements = get_ui_hierarchy(self.agent_config.device_id)
-                ui_elements_str = format_elements_for_llm(elements)
+                # Pass screen dimensions for coordinate normalization
+                screen_w = screenshot.width if screenshot else 1080
+                screen_h = screenshot.height if screenshot else 2400
+                ui_elements_str = format_elements_for_llm(
+                    elements, screen_width=screen_w, screen_height=screen_h
+                )
                 # logger.debug(f"Fetched {len(elements)} UI elements")
             except Exception as e:
                 logger.warning(f"Failed to get UI hierarchy: {e}")
@@ -387,6 +392,12 @@ class PhoneAgent:
 
         # Get model response (支持流式输出)
         try:
+            # 🆕 通知步骤开始（在调用模型前，以便前端接收流式Thinking）
+            start_info = {"thinking": "", "action": "Thinking..."}
+            self.step_callback.on_step_start(
+                self._step_count, json.dumps(start_info, ensure_ascii=False)
+            )
+
             if self.model_config.enable_streaming:
                 response = self.model_client.request_stream(
                     self._context,
@@ -458,13 +469,7 @@ class PhoneAgent:
             if self.agent_config.verbose:
                 logger.debug(f"🧠 Memory Updated: {old_memory[:20]}... -> {new_memory[:20]}...")
 
-        # 通知步骤开始（此时已有 thinking 和 action）
-        action_json = json.dumps(action, ensure_ascii=False) if action else "{}"
-        # 将 thinking 和 action 组合传递
-        step_info = {"thinking": response.thinking, "action": action_json}
-        self.step_callback.on_step_start(
-            self._step_count, json.dumps(step_info, ensure_ascii=False)
-        )
+
 
         if self.agent_config.verbose:
             # 打印思考过程（使用logger替代print）
@@ -567,6 +572,7 @@ class PhoneAgent:
             result.success,
             thinking=response.thinking,
             observation=result.message or action.get("message", ""),
+            action=json.dumps(action, ensure_ascii=False) if action else None,
         )
 
         if finished and self.agent_config.verbose:

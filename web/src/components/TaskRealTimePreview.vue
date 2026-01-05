@@ -85,18 +85,33 @@
                 <div class="observation-content">{{ step.observation }}</div>
               </div>
 
-              <!-- 截图 -->
-              <div v-if="step.screenshot || step.screenshot_base64" class="step-screenshot">
-                <el-image
-                  :src="step.screenshot_base64 || getScreenshotUrl(step.screenshot)"
-                  fit="contain"
-                  style="width: 200px; height: auto;"
-                  :preview-src-list="[step.screenshot_base64 || getScreenshotUrl(step.screenshot)]"
-                >
-                  <template #error>
-                    <el-tag type="info" size="small">[截图加载失败]</el-tag>
-                  </template>
-                </el-image>
+              <!-- 截图 with click position indicator -->
+              <div v-if="step.screenshot || step.screenshot_base64" class="step-screenshot-container">
+                <div class="screenshot-wrapper">
+                  <el-image
+                    :src="step.screenshot_base64 || getScreenshotUrl(step.screenshot)"
+                    fit="contain"
+                    class="screenshot-image"
+                    :preview-src-list="[step.screenshot_base64 || getScreenshotUrl(step.screenshot)]"
+                  >
+                    <template #error>
+                      <el-tag type="info" size="small">[截图加载失败]</el-tag>
+                    </template>
+                  </el-image>
+                  <!-- Click position indicator -->
+                  <div 
+                    v-if="getClickPosition(step.action)" 
+                    class="click-indicator"
+                    :style="getClickIndicatorStyle(step.action)"
+                    :title="`Click: [${getClickPosition(step.action)?.x}, ${getClickPosition(step.action)?.y}]`"
+                  >
+                    <div class="click-dot"></div>
+                    <div class="click-ring"></div>
+                  </div>
+                </div>
+                <div v-if="getClickPosition(step.action)" class="click-coords">
+                  📍 {{ step.action?.action }}: [{{ getClickPosition(step.action)?.x }}, {{ getClickPosition(step.action)?.y }}]
+                </div>
               </div>
 
               <!-- 步骤状态 -->
@@ -214,17 +229,11 @@
                   <template v-else-if="Array.isArray(msg.content)">
                     <div v-for="(item, i) in msg.content" :key="i" class="content-item">
                       <pre v-if="item.type === 'text'" class="full-content">{{ item.text }}</pre>
-                      <div v-else-if="item.type === 'image_url'" class="context-image">
-                        <el-image
-                          :src="item.image_url?.url || ''"
-                          fit="contain"
-                          style="max-width: 300px; max-height: 400px;"
-                          :preview-src-list="[item.image_url?.url]"
-                        >
-                          <template #error>
-                            <el-tag type="warning" size="small">[图片加载失败]</el-tag>
-                          </template>
-                        </el-image>
+                      <div v-else-if="item.type === 'image_url'" class="context-image-indicator">
+                        <el-tag type="success" size="small">
+                          <el-icon><Picture /></el-icon>
+                          Screenshot ({{ getImageSize(item.image_url?.url) }})
+                        </el-tag>
                       </div>
                     </div>
                   </template>
@@ -243,7 +252,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ChatDotRound, VideoPlay, View, Loading, Edit, QuestionFilled, Promotion, Refresh, WarningFilled } from '@element-plus/icons-vue'
+import { ChatDotRound, VideoPlay, View, Loading, Edit, QuestionFilled, Promotion, Refresh, WarningFilled, Picture } from '@element-plus/icons-vue'
 import { taskApi, request } from '@/api'
 
 const props = defineProps({
@@ -315,6 +324,61 @@ function getScreenshotUrl(path) {
   
   // Fallback
   return `${apiBaseUrl}/${path}`
+}
+
+// Get approximate image size from base64 data URL
+function getImageSize(dataUrl) {
+  if (!dataUrl) return '?'
+  if (!dataUrl.startsWith('data:')) return 'file'
+  
+  // Calculate approximate size from base64 length
+  // Base64 is ~33% larger than binary, and we subtract the header
+  const base64Part = dataUrl.split(',')[1] || ''
+  const sizeBytes = Math.floor(base64Part.length * 0.75)
+  
+  if (sizeBytes < 1024) return `${sizeBytes}B`
+  if (sizeBytes < 1024 * 1024) return `${Math.floor(sizeBytes / 1024)}KB`
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)}MB`
+}
+
+// Extract click position from action (coordinates are 0-1000 relative)
+function getClickPosition(action) {
+  if (!action) return null
+  
+  // Actions with element coordinates
+  const actionType = action.action
+  if (['Tap', 'Double Tap', 'Long Press'].includes(actionType)) {
+    const element = action.element
+    if (element && Array.isArray(element) && element.length >= 2) {
+      return { x: element[0], y: element[1] }
+    }
+  }
+  
+  // Swipe has start/end
+  if (actionType === 'Swipe') {
+    const start = action.start
+    if (start && Array.isArray(start) && start.length >= 2) {
+      return { x: start[0], y: start[1], isSwipeStart: true }
+    }
+  }
+  
+  return null
+}
+
+// Calculate CSS style for click indicator position
+// Image is 200px wide, coordinates are 0-1000 relative
+function getClickIndicatorStyle(action) {
+  const pos = getClickPosition(action)
+  if (!pos) return {}
+  
+  // Convert 0-1000 coordinates to percentage
+  const leftPercent = pos.x / 10
+  const topPercent = pos.y / 10
+  
+  return {
+    left: `${leftPercent}%`,
+    top: `${topPercent}%`
+  }
 }
 
 // 截断指令文本，适合在标题中显示
@@ -1115,6 +1179,67 @@ onUnmounted(() => {
 
 .content-item {
   margin-bottom: 4px;
+}
+
+/* Screenshot with click position indicator */
+.step-screenshot-container {
+  margin-top: 10px;
+}
+
+.screenshot-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 200px;
+}
+
+.screenshot-image {
+  width: 200px;
+  height: auto;
+}
+
+.click-indicator {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.click-dot {
+  width: 8px;
+  height: 8px;
+  background: #ff4444;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.click-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ff4444;
+  border-radius: 50%;
+  animation: click-pulse 1s ease-out infinite;
+}
+
+@keyframes click-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+.click-coords {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
 }
 </style>
 

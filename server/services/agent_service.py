@@ -225,24 +225,34 @@ class AgentCallback:
                 f" [AgentCallback] No websocket_broadcast_callback set for task {self.task.task_id}"
             )
 
-    def on_step_complete(self, step: int, success: bool, thinking: str = "", observation: str = ""):
+    def on_step_complete(
+        self,
+        step: int,
+        success: bool,
+        thinking: str = "",
+        observation: str = "",
+        action: Optional[str] = None,
+    ):
         """步骤完成（同步方法，非阻塞）"""
         logger.info(f"Task {self.task.task_id} Step {step}: {'success' if success else 'failed'}")
 
         # 立即更新步骤状态（不等待截图）
-        self._update_step_status(step, success, thinking, observation, screenshot_paths=None)
+        self._update_step_status(
+            step, success, thinking, observation, screenshot_paths=None, action=action
+        )
 
         # 异步保存截图并广播（fire-and-forget，不阻塞）
         try:
             asyncio.run_coroutine_threadsafe(
-                self._save_and_broadcast_step(step, success, thinking, observation), self.loop
+                self._save_and_broadcast_step(step, success, thinking, observation, action),
+                self.loop,
             )
             # Warning: 不等待结果，避免阻塞Agent执行
         except Exception as e:
             logger.error(f"Failed to schedule screenshot save for step {step}: {e}")
 
     async def _save_and_broadcast_step(
-        self, step: int, success: bool, thinking: str, observation: str
+        self, step: int, success: bool, thinking: str, observation: str, action: Optional[str] = None
     ):
         """保存截图并广播（异步，非阻塞）"""
         # 保存截图
@@ -254,13 +264,14 @@ class AgentCallback:
             step_key = last_step.get("step") if "step" in last_step else last_step.get("step_index")
 
             if step_key == step:
-                self.task.steps[-1].update(
-                    {
-                        "screenshot": screenshot_paths.get("medium"),
-                        "screenshot_small": screenshot_paths.get("small"),
-                        "screenshot_ai": screenshot_paths.get("ai"),
-                    }
-                )
+                update_data = {
+                    "screenshot": screenshot_paths.get("medium"),
+                    "screenshot_small": screenshot_paths.get("small"),
+                    "screenshot_ai": screenshot_paths.get("ai"),
+                }
+                if action:
+                    update_data["action"] = action
+                self.task.steps[-1].update(update_data)
 
         # WebSocket实时推送步骤更新（包含截图）
         if self.websocket_broadcast_callback and self.task.steps:
@@ -271,24 +282,30 @@ class AgentCallback:
                 )
 
                 if step_key == step:
+                    # Construct update data
+                    update_data = {
+                        "task_id": self.task.task_id,
+                        "step": step,
+                        "thinking": thinking,
+                        "observation": observation,
+                        "status": "completed" if success else "failed",
+                        "success": success,
+                        "screenshot": screenshot_paths.get("medium") if screenshot_paths else None,
+                        "screenshot_small": (
+                            screenshot_paths.get("small") if screenshot_paths else None
+                        ),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "base64_thumb": screenshot_paths.get("base64_thumb")
+                        if screenshot_paths
+                        else None,
+                    }
+                    if action:
+                        update_data["action"] = action
+                    
                     await self.websocket_broadcast_callback(
                         {
                             "type": "task_step_update",
-                            "data": {
-                                "task_id": self.task.task_id,
-                                "step": step,
-                                "thinking": thinking,
-                                "action": last_step.get("action", ""),
-                                "observation": observation,
-                                "screenshot": (
-                                    screenshot_paths.get("small") if screenshot_paths else None
-                                ),
-                                "success": success,
-                                "status": "completed" if success else "failed",
-                                "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "duration_ms": last_step.get("duration_ms"),
-                                "tokens_used": last_step.get("tokens_used"),
-                            },
+                            "data": update_data,
                         }
                     )
                     logger.info(
@@ -300,7 +317,13 @@ class AgentCallback:
         return screenshot_paths
 
     def _update_step_status(
-        self, step: int, success: bool, thinking: str, observation: str, screenshot_paths
+        self,
+        step: int,
+        success: bool,
+        thinking: str,
+        observation: str,
+        screenshot_paths,
+        action: Optional[str] = None,
     ):
         """更新步骤状态（同步）"""
         if self.task.steps and len(self.task.steps) > 0:
@@ -310,20 +333,22 @@ class AgentCallback:
             step_key = last_step.get("step") if "step" in last_step else last_step.get("step_index")
 
             if step_key == step:
-                self.task.steps[-1].update(
-                    {
-                        "status": "completed" if success else "failed",
-                        "success": success,
-                        "thinking": thinking,
-                        "observation": observation,
-                        "screenshot": screenshot_paths.get("medium") if screenshot_paths else None,
-                        "screenshot_small": (
-                            screenshot_paths.get("small") if screenshot_paths else None
-                        ),
-                        "screenshot_ai": screenshot_paths.get("ai") if screenshot_paths else None,
-                        "completed_at": datetime.now(timezone.utc).isoformat(),
-                    }
-                )
+                update_data = {
+                    "status": "completed" if success else "failed",
+                    "success": success,
+                    "thinking": thinking,
+                    "observation": observation,
+                    "screenshot": screenshot_paths.get("medium") if screenshot_paths else None,
+                    "screenshot_small": (
+                        screenshot_paths.get("small") if screenshot_paths else None
+                    ),
+                    "screenshot_ai": screenshot_paths.get("ai") if screenshot_paths else None,
+                    "completed_at": datetime.now(timezone.utc).isoformat(),
+                }
+                if action:
+                    update_data["action"] = action
+                
+                self.task.steps[-1].update(update_data)
             else:
                 logger.warning(
                     f"Step mismatch: expected {step}, got {step_key}. Last step: {last_step}"

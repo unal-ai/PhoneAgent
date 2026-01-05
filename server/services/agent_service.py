@@ -1956,15 +1956,32 @@ class AgentService:
 
                 tasks = []
                 for db_task in db_tasks:
+                    # Safely parse model_config
+                    model_config = None
+                    if db_task.model_config:
+                        try:
+                            model_config = json.loads(db_task.model_config)
+                        except json.JSONDecodeError:
+                            logger.error(
+                                f"Failed to parse model_config for task {db_task.task_id}, ignoring"
+                            )
+
                     task = Task(
                         task_id=db_task.task_id,
                         instruction=db_task.instruction,
                         device_id=db_task.device_id,
-                        model_config=(
-                            json.loads(db_task.model_config) if db_task.model_config else None
-                        ),
+                        model_config=model_config,
                     )
-                    task.status = TaskStatus(db_task.status)
+
+                    # Safely parse status
+                    try:
+                        task.status = TaskStatus(db_task.status)
+                    except ValueError:
+                        logger.error(
+                            f"Invalid status '{db_task.status}' for task {db_task.task_id}, fallback to FAILED"
+                        )
+                        task.status = TaskStatus.FAILED
+
                     task.created_at = (
                         db_task.created_at.replace(tzinfo=timezone.utc)
                         if db_task.created_at
@@ -1983,7 +2000,19 @@ class AgentService:
                     task.result = db_task.result
                     task.notice_info = db_task.notice_info
                     task.error = db_task.error
-                    task.steps = json.loads(db_task.steps_detail) if db_task.steps_detail else []
+
+                    # Safely parse steps
+                    if db_task.steps_detail:
+                        try:
+                            task.steps = json.loads(db_task.steps_detail)
+                        except json.JSONDecodeError:
+                            logger.error(
+                                f"Failed to parse steps_detail for task {db_task.task_id}, returning empty list"
+                            )
+                            task.steps = []
+                    else:
+                        task.steps = []
+
                     task.total_tokens = db_task.total_tokens or 0
                     tasks.append(task)
 

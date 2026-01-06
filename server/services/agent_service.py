@@ -380,6 +380,7 @@ class AgentCallback:
             if device_id:
                 try:
                     from server.services.device_scanner import get_device_scanner
+
                     scanner = get_device_scanner()
                     scanned_devices = scanner.get_scanned_devices()
                     if device_id in scanned_devices:
@@ -388,10 +389,11 @@ class AgentCallback:
                         logger.debug(f"Screenshot using device scanner address: {adb_address}")
                 except Exception as e:
                     logger.warning(f"Failed to get device from scanner: {e}")
-                
+
                 # 如果扫描器获取失败，回退到简单转换
                 if not adb_address:
                     from server.utils import device_id_to_adb_address
+
                     adb_address = device_id_to_adb_address(device_id)
                     logger.debug(f"Screenshot fallback to simple conversion: {adb_address}")
 
@@ -2202,6 +2204,7 @@ class AgentService:
             if device_id:
                 try:
                     from server.services.device_scanner import get_device_scanner
+
                     scanner = get_device_scanner()
                     scanned_devices = scanner.get_scanned_devices()
                     if device_id in scanned_devices:
@@ -2210,10 +2213,11 @@ class AgentService:
                         logger.debug(f"Screenshot using device scanner address: {adb_address}")
                 except Exception as e:
                     logger.warning(f"Failed to get device from scanner: {e}")
-                
+
                 # 如果扫描器获取失败，回退到简单转换
                 if not adb_address:
                     from server.utils import device_id_to_adb_address
+
                     adb_address = device_id_to_adb_address(device_id)
                     logger.debug(f"Screenshot fallback to simple conversion: {adb_address}")
 

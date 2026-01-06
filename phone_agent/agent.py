@@ -17,7 +17,7 @@ from typing import Any, Callable
 from PIL import Image
 
 from phone_agent.actions import ActionHandler
-from phone_agent.actions.handler import finish, parse_action
+from phone_agent.actions.handler import parse_action, submit_result
 from phone_agent.adb import get_current_app, get_screenshot
 from phone_agent.adb.device import get_physical_screen_size
 from phone_agent.config import SYSTEM_PROMPT
@@ -496,7 +496,7 @@ class PhoneAgent:
         except ValueError:
             if self.agent_config.verbose:
                 traceback.print_exc()
-            action = finish(message=response.action)
+            action = submit_result(message=response.action)
 
         # 🧠 Handle Memory Update (Before Callback)
         if action.get("action") == "UpdateMemory":
@@ -589,7 +589,7 @@ class PhoneAgent:
 
             # Fallback to screenshot size if physical fetch utterly fails (though helper defaults to 1080p)
             result = self.action_handler.execute(
-                finish(message=str(e)), screenshot.width, screenshot.height
+                submit_result(message=str(e)), screenshot.width, screenshot.height
             )
 
         # Store action result for next step's feedback
@@ -611,7 +611,7 @@ class PhoneAgent:
         )
 
         # Check if finished
-        finished = action.get("_metadata") == "finish" or result.should_finish
+        finished = action.get("_metadata") == "submit_result" or result.should_finish
 
         # 通知步骤完成
         self.step_callback.on_step_complete(

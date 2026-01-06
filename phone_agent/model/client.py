@@ -316,8 +316,8 @@ class ModelClient:
                 thinking = think_match.group(1).strip()
                 # 提取 {action} 后面的 do(...) 指令
                 action_section = content.split("{action}")[1]
-                # 在 action section 中找 do(...) 或 finish(...)
-                action_match = re.search(r"((?:do|finish)\([^)]+\))", action_section)
+                # 在 action section 中找 do(...) 或 submit_result(...)
+                action_match = re.search(r"((?:do|submit_result)\([^)]+\))", action_section)
                 action = (
                     action_match.group(1).strip()
                     if action_match
@@ -357,11 +357,11 @@ class ModelClient:
 
         # 格式4: GLM-4.1V 输出 <think>... 但没有闭合标签和 <answer>
         # 这种情况下，thinking 太长被截断了，直接返回空 thinking 和原内容作为 action
-        # 因为 parse_action 会失败，agent 会自动调用 finish
+        # 因为 parse_action 会失败，agent 会自动调用 submit_result
         if "<think>" in content:
             # 尝试提取一个合理的 action（可能在最后）
-            # 查找 do(...) 或 finish(...) 模式
-            action_pattern = r"((?:do|finish)\([^)]+\))"
+            # 查找 do(...) 或 submit_result(...) 模式
+            action_pattern = r"((?:do|submit_result)\([^)]+\))"
             matches = re.findall(action_pattern, content)
             if matches:
                 # 取最后一个匹配的 action
@@ -373,17 +373,19 @@ class ModelClient:
                 thinking = thinking_text[-500:] if len(thinking_text) > 500 else thinking_text
                 return thinking, action
 
-        # 默认：尝试从任何格式中提取 do(...) 或 finish(...) 指令
+        # 默认：尝试从任何格式中提取 do(...) 或 submit_result(...) 指令
         # 这是最后的兜底方案，用于处理各种奇怪的输出格式
 
-        # 使用正则提取所有 do(...) 或 finish(...) 模式
+        # 使用正则提取所有 do(...) 或 submit_result(...) 模式
         # 支持嵌套括号和引号
         all_matches = []
 
-        # 方法1: 找到所有完整的 do(...) 或 finish(...) 调用
-        # 改进的正则：匹配 do( 或 finish( 后面的内容，直到找到匹配的 )
+        # 方法1: 找到所有完整的 do(...) 或 submit_result(...) 调用
+        # 改进的正则：匹配 do( 或 submit_result( 后面的内容，直到找到匹配的 )
         # 支持引号和嵌套
-        for match in re.finditer(r"((?:do|finish)\s*\([^()]*(?:\([^()]*\)[^()]*)*\))", content):
+        for match in re.finditer(
+            r"((?:do|submit_result)\s*\([^()]*(?:\([^()]*\)[^()]*)*\))", content
+        ):
             all_matches.append(match.group(1))
 
         if all_matches:

@@ -68,7 +68,7 @@ class ActionHandler:
         """
         action_type = action.get("_metadata")
 
-        if action_type == "finish":
+        if action_type == "submit_result":
             return ActionResult(
                 success=True,
                 should_finish=True,
@@ -325,7 +325,7 @@ def parse_action(response: str) -> dict[str, Any]:
 
         func_name = tree.body.func.id if isinstance(tree.body.func, ast.Name) else None
 
-        if func_name not in ["do", "finish"]:
+        if func_name not in ["do", "submit_result"]:
             raise ValueError(f"Unknown function: {func_name}")
 
         # Extract arguments safely
@@ -347,7 +347,7 @@ def parse_action(response: str) -> dict[str, Any]:
 
             args[arg_name] = arg_value
 
-        args["_metadata"] = func_name
+        args["_metadata"] = "submit_result" if func_name == "submit_result" else func_name
         return args
 
     except Exception as e:
@@ -372,8 +372,8 @@ def _parse_action_with_regex(response: str) -> dict[str, Any]:
     """
     import re
 
-    # Match do(...) or finish(...)
-    func_match = re.match(r"^(do|finish)\((.*)\)$", response, re.DOTALL)
+    # Match do(...) or submit_result(...)
+    func_match = re.match(r"^(do|submit_result)\((.*)\)$", response, re.DOTALL)
     if not func_match:
         raise ValueError(f"Invalid action format: {response}")
 
@@ -384,8 +384,8 @@ def _parse_action_with_regex(response: str) -> dict[str, Any]:
     args = {}
 
     # Handle special patterns
-    if func_name == "finish":
-        # finish(message="xxx")
+    if func_name == "submit_result":
+        # submit_result(message="xxx")
         message_match = re.search(r'message\s*=\s*["\'](.+?)["\']', args_str)
         if message_match:
             args["message"] = message_match.group(1)
@@ -441,7 +441,11 @@ def do(**kwargs) -> dict[str, Any]:
     return kwargs
 
 
-def finish(**kwargs) -> dict[str, Any]:
-    """Helper function for creating 'finish' actions."""
-    kwargs["_metadata"] = "finish"
+def submit_result(**kwargs) -> dict[str, Any]:
+    """Helper function for creating 'submit_result' actions."""
+    kwargs["_metadata"] = "submit_result"
     return kwargs
+
+
+# Backward compatibility alias
+finish = submit_result

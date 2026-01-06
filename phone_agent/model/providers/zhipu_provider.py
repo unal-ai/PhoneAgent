@@ -98,7 +98,9 @@ class ZhipuAIProvider(BaseVLMProvider):
             parts = raw_output.split("<answer>", 1)
             thinking = parts[0].replace("<think>", "").replace("</think>", "").strip()
             action_part = parts[1].replace("</answer>", "").strip()
-            action_match = re.search(r"((?:do|finish)\([^()]*(?:\([^()]*\)[^()]*)*\))", action_part)
+            action_match = re.search(
+                r"((?:do|submit_result)\([^()]*(?:\([^()]*\)[^()]*)*\))", action_part
+            )
             action = action_match.group(1).strip() if action_match else action_part
             return thinking, action
 
@@ -108,7 +110,7 @@ class ZhipuAIProvider(BaseVLMProvider):
             if isinstance(data, dict) and "think" in data and "action" in data:
                 action_str = str(data["action"])
                 action_match = re.search(
-                    r"((?:do|finish)\([^()]*(?:\([^()]*\)[^()]*)*\))", action_str
+                    r"((?:do|submit_result)\([^()]*(?:\([^()]*\)[^()]*)*\))", action_str
                 )
                 action = action_match.group(1).strip() if action_match else action_str
                 return str(data["think"]), action
@@ -117,7 +119,7 @@ class ZhipuAIProvider(BaseVLMProvider):
 
         # Format 3: GLM-4.1V-Thinking multi-line format {think}...{action}...
         think_action_match = re.search(
-            r"\{think[>]?(.*?)\}\s*(?:\{action\})?\s*((?:do|finish)\([^()]*(?:\([^()]*\)[^()]*)*\))",
+            r"\{think[>]?(.*?)\}\s*(?:\{action\})?\s*((?:do|submit_result)\([^()]*(?:\([^()]*\)[^()]*)*\))",
             raw_output,
             re.DOTALL,
         )
@@ -131,7 +133,7 @@ class ZhipuAIProvider(BaseVLMProvider):
         if box_match:
             action_box_content = box_match.group(1).strip()
             action_match = re.search(
-                r"((?:do|finish)\([^()]*(?:\([^()]*\)[^()]*)*\))", action_box_content
+                r"((?:do|submit_result)\([^()]*(?:\([^()]*\)[^()]*)*\))", action_box_content
             )
             action = action_match.group(1).strip() if action_match else action_box_content
 
@@ -140,9 +142,9 @@ class ZhipuAIProvider(BaseVLMProvider):
             thinking = think_match.group(1).strip() if think_match else ""
             return thinking, action
 
-        # Format 5: Extract do(...) or finish(...) from anywhere
+        # Format 5: Extract do(...) or submit_result(...) from anywhere
         action_match = re.search(
-            r"((?:do|finish)\([^()]*(?:\([^()]*\)[^()]*)*\))", raw_output, re.DOTALL
+            r"((?:do|submit_result)\([^()]*(?:\([^()]*\)[^()]*)*\))", raw_output, re.DOTALL
         )
         if action_match:
             action = action_match.group(1).strip()

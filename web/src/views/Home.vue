@@ -1302,6 +1302,20 @@ onMounted(async () => {
   loadFormState()
   
   await deviceStore.fetchDevices()
+  
+  // 🆕 验证保存的 device_id 是否仍然存在于可用设备列表中
+  if (taskForm.value.device_id) {
+    const deviceExists = deviceStore.availableDevices.some(
+      d => d.device_id === taskForm.value.device_id
+    )
+    if (!deviceExists) {
+      console.warn(`[Home] Saved device_id '${taskForm.value.device_id}' no longer exists, clearing selection`)
+      taskForm.value.device_id = null
+      // 更新 localStorage
+      saveFormState()
+    }
+  }
+  
   await taskStore.fetchTasks()
   await loadShortcuts()
   await loadPromptCards()

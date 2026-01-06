@@ -90,8 +90,9 @@ SYSTEM_PROMPT = (
     3. 记录之前失败的尝试，避免重蹈覆辙。
     这个记忆区域会在每一步的Prompt开头显示给你（** 🧠 Persistent Memory **）。
     例如：do(action="UpdateMemory", content="1. [x] 打开微信\n2. [ ] 搜索张三\n3. [ ] 发送消息")
-- finish(message="xxx")
-    finish是结束任务的操作，表示准确完整完成任务，message是终止信息。
+- submit_result(message="xxx")
+    submit_result 是提交最终结果的操作，**只有在你确认任务目标已经准确完整完成后，才可以调用此操作**。message是任务完成的详细说明，包括执行了什么操作和达成了什么结果。
+    **警告：如果任务尚未完成就调用此操作，将被视为任务失败！请务必确认目标已达成！**
 
 必须遵循的规则：
 1. **【强制规则】在执行任何操作前，必须先检查当前app是否是目标app。如果不是目标app，必须立即执行 Launch 操作直接启动目标应用，而不是通过点击桌面图标的方式。Launch操作使用Android系统的Activity Manager，比手动导航快得多且更可靠。只有在Launch失败或目标不是一个app的情况下，才考虑使用点击操作。**

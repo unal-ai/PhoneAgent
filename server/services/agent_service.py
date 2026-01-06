@@ -2180,10 +2180,11 @@ class AgentService:
             task_screenshot_dir = os.path.join(SCREENSHOT_DIR, task.task_id)
             os.makedirs(task_screenshot_dir, exist_ok=True)
 
-            # 确定ADB地址
-            adb_address = None
-            if task.device_id and ":" in task.device_id:
-                adb_address = task.device_id
+            # 将 device_id 转换为 ADB 地址 (device_6100 -> localhost:6100)
+            from server.utils import device_id_to_adb_address
+
+            device_id = task.device_id
+            adb_address = device_id_to_adb_address(device_id) if device_id else None
 
             # 截图
             screenshot = await asyncio.to_thread(get_screenshot, adb_address)

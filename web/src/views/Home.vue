@@ -289,8 +289,8 @@
                   </el-form-item>
 
                   <el-form-item label="模型名称">
-                    <el-input v-model="taskForm.ai_model" placeholder="例如: autoglm-phone, glm-4-flash, gpt-4o" />
-                    <div class="form-hint-text">推荐: autoglm-phone (官方优化), glm-4-flash (便宜速度快)</div>
+                    <el-input v-model="taskForm.ai_model" placeholder="例如: autoglm-phone, GLM-4.6V-FlashX, gpt-4o" />
+                    <div class="form-hint-text">推荐: autoglm-phone (官方优化), GLM-4.6V-FlashX (便宜速度快)</div>
                   </el-form-item>
 
                   <el-form-item>
@@ -473,7 +473,7 @@ const handlePresetChange = (val) => {
       break
     case 'zhipu':
       taskForm.value.ai_base_url = 'https://open.bigmodel.cn/api/paas/v4/'
-      taskForm.value.ai_model = 'glm-4-flash'
+      taskForm.value.ai_model = 'GLM-4.6V-FlashX'
       break
     case 'openai':
       taskForm.value.ai_base_url = 'https://api.openai.com/v1'

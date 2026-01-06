@@ -85,7 +85,7 @@ class ModelCallTracker:
         计算成本（美元）
 
         智谱AI定价（2025年）:
-        - glm-4-flash: 免费
+        - GLM-4.6V-FlashX: 免费
         - glm-4-1.5v-thinking-flash: 免费
         - autoglm-phone: 免费
 

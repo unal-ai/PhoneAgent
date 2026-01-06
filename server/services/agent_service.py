@@ -373,12 +373,27 @@ class AgentCallback:
             task_screenshot_dir = os.path.join(SCREENSHOT_DIR, self.task.task_id)
             os.makedirs(task_screenshot_dir, exist_ok=True)
 
-            # 获取截图
-            # 将 device_id 转换为 ADB 地址 (device_6100 -> localhost:6100)
-            from server.utils import device_id_to_adb_address
-
+            # 从设备扫描器获取正确的 ADB 地址
+            # 重要：不能简单用 device_id_to_adb_address，因为 FRP 设备的实际端口可能不同
+            adb_address = None
             device_id = self.task.device_id
-            adb_address = device_id_to_adb_address(device_id)
+            if device_id:
+                try:
+                    from server.services.device_scanner import get_device_scanner
+                    scanner = get_device_scanner()
+                    scanned_devices = scanner.get_scanned_devices()
+                    if device_id in scanned_devices:
+                        v2_device = scanned_devices[device_id]
+                        adb_address = v2_device.adb_address
+                        logger.debug(f"Screenshot using device scanner address: {adb_address}")
+                except Exception as e:
+                    logger.warning(f"Failed to get device from scanner: {e}")
+                
+                # 如果扫描器获取失败，回退到简单转换
+                if not adb_address:
+                    from server.utils import device_id_to_adb_address
+                    adb_address = device_id_to_adb_address(device_id)
+                    logger.debug(f"Screenshot fallback to simple conversion: {adb_address}")
 
             screenshot = await asyncio.to_thread(get_screenshot, adb_address)
 
@@ -2180,11 +2195,27 @@ class AgentService:
             task_screenshot_dir = os.path.join(SCREENSHOT_DIR, task.task_id)
             os.makedirs(task_screenshot_dir, exist_ok=True)
 
-            # 将 device_id 转换为 ADB 地址 (device_6100 -> localhost:6100)
-            from server.utils import device_id_to_adb_address
-
+            # 从设备扫描器获取正确的 ADB 地址
+            # 重要：不能简单用 device_id_to_adb_address，因为 FRP 设备的实际端口可能不同
+            adb_address = None
             device_id = task.device_id
-            adb_address = device_id_to_adb_address(device_id) if device_id else None
+            if device_id:
+                try:
+                    from server.services.device_scanner import get_device_scanner
+                    scanner = get_device_scanner()
+                    scanned_devices = scanner.get_scanned_devices()
+                    if device_id in scanned_devices:
+                        v2_device = scanned_devices[device_id]
+                        adb_address = v2_device.adb_address
+                        logger.debug(f"Screenshot using device scanner address: {adb_address}")
+                except Exception as e:
+                    logger.warning(f"Failed to get device from scanner: {e}")
+                
+                # 如果扫描器获取失败，回退到简单转换
+                if not adb_address:
+                    from server.utils import device_id_to_adb_address
+                    adb_address = device_id_to_adb_address(device_id)
+                    logger.debug(f"Screenshot fallback to simple conversion: {adb_address}")
 
             # 截图
             screenshot = await asyncio.to_thread(get_screenshot, adb_address)

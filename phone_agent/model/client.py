@@ -280,16 +280,22 @@ class ModelClient:
             parts = content.split("<answer>", 1)
             thinking = parts[0].replace("<think>", "").replace("</think>", "").strip()
             answer_raw = parts[1].replace("</answer>", "").strip()
-            
+
             # 从 answer 中提取实际的 do(...) 或 submit_result(...) 调用
             # 有时模型会把思考过程也放在 answer 中，我们需要只提取最后的 action 调用
-            action_match = re.search(r"((?:do|submit_result)\s*\([^()]*(?:\([^()]*\)[^()]*)*\))\s*$", answer_raw, re.DOTALL)
+            action_match = re.search(
+                r"((?:do|submit_result)\s*\([^()]*(?:\([^()]*\)[^()]*)*\))\s*$",
+                answer_raw,
+                re.DOTALL,
+            )
             if action_match:
                 action = action_match.group(1).strip()
                 # 把 action 之前的文本作为额外的 thinking
-                extra_thinking = answer_raw[:action_match.start()].strip()
+                extra_thinking = answer_raw[: action_match.start()].strip()
                 if extra_thinking:
-                    thinking = (thinking + "\n\n" + extra_thinking).strip() if thinking else extra_thinking
+                    thinking = (
+                        (thinking + "\n\n" + extra_thinking).strip() if thinking else extra_thinking
+                    )
             else:
                 # 没找到标准格式，使用整个 answer
                 action = answer_raw

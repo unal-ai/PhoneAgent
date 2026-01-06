@@ -1,214 +1,86 @@
-<div align="center">
-
 # PhoneAgent
 
-### A Complete Android Agent Solution Based on Open-AutoGLM
+PhoneAgent is a complete Android Agent solution based on Open-AutoGLM.
 
-**Web UI + Backend + Terminal | One-Click Deploy | Multi-Device | Real-time Preview**
+It enhances the original Open-AutoGLM project with a Web UI, multi-device management, and real-time screen preview capabilities, making it a production-ready infrastructure for Android automation.
 
-[![License](https://img.shields.io/badge/License-AGPL%203.0-blue?style=for-the-badge)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org/)
+## Features
 
-<br>
-
-[中文](README.md) | [English](README_EN.md)
-
-</div>
-
----
-
-## What is this?
-
-PhoneAgent is a community-enhanced version of [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM).
-
-Open-AutoGLM is an excellent Android Agent project open-sourced by the Zhipu team, providing CLI tools and APIs. We've added engineering features on top to make it production-ready:
-
-- **Web UI** - Modern interface, no coding required
-- **Multi-Device Management** - Manage multiple devices simultaneously
-- **Real-time Screen Preview** - Integrated Scrcpy, <150ms latency
-- **Multi-Model Support** - GLM-4.6v series + third-party APIs
-
----
-
-## Screenshots
-
-<div align="center">
-<img src="assets/images/首页.jpg" alt="Home" width="800">
-<p><em>Home - Multi-device management and task monitoring</em></p>
-</div>
-
-<div align="center">
-<img src="assets/images/设备管理.jpg" alt="Device Management" width="800">
-<p><em>Device Management - Real-time device pool monitoring</em></p>
-</div>
-
----
-
-## Key Features
-
-### Task Execution
-
-- **Natural Language Tasks** - Describe tasks in plain language, AI executes automatically
-- **Voice Input** - Web voice recording + STT (requires HTTPS)
-- **Real-time Feedback** - WebSocket pushes progress for each step
-
-### Device Management
-
-- **Device Pool** - Manage 100+ devices simultaneously
-- **Auto Discovery** - FRP port scanning, automatic device detection
-- **State Sync** - WebSocket real-time device state synchronization
-
-### Live Preview
-
-- **Scrcpy Integration** - Real-time device screen viewing
-- **H.264 Streaming** - Efficient compression, bandwidth-friendly
-
----
+- **Web Interface**: Modern Vue 3 based UI for easy interaction without writing code.
+- **Multi-Device Management**: Manage multiple devices simultaneously from a single dashboard.
+- **Real-time Preview**: Integrated Scrcpy for low-latency (<150ms) screen mirroring.
+- **Multi-Model Support**: Supports GLM-4.6v series and any OpenAI-compatible vision models.
 
 ## Quick Start
 
 ### Requirements
 
-**Server**: Ubuntu 20.04+ / Debian 11+, 2 cores / 4GB+, public IP
+- **Server**: Ubuntu 20.04+ or Debian 11+, 2 cores, 4GB RAM, Public IP.
+- **Android Device**: Android 7.0+, USB debugging enabled.
 
-**Android Device**: Android 7.0+, USB debugging enabled
+### Deployment
 
-### 10-Minute Deployment
+1.  **Clone Repository**
 
-#### 1️⃣ Server
+    ```bash
+    git clone https://github.com/unal-ai/PhoneAgent.git
+    cd PhoneAgent
+    ```
 
-```bash
-git clone https://github.com/unal-ai/PhoneAgent.git
-cd PhoneAgent
+2.  **Configure Environment**
 
-# Configure API key
-cp env.example .env
-nano .env  # Fill in ZHIPU_API_KEY
+    ```bash
+    cp env.example .env
+    # Edit .env and fill in ZHIPU_API_KEY
+    ```
 
-# One-click install
-sudo bash scripts/install/install_server.sh
-```
+3.  **Install Server**
 
-#### 2️⃣ Client (Termux)
+    ```bash
+    sudo bash scripts/install/install_server.sh
+    ```
 
-```bash
-bash <(curl -s https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh)
-```
+4.  **Install Client (Termux)**
 
-#### 3️⃣ Frontend
+    Run this command in Termux on your Android device:
 
-```bash
-cd web
-npm install && npm run dev -- --host 0.0.0.0
-# Access: http://SERVER_IP:5173
-```
+    ```bash
+    bash <(curl -s https://cdn.jsdelivr.net/gh/unal-ai/PhoneAgent@main/client/install_termux.sh)
+    ```
 
-For detailed steps, see [Deployment Guide](docs/DEPLOYMENT.md).
+5.  **Start Frontend**
 
-### Get API Key
+    ```bash
+    cd web
+    npm install && npm run dev -- --host 0.0.0.0
+    ```
 
-Visit [Zhipu AI Platform](https://open.bigmodel.cn/) → Register → Create API Key → Add to `.env`
+    Access via `http://SERVER_IP:5173`.
 
----
-
-## AI Model Support
-
-### Default Models (Zhipu AI)
-
-| Model | Type | Description |
-|-------|------|-------------|
-| `autoglm-phone` | 🆓 Free | Official Phone model, mobile-optimized |
-| `glm-4.6v-flash` | 🆓 Free | Latest vision model, cost-effective |
-| `glm-4.6v` | 💰 Paid | Flagship vision model |
-
-### Multi-Platform Support
-
-Any OpenAI-compatible vision model works:
-
-```bash
-# OpenAI GPT-4o
-MODEL_PROVIDER=openai
-CUSTOM_API_KEY=sk-proj-xxxxx
-CUSTOM_MODEL_NAME=gpt-4o
-
-# Google Gemini
-MODEL_PROVIDER=gemini
-CUSTOM_API_KEY=AIzaSyXXXXXXXX
-CUSTOM_MODEL_NAME=gemini-2.0-flash
-```
-
----
+For detailed instructions, refer to the [Deployment Guide](docs/DEPLOYMENT.md).
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Web Frontend (Vue 3)                       │
-└────────────┬────────────────────────────────────────────────┘
-             │
-             ├─────────────────┬──────────────────┬───────────┐
-             ↓                 ↓                  ↓           ↓
-    ┌────────────────┐ ┌─────────────────┐ ┌──────────┐ ┌──────────┐
-    │  API Server    │ │ WebSocket Server│ │FRP Server│ │  Device  │
-    │   (port 8000)  │ │   (port 9999)   │ │(port 7000)│ │ (Termux) │
-    └────────────────┘ └─────────────────┘ └──────────┘ └──────────┘
-```
+PhoneAgent employs a dual WebSocket architecture:
 
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | Vue 3 + Vite + Element Plus |
-| **Backend** | FastAPI + SQLite + WebSocket |
-| **AI** | AutoGLM-Phone / GLM-4.6v / OpenAI-Compatible |
-| **Device** | Termux + ADB + Scrcpy |
-
----
-
-## Documentation
-
-| Doc | Description |
-|-----|-------------|
-| [Deployment Guide](docs/DEPLOYMENT.md) | Complete deployment steps |
-| [Self-Hosted Model](docs/SELF_HOSTED_MODEL.md) | Local model deployment |
-| [Multi-Device Management](docs/MULTI_DEVICE_MANAGEMENT.md) | Cluster deployment guide |
-
----
+-   **API Server (Port 8000)**: Handles REST API, frontend WebSocket, and Scrcpy video streams.
+-   **WebSocket Server (Port 9999)**: Manages device connections and state synchronization.
+-   **FRP Server (Port 7000)**: Provides NAT traversal for devices.
 
 ## License
 
-This project is licensed under **AGPL-3.0**, based on [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM) (Apache 2.0).
+This project is licensed under the **AGPL-3.0 License**.
 
-**In simple terms**:
+It is based on [Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM), which is licensed under Apache 2.0.
 
-- ✅ You can freely use, modify, and distribute this project
-- ✅ Personal use and internal enterprise use are completely free
-- 📤 **The only requirement**: If you modify the code and provide network services to users, please open-source your improvements back to the community
+We believe in the spirit of open source. You are free to use, modify, and distribute this software. If you deploy a modified version as a network service, you are required to make your source code available to the community.
 
-That's what open source is about — **sharing benefits everyone**.
-
-See [LICENSE](LICENSE) and [Third-Party Licenses](LICENSES_THIRD_PARTY.md) for details.
-
----
-
-## Contributing
-
-Feel free to submit issues and suggestions via GitHub Issues, and pull requests are welcome.
-
----
+See [LICENSE](LICENSE) and [Third-Party Licenses](LICENSES_THIRD_PARTY.md) for full details.
 
 ## Acknowledgements
 
-This project stands on the shoulders of giants:
-
-- **[Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM)** - The core foundation of this project. Thanks to Zhipu team for their open-source contribution
-- **[Zhipu AI](https://open.bigmodel.cn/)** - For providing the free autoglm-phone model
-- **[Scrcpy](https://github.com/Genymobile/scrcpy/)** - Android screen mirroring
-- **[FRP](https://github.com/fatedier/frp)** - NAT traversal
-- **[YADB](https://github.com/ysbing/YADB)** - ADB enhancements (Chinese input, force screenshot)
-- **[Vue.js](https://vuejs.org/)** / **[FastAPI](https://fastapi.tiangolo.com/)** / **[Element Plus](https://element-plus.org/)** - Web tech stack
-
-Thanks to all open-source contributors.
+-   **Open-AutoGLM**: The core foundation of this project.
+-   **Zhipu AI**: Provider of the underlying AI models.
+-   **Scrcpy**: High-performance screen mirroring solution.
+-   **FRP**: Fast reverse proxy.
+-   **YADB**: Android debugging bridge enhancement.

@@ -697,11 +697,20 @@ class AgentService:
                         adb_device_id = v2_device.adb_address
                         logger.info(f"⏱️  [Task {task.task_id}] Using device: {adb_device_id}")
                     else:
-                        logger.error(
-                            f"Task {task.task_id}: Device {task.device_id} not found in scanned devices"
+                        logger.warning(
+                            f"Task {task.task_id}: Device {task.device_id} not found in scanned devices, using fallback"
                         )
                 except Exception as e:
                     logger.error(f"Failed to get device from scanner: {e}")
+
+                # 如果扫描器获取失败，回退到简单转换
+                if not adb_device_id:
+                    from server.utils import device_id_to_adb_address
+
+                    adb_device_id = device_id_to_adb_address(task.device_id)
+                    logger.info(
+                        f"⏱️  [Task {task.task_id}] Using fallback ADB address: {adb_device_id}"
+                    )
 
             # 构建模型配置
             model_config_dict = task.model_config or {}
